@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuietSpace - Room Noise Display</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      font-family:
+        "Avenir Next",
+        "Segoe UI",
+        "Inter",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      background-color: #7ed957;
+      color: #111;
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    .screen {
+      width: 100%;
+      min-height: calc(100vh - 48px);
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding-top: 8px;
+    }
+
+    .room-label {
+      font-size: clamp(1.1rem, 2vw, 1.6rem);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.9;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(6px);
+    }
+
+    .main-panel {
+      width: min(900px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      padding: clamp(24px, 4vw, 42px);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.16);
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(8px);
+    }
+
+    .status {
+      font-size: clamp(4rem, 11vw, 8rem);
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+    }
+
+    .thank-you {
+      font-size: clamp(1.2rem, 2.8vw, 2rem);
+      font-weight: 600;
+      max-width: 760px;
+      line-height: 1.35;
+    }
+
+    .level {
+      display: none;
+    }
+
+    .message {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      max-width: 680px;
+      opacity: 0.9;
+      line-height: 1.5;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: row;
+      gap: 14px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: nowrap;
+      margin-top: 18px;
+    }
+
+    button {
+      margin-top: 18px;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      background-color: rgba(255, 255, 255, 0.95);
+      color: #1565c0;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    .button-group button {
+      margin-top: 0;
+      width: auto;
+    }
+
+    button:hover {
+      opacity: 0.96;
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .bottom-row {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding-bottom: 8px;
+      margin-top: 24px;
+    }
+
+    .report-card {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 22px 28px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow:
+        0 14px 32px rgba(0, 0, 0, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+    }
+
+    .report-text-wrap {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 320px;
+    }
+
+    .report-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .report-subtext {
+      font-size: 1rem;
+      line-height: 1.4;
+      opacity: 0.9;
+    }
+
+    .qr-image {
+      width: clamp(110px, 13vw, 155px);
+      height: clamp(110px, 13vw, 155px);
+      object-fit: contain;
+      background: white;
+      border: 3px solid rgba(0, 0, 0, 0.15);
+      border-radius: 16px;
+      padding: 8px;
+      flex-shrink: 0;
+    }
+
+    .countdown-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 24px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow:
+        0 14px 32px rgba(0, 0, 0, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+    }
+
+    .countdown-title {
+      font-size: 1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .countdown-circle-wrap {
+      position: relative;
+      width: 180px;
+      height: 180px;
+    }
+
+    .countdown-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.35);
+      stroke-width: 8;
+    }
+
+    .countdown-progress {
+      fill: none;
+      stroke: #111;
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 326.73;
+      stroke-dashoffset: 0;
+      transform: rotate(-90deg);
+      transform-origin: center;
+    }
+
+    .countdown-time {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .countdown-subtext {
+      font-size: 0.9rem;
+      text-align: center;
+      line-height: 1.4;
+      max-width: 300px;
+    }
+
+    #demoButton {
+      background-color: rgba(255, 255, 255, 0.95);
+      color: #111;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 16px;
+      }
+
+      .screen {
+        min-height: calc(100vh - 32px);
+      }
+
+      .main-panel {
+        border-radius: 22px;
+        gap: 14px;
+      }
+
+      .bottom-row {
+        margin-top: 18px;
+      }
+
+      .report-card,
+      .countdown-card {
+        width: 100%;
+        max-width: 420px;
+      }
+
+      .report-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 14px;
+      }
+
+      .report-text-wrap {
+        text-align: center;
+        max-width: none;
+      }
+
+      button {
+        width: 100%;
+        max-width: 280px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="screen">
+
+    <div class="top-bar">
+      <div class="room-label" id="roomLabel">
+        Study Room 311
+      </div>
+    </div>
+
+    <div class="main-panel">
+
+      <div class="status" id="statusText">
+        QUIET
+      </div>
+
+      <div class="thank-you" id="thankYouText">
+        Thank you for keeping this space quiet!
+      </div>
+
+      <!--
+        Sound level is currently hidden from the public display,
+        but the element is retained so JavaScript can continue
+        updating the value for development/testing.
+      -->
+      <div class="level" id="soundLevel">
+        Current Sound Level: 0
+      </div>
+
+      <div class="message" id="messageText">
+        Noise level is acceptable.
+      </div>
+
+      <!--
+        Start Microphone enables live room monitoring.
+        Presentation Demo manually cycles through display states
+        without requiring live microphone input.
+      -->
+      <div class="button-group">
+        <button id="startButton" onclick="startMonitoring()">
+          Start Microphone
+        </button>
+
+        <button id="demoButton" onclick="runPresentationDemo()">
+          Presentation Demo
+        </button>
+      </div>
+
+    </div>
+
+    <div class="bottom-row">
+
+      <!--
+        Default QR card shown while the room is quiet.
+        The QR code directs students to the room-specific
+        noise-reporting workflow.
+      -->
+      <div class="report-card" id="reportCard">
+
+        <div class="report-text-wrap">
+          <div class="report-title">
+            Need to report noise?
+          </div>
+
+          <div class="report-subtext">
+            Scan the QR code to submit a room-specific noise report.
+          </div>
+        </div>
+
+        <img
+          src="../images/qrCode.png"
+          alt="QR code for submitting a room noise report"
+          class="qr-image"
+        />
+
+      </div>
+
+      <!--
+        Replaces the QR card while a red-state countdown
+        is active.
+      -->
+      <div class="countdown-card hidden" id="countdownCard">
+
+        <div class="countdown-title">
+          Quiet Down to Reset:
+        </div>
+
+        <div class="countdown-circle-wrap">
+          <svg
+            width="180"
+            height="180"
+            viewBox="0 0 120 120"
+            aria-hidden="true"
+          >
+            <circle
+              class="countdown-bg"
+              cx="60"
+              cy="60"
+              r="52"
+            ></circle>
+
+            <circle
+              class="countdown-progress"
+              id="countdownProgress"
+              cx="60"
+              cy="60"
+              r="52"
+            ></circle>
+          </svg>
+
+          <div class="countdown-time" id="countdownTimer">
+            02:00
+          </div>
+        </div>
+
+        <div class="countdown-subtext">
+          Staff has been notified.<br />
+          Please lower your volume to restore a quiet study space.
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      ============================================================
+      QuietSpace Room Display
+      ============================================================
+
+      This page:
+      - Reads microphone input from the room display device.
+      - Calculates an approximate sound level.
+      - Uses a short sliding window to smooth measurements.
+      - Assigns the room a green, yellow, or red state.
+      - Sends room readings to the QuietSpace backend.
+      - Creates/escalates incidents when the room remains too loud.
+      - Displays a QR code students can use to report noise.
+      - Includes a presentation demo mode for testing the interface.
+
+      Note:
+      Browser microphone levels are relative measurements and are
+      not calibrated physical decibel readings.
+    */
+
+    let audioContext;
+    let analyser;
+    let microphone;
+    let dataArray;
+
+    let isMonitoring = false;
+
+    /*
+      Presentation demo state.
+      The demo cycles:
+      green -> yellow -> red -> green.
+    */
+    let demoStage = "green";
+    let demoRedCycleCount = 0;
+
+    /*
+      Timer used by the red-state countdown.
+    */
+    let countdownInterval = null;
+
+    /*
+      Current prototype room.
+
+      Room 311 maps to room_id 1 in the backend.
+      Multi-room support can later provide this dynamically.
+    */
+    const ROOM_ID = 1;
+
+    /*
+      Noise-state timing configuration.
+
+      Measurements are averaged over the most recent 3 seconds.
+      State evaluation occurs once per second.
+      Yellow remains visible for at least 14 seconds before
+      transitioning to a less severe state.
+
+      RED_TIME is currently shortened to 2 minutes for
+      demonstration/testing.
+    */
+    const SLIDING_WINDOW_MS = 3000;
+    const EVALUATION_INTERVAL_MS = 1000;
+    const YELLOW_MIN_HOLD_MS = 14000;
+    const RED_TIME = 2 * 60 * 1000;
+
+    /*
+      Stores recent microphone samples used to calculate
+      the sliding-window average.
+    */
+    const levelSamples = [];
+
+    /*
+      Guidance displayed while the room is in the yellow
+      warning state. Messages rotate between warnings.
+    */
+    const warningMessages = [
+      {
+        title: "Quiet Floor Reminder",
+        text:
+          "The third floor is designated for quiet study. " +
+          "Please keep conversations to a minimum."
+      },
+      {
+        title: "Need to Talk?",
+        text:
+          "For conversation or group work, please use the " +
+          "second floor collaboration areas."
+      },
+      {
+        title: "Study Space Courtesy",
+        text:
+          "Others may be studying nearby. " +
+          "Please be mindful of sound levels."
+      }
+    ];
+
+    let warningMessageIndex = 0;
+
+    /*
+      Room state tracking.
+    */
+    let currentState = "green";
+    let latestDetectedState = "green";
+    let stateEnteredAt = Date.now();
+    let lastEvaluationAt = 0;
+
+    /*
+      Red-state lock/countdown tracking.
+    */
+    let redLockActive = false;
+    let redLockEndsAt = null;
+    let countdownStart = null;
+    let countdownFinished = false;
+
+    /*
+      SVG countdown circle measurements.
+    */
+    const radius = 52;
+    const circumference = 2 * Math.PI * radius;
+
+    /*
+      Cached DOM elements.
+    */
+    const statusText =
+      document.getElementById("statusText");
+
+    const thankYouText =
+      document.getElementById("thankYouText");
+
+    const soundLevelText =
+      document.getElementById("soundLevel");
+
+    const messageText =
+      document.getElementById("messageText");
+
+    const startButton =
+      document.getElementById("startButton");
+
+    const reportCard =
+      document.getElementById("reportCard");
+
+    const countdownCard =
+      document.getElementById("countdownCard");
+
+    const countdownProgress =
+      document.getElementById("countdownProgress");
+
+    const countdownTimer =
+      document.getElementById("countdownTimer");
+
+    /*
+      Initialize the countdown ring.
+    */
+    countdownProgress.style.strokeDasharray =
+      `${circumference}`;
+
+    countdownProgress.style.strokeDashoffset = "0";
+
+
+    /*
+      Convert milliseconds into MM:SS format.
+    */
+    function formatTime(ms) {
+      const total =
+        Math.max(0, Math.ceil(ms / 1000));
+
+      const minutes =
+        Math.floor(total / 60);
+
+      const seconds =
+        total % 60;
+
+      return (
+        `${String(minutes).padStart(2, "0")}:` +
+        `${String(seconds).padStart(2, "0")}`
+      );
+    }
+
+
+    /*
+      Update the red-state circular countdown display.
+    */
+    function updateCircle(remaining) {
+      const clamped =
+        Math.max(0, remaining);
+
+      const percent =
+        clamped / RED_TIME;
+
+      const offset =
+        circumference * (1 - percent);
+
+      countdownProgress.style.strokeDashoffset =
+        offset;
+
+      countdownTimer.textContent =
+        formatTime(clamped);
+    }
+
+
+    /*
+      Convert an internal color state into the label
+      stored with backend sound readings.
+    */
+    function getQuietScore(state) {
+      if (state === "yellow") {
+        return "Warning";
+      }
+
+      if (state === "red") {
+        return "Too Loud";
+      }
+
+      return "Quiet";
+    }
+
+
+    /*
+      Determine the target room state from the averaged
+      browser microphone level.
+
+      These are prototype relative thresholds, not dB values.
+    */
+    function getStateFromLevel(level) {
+      if (level < 10) {
+        return "green";
+      }
+
+      if (level < 17) {
+        return "yellow";
+      }
+
+      return "red";
+    }
+
+
+    /*
+      Remove expired samples and calculate the average
+      sound level over the configured sliding window.
+    */
+    function getAverageLevelFromWindow() {
+      const now = Date.now();
+
+      while (
+        levelSamples.length > 0 &&
+        now - levelSamples[0].time > SLIDING_WINDOW_MS
+      ) {
+        levelSamples.shift();
+      }
+
+      if (levelSamples.length === 0) {
+        return 0;
+      }
+
+      const total =
+        levelSamples.reduce(
+          (sum, sample) => sum + sample.level,
+          0
+        );
+
+      return Math.round(
+        total / levelSamples.length
+      );
+    }
+
+
+    /*
+      Send the latest averaged room reading to the backend.
+    */
+    async function sendReadingToBackend(level, state) {
+      const readingData = {
+        room_id: ROOM_ID,
+        level: level,
+        status_color: state,
+        quiet_score: getQuietScore(state)
+      };
+
+      try {
+        await fetch("/api/readings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(readingData)
+        });
+
+        console.log(
+          "Sent reading to backend:",
+          readingData
+        );
+      } catch (error) {
+        console.error(
+          "Error sending reading:",
+          error
+        );
+      }
+    }
+
+
+    /*
+      Start the red-state countdown.
+
+      While the countdown is active, the current state is
+      temporarily locked so the warning has time to run.
+    */
+    function startCountdown() {
+      if (countdownStart !== null) {
+        return;
+      }
+
+      countdownStart = Date.now();
+      countdownFinished = false;
+
+      redLockActive = true;
+      redLockEndsAt =
+        countdownStart + RED_TIME;
+
+      reportCard.classList.add("hidden");
+      countdownCard.classList.remove("hidden");
+
+      updateCircle(RED_TIME);
+
+      clearInterval(countdownInterval);
+
+      countdownInterval =
+        setInterval(() => {
+          const remaining =
+            redLockEndsAt - Date.now();
+
+          updateCircle(remaining);
+
+          if (remaining <= 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+          }
+        }, 1000);
+    }
+
+
+    /*
+      Clear the red-state countdown and restore the QR card.
+    */
+    function resetCountdown() {
+      countdownStart = null;
+      countdownFinished = false;
+
+      redLockActive = false;
+      redLockEndsAt = null;
+
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+
+      reportCard.classList.remove("hidden");
+      countdownCard.classList.add("hidden");
+
+      updateCircle(RED_TIME);
+    }
+
+
+    /*
+      Request browser microphone permission and initialize
+      the Web Audio API analyser.
+    */
+    async function startMonitoring() {
+      if (isMonitoring) {
+        return;
+      }
+
+      try {
+        const stream =
+          await navigator.mediaDevices.getUserMedia({
+            audio: true
+          });
+
+        audioContext =
+          new (
+            window.AudioContext ||
+            window.webkitAudioContext
+          )();
+
+        analyser =
+          audioContext.createAnalyser();
+
+        analyser.fftSize = 2048;
+
+        microphone =
+          audioContext.createMediaStreamSource(
+            stream
+          );
+
+        microphone.connect(analyser);
+
+        dataArray =
+          new Uint8Array(
+            analyser.fftSize
+          );
+
+        isMonitoring = true;
+
+        startButton.textContent =
+          "Microphone Active";
+
+        startButton.disabled = true;
+        startButton.style.opacity = "0.82";
+        startButton.style.cursor = "default";
+
+        updateSoundLevel();
+      } catch (error) {
+        console.error(
+          "Microphone access error:",
+          error
+        );
+
+        alert(
+          "Could not access microphone: " +
+          error.name +
+          " - " +
+          error.message
+        );
+      }
+    }
+
+
+    /*
+      Continuously sample microphone input.
+
+      RMS amplitude is converted into a relative prototype
+      level. Every evaluation interval, the averaged value
+      is used to determine the room's target state.
+    */
+    function updateSoundLevel() {
+      if (!analyser) {
+        return;
+      }
+
+      analyser.getByteTimeDomainData(
+        dataArray
+      );
+
+      let sum = 0;
+
+      for (
+        let i = 0;
+        i < dataArray.length;
+        i++
+      ) {
+        const normalized =
+          (dataArray[i] - 128) / 128;
+
+        sum +=
+          normalized * normalized;
+      }
+
+      const rms =
+        Math.sqrt(
+          sum / dataArray.length
+        );
+
+      const rawLevel =
+        rms * 500;
+
+      const instantLevel =
+        Math.round(rawLevel);
+
+      const now =
+        Date.now();
+
+      levelSamples.push({
+        time: now,
+        level: instantLevel
+      });
+
+      soundLevelText.textContent =
+        "Current Sound Level: " +
+        instantLevel;
+
+      if (
+        now - lastEvaluationAt >=
+        EVALUATION_INTERVAL_MS
+      ) {
+        lastEvaluationAt = now;
+
+        const averageLevel =
+          getAverageLevelFromWindow();
+
+        const targetState =
+          getStateFromLevel(
+            averageLevel
+          );
+
+        latestDetectedState =
+          targetState;
+
+        evaluateStateChange(
+          targetState
+        );
+
+        sendReadingToBackend(
+          averageLevel,
+          currentState
+        );
+      }
+
+      /*
+        When the red countdown expires, escalate the
+        incident if the latest measured state is still red.
+      */
+      if (redLockActive) {
+        const remaining =
+          redLockEndsAt - now;
+
+        updateCircle(remaining);
+
+        if (
+          remaining <= 0 &&
+          !countdownFinished
+        ) {
+          countdownFinished = true;
+
+          if (
+            latestDetectedState === "red"
+          ) {
+            console.log(
+              "SEND ALERT TO STAFF"
+            );
+
+            escalateIncident();
+          }
+
+          redLockActive = false;
+          countdownStart = null;
+          redLockEndsAt = null;
+
+          countdownCard.classList.add(
+            "hidden"
+          );
+
+          reportCard.classList.remove(
+            "hidden"
+          );
+
+          setState(
+            latestDetectedState
+          );
+        }
+      }
+
+      requestAnimationFrame(
+        updateSoundLevel
+      );
+    }
+
+
+    /*
+      Decide whether the visible room state should change.
+
+      More severe states can appear immediately.
+      A yellow warning must remain visible for its minimum
+      hold time before transitioning downward.
+    */
+    function evaluateStateChange(targetState) {
+      const now =
+        Date.now();
+
+      const timeInCurrentState =
+        now - stateEnteredAt;
+
+      if (redLockActive) {
+        return;
+      }
+
+      if (
+        targetState === currentState
+      ) {
+        return;
+      }
+
+      if (
+        isMoreSevere(
+          targetState,
+          currentState
+        )
+      ) {
+        setState(targetState);
+        return;
+      }
+
+      if (
+        currentState === "yellow" &&
+        timeInCurrentState <
+          YELLOW_MIN_HOLD_MS
+      ) {
+        return;
+      }
+
+      setState(targetState);
+    }
+
+
+    /*
+      Compare state severity:
+      green < yellow < red.
+    */
+    function isMoreSevere(
+      newState,
+      oldState
+    ) {
+      const severity = {
+        green: 0,
+        yellow: 1,
+        red: 2
+      };
+
+      return (
+        severity[newState] >
+        severity[oldState]
+      );
+    }
+
+
+    /*
+      Create a new backend incident when the room
+      enters the red state.
+    */
+    async function startIncident() {
+      console.log(
+        "START INCIDENT FIRED"
+      );
+
+      try {
+        const response =
+          await fetch(
+            "/api/incidents/start",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+              body: JSON.stringify({
+                room_id: ROOM_ID,
+                trigger_level: "red"
+              })
+            }
+          );
+
+        const data =
+          await response.json();
+
+        console.log(data);
+      } catch (error) {
+        console.error(
+          "Error starting incident:",
+          error
+        );
+      }
+    }
+
+
+    /*
+      Mark the active room incident as resolved.
+    */
+    async function resolveIncident() {
+      try {
+        await fetch(
+          "/api/incidents/resolve",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              room_id: ROOM_ID
+            })
+          }
+        );
+      } catch (error) {
+        console.error(
+          "Error resolving incident:",
+          error
+        );
+      }
+    }
+
+
+    /*
+      Increase the escalation level of the active
+      room incident.
+    */
+    async function escalateIncident() {
+      try {
+        await fetch(
+          "/api/incidents/escalate",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              room_id: ROOM_ID
+            })
+          }
+        );
+      } catch (error) {
+        console.error(
+          "Error escalating incident:",
+          error
+        );
+      }
+    }
+
+
+    /*
+      Apply a room state to the interface and update
+      incident behavior.
+
+      Green:
+      - resolves the current incident
+      - restores the QR reporting card
+
+      Yellow:
+      - resolves the current incident
+      - shows rotating quiet-floor guidance
+
+      Red:
+      - begins the countdown
+      - starts a backend incident
+    */
+    function setState(state) {
+      currentState = state;
+      stateEnteredAt = Date.now();
+
+      if (state === "green") {
+        resetCountdown();
+        resolveIncident();
+        showReportQRCode();
+
+        document.body.style.backgroundColor =
+          "#7ed957";
+
+        document.body.style.color =
+          "#111";
+
+        statusText.textContent =
+          "QUIET";
+
+        thankYouText.textContent =
+          "Thank you for keeping this space quiet!";
+
+        messageText.textContent =
+          "Noise level is acceptable.";
+
+        return;
+      }
+
+      if (state === "yellow") {
+        resetCountdown();
+        resolveIncident();
+        showWarningGuidance();
+
+        document.body.style.backgroundColor =
+          "#ffd966";
+
+        document.body.style.color =
+          "#111";
+
+        statusText.textContent =
+          "WARNING";
+
+        thankYouText.textContent =
+          "Please lower your volume to maintain a quiet study space.";
+
+        messageText.textContent =
+          "Noise level is rising.";
+
+        return;
+      }
+
+      startCountdown();
+      startIncident();
+
+      document.body.style.backgroundColor =
+        "#ff6b6b";
+
+      document.body.style.color =
+        "#111";
+
+      statusText.textContent =
+        "TOO LOUD";
+
+      thankYouText.textContent =
+        "This room is too loud. Please be mindful of others.";
+
+      messageText.textContent =
+        "Noise level is too high.";
+    }
+
+
+    /*
+      Replace the QR reporting prompt with one of the
+      rotating warning messages while the room is yellow.
+    */
+    function showWarningGuidance() {
+      const message =
+        warningMessages[
+          warningMessageIndex
+        ];
+
+      reportCard.classList.add(
+        "warning-guidance"
+      );
+
+      document.querySelector(
+        ".report-title"
+      ).textContent =
+        message.title;
+
+      document.querySelector(
+        ".report-subtext"
+      ).textContent =
+        message.text;
+
+      const qrImage =
+        document.querySelector(
+          ".qr-image"
+        );
+
+      if (qrImage) {
+        qrImage.classList.add(
+          "hidden"
+        );
+      }
+
+      warningMessageIndex =
+        (
+          warningMessageIndex + 1
+        ) %
+        warningMessages.length;
+    }
+
+
+    /*
+      Restore the normal student-report QR card.
+    */
+    function showReportQRCode() {
+      reportCard.classList.remove(
+        "warning-guidance"
+      );
+
+      document.querySelector(
+        ".report-title"
+      ).textContent =
+        "Need to report noise?";
+
+      document.querySelector(
+        ".report-subtext"
+      ).textContent =
+        "Scan the QR code to submit a room-specific noise report.";
+
+      const qrImage =
+        document.querySelector(
+          ".qr-image"
+        );
+
+      if (qrImage) {
+        qrImage.classList.remove(
+          "hidden"
+        );
+      }
+    }
+
+
+    /*
+      Presentation-only demo.
+
+      Each click advances the display through:
+      green -> yellow -> red -> green.
+
+      Demo readings are also sent to the backend so the
+      staff dashboard can reflect the presentation state.
+
+      After repeated red demo cycles, the existing incident
+      is escalated rather than creating a new one.
+    */
+    async function runPresentationDemo() {
+      if (isMonitoring) {
+        alert(
+          "Turn off microphone mode before using presentation demo mode."
+        );
+
+        return;
+      }
+
+      /*
+        GREEN -> YELLOW
+      */
+      if (demoStage === "green") {
+        demoStage = "yellow";
+
+        currentState = "yellow";
+        stateEnteredAt = Date.now();
+
+        resetCountdown();
+
+        document.body.style.backgroundColor =
+          "#ffd966";
+
+        document.body.style.color =
+          "#111";
+
+        statusText.textContent =
+          "WARNING";
+
+        thankYouText.textContent =
+          "Please lower your volume to maintain a quiet study space.";
+
+        messageText.textContent =
+          "Noise level is rising.";
+
+        showWarningGuidance();
+
+        await sendReadingToBackend(
+          10,
+          "yellow"
+        );
+
+        return;
+      }
+
+      /*
+        YELLOW -> RED
+      */
+      if (demoStage === "yellow") {
+        demoStage = "red";
+        demoRedCycleCount++;
+
+        currentState = "red";
+        stateEnteredAt = Date.now();
+
+        document.body.style.backgroundColor =
+          "#ff6b6b";
+
+        document.body.style.color =
+          "#111";
+
+        statusText.textContent =
+          "TOO LOUD";
+
+        thankYouText.textContent =
+          "This room is too loud. Please be mindful of others.";
+
+        messageText.textContent =
+          "Noise level is too high.";
+
+        showReportQRCode();
+        startCountdown();
+
+        await sendReadingToBackend(
+          20,
+          "red"
+        );
+
+        if (
+          demoRedCycleCount === 1
+        ) {
+          await startIncident();
+        } else {
+          await escalateIncident();
+        }
+
+        return;
+      }
+
+      /*
+        RED -> GREEN
+      */
+      if (demoStage === "red") {
+        demoStage = "green";
+
+        currentState = "green";
+        stateEnteredAt = Date.now();
+
+        resetCountdown();
+
+        document.body.style.backgroundColor =
+          "#7ed957";
+
+        document.body.style.color =
+          "#111";
+
+        statusText.textContent =
+          "QUIET";
+
+        thankYouText.textContent =
+          "Thank you for keeping this space quiet!";
+
+        messageText.textContent =
+          "Noise level is acceptable.";
+
+        showReportQRCode();
+
+        await sendReadingToBackend(
+          4,
+          "green"
+        );
+
+        /*
+          For the presentation demo, resolve the incident
+          after the third completed red cycle.
+        */
+        if (
+          demoRedCycleCount >= 3
+        ) {
+          await resolveIncident();
+          demoRedCycleCount = 0;
+        }
+
+        return;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuietSpace Staff Dashboard</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef5fb;
+      color: #1f2a44;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* -------------------- Sidebar -------------------- */
+
+    .sidebar {
+      position: relative;
+      width: 240px;
+      height: 100vh;
+      min-height: 100vh;
+      flex-shrink: 0;
+      overflow: hidden;
+      padding: 28px 20px;
+      background: #1f3b73;
+      color: white;
+      transition: width 0.25s ease, padding 0.25s ease;
+    }
+
+    .sidebar h1 {
+      margin-bottom: 8px;
+      font-size: 1.6rem;
+    }
+
+    .sidebar p {
+      margin-bottom: 30px;
+      color: #c9d7ff;
+      font-size: 0.9rem;
+    }
+
+    .nav-item {
+      display: block;
+      margin-bottom: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.28);
+      font-weight: 800;
+    }
+
+    .nav-item.disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+
+    .nav-item.disabled:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: none;
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      top: 20px;
+      left: calc(240px - 50px);
+      z-index: 300;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.82);
+      color: #1f3b73;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+      transition: all 0.25s ease;
+    }
+
+    .sidebar-toggle img {
+      display: block;
+      width: 22px;
+      height: 22px;
+      margin: auto;
+      object-fit: contain;
+    }
+
+    body.sidebar-collapsed .sidebar-toggle {
+      top: 20px;
+      left: 18px;
+      background: rgba(31, 59, 115, 0.92);
+      color: white;
+    }
+
+    body.sidebar-collapsed .sidebar {
+      width: 0;
+      padding: 0;
+    }
+
+    body.sidebar-collapsed .sidebar * {
+      display: none;
+    }
+
+    .logout-wrapper {
+      position: absolute;
+      right: 20px;
+      bottom: 24px;
+      left: 20px;
+    }
+
+    .logout-btn {
+      width: 100%;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    /* -------------------- Main Layout -------------------- */
+
+    .main {
+      flex: 1;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 24px 32px 32px;
+      transition: all 0.25s ease;
+    }
+
+    .top-header {
+      position: relative;
+      margin-bottom: 28px;
+      padding-left: 58px;
+    }
+
+    .top-header h2 {
+      margin-bottom: 6px;
+      color: #1f3b73;
+      font-size: 2rem;
+    }
+
+    .top-header p {
+      color: #60708a;
+    }
+
+    /* -------------------- Room Cards -------------------- */
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      min-height: 155px;
+      padding: 22px;
+      border: 1px solid #d7e4f2;
+      border-radius: 18px;
+      background: white;
+      box-shadow: 0 12px 28px rgba(31, 60, 115, 0.1);
+    }
+
+    .card.inactive-card {
+      border-color: #d4d9e2;
+      background: #f3f5f8;
+      color: #778091;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+      color: #1f3b73;
+    }
+
+    .inactive-card h3 {
+      color: #5d6678;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .green {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+
+    .yellow {
+      background: #fff8d6;
+      color: #8a6d00;
+    }
+
+    .red {
+      background: #fde8e8;
+      color: #8a1f1f;
+    }
+
+    .inactive {
+      background: #e4e7ec;
+      color: #5d6678;
+    }
+
+    /* -------------------- Dashboard Sections -------------------- */
+
+    .section {
+      padding: 24px;
+      border: 1px solid #d7e4f2;
+      border-radius: 18px;
+      background: white;
+      box-shadow: 0 12px 28px rgba(31, 60, 115, 0.1);
+    }
+
+    .incidents-section {
+      margin-bottom: 30px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .section-header h3 {
+      color: #1f3b73;
+      font-size: 1.4rem;
+    }
+
+    .section-subtitle {
+      margin-top: 5px;
+      color: #60708a;
+      font-size: 0.92rem;
+    }
+
+    /* -------------------- Tables -------------------- */
+
+    .table-scroll {
+      overflow-x: auto;
+      overflow-y: auto;
+      border-radius: 12px;
+    }
+
+    .incidents-scroll {
+      max-height: 370px;
+    }
+
+    .reports-scroll {
+      max-height: 300px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 0;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e1e9f3;
+      font-size: 0.88rem;
+      text-align: left;
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: white;
+      color: #4c5d7a;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    #studentReportsSection th {
+      padding: 10px 6px;
+      font-size: 0.7rem;
+      letter-spacing: 0.01em;
+    }
+
+    .empty {
+      padding: 24px;
+      color: #60708a;
+      text-align: center;
+    }
+
+    /* -------------------- Incident Status -------------------- */
+
+    .incident-open {
+      background: #fde8e8;
+      color: #8a1f1f;
+    }
+
+    .incident-resolved {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+
+    .incident-attention {
+      background: #fff3cd;
+      color: #8a5a00;
+    }
+
+    .priority {
+      font-weight: 800;
+    }
+
+    .priority-low,
+    .priority-medium {
+      color: #8a6d00;
+    }
+
+    .priority-high {
+      color: #8a1f1f;
+    }
+
+    /* -------------------- Student Report Controls -------------------- */
+
+    .severity-badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .severity-low {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+
+    .severity-medium {
+      background: #fff8d6;
+      color: #8a6d00;
+    }
+
+    .severity-high {
+      background: #fde8e8;
+      color: #8a1f1f;
+    }
+
+    .status-select {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 999px;
+      outline: none;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .status-open {
+      background: #fde8e8;
+      color: #8a1f1f;
+    }
+
+    .status-in_review {
+      background: #fff8d6;
+      color: #8a6d00;
+    }
+
+    .status-resolved {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+
+    .view-btn {
+      margin-left: 8px;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 8px;
+      background: #1f3b73;
+      color: white;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    /* -------------------- Staff Alert -------------------- */
+
+    .toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 999;
+      display: none;
+      width: min(360px, 90%);
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: #8a1f1f;
+      color: white;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.22);
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    .toast-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    .toast-close {
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .toast-message {
+      font-size: 0.95rem;
+      line-height: 1.4;
+      white-space: pre-line;
+    }
+
+    /* -------------------- Student Report Notification -------------------- */
+
+    .report-notice {
+      position: fixed;
+      top: 90px;
+      right: 24px;
+      z-index: 998;
+      display: none;
+      width: min(360px, 90%);
+      padding: 16px 44px 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #3f7cff, #244fc7);
+      color: white;
+      cursor: pointer;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.22),
+        0 0 24px rgba(100, 150, 255, 0.55),
+        0 14px 35px rgba(0, 0, 0, 0.24);
+    }
+
+    .report-notice.show {
+      display: block;
+    }
+
+    .report-notice-title {
+      margin-bottom: 4px;
+      font-weight: 900;
+    }
+
+    .report-notice-text {
+      font-size: 0.92rem;
+      opacity: 0.95;
+    }
+
+    .report-notice-close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: none;
+    }
+
+    .highlight-new-report {
+      animation: reportFlash 1.8s ease;
+    }
+
+    @keyframes reportFlash {
+      0% {
+        background: rgba(120, 255, 180, 0.28);
+      }
+
+      100% {
+        background: transparent;
+      }
+    }
+
+    /* -------------------- Comment Modal -------------------- */
+
+    .comment-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    .comment-modal.show {
+      display: flex;
+    }
+
+    .comment-box {
+      width: min(500px, 92%);
+      padding: 22px;
+      border-radius: 18px;
+      background: white;
+    }
+
+    .comment-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      font-weight: 800;
+    }
+
+    .comment-header button {
+      border: none;
+      background: transparent;
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .comment-body {
+      color: #1f2a44;
+      line-height: 1.5;
+    }
+
+    /* -------------------- Dark Mode -------------------- */
+
+    @media (prefers-color-scheme: dark) {
+      body,
+      .main {
+        background: #0f1d3a;
+        color: #ffffff;
+      }
+
+      .sidebar {
+        background: #10275a;
+      }
+
+      .top-header h2,
+      .section-header h3,
+      .card h3 {
+        color: #ffffff;
+      }
+
+      .top-header p,
+      .section-subtitle {
+        color: #dbe7ff;
+      }
+
+      .card,
+      .section {
+        border: 1px solid rgba(141, 170, 220, 0.35);
+        background: linear-gradient(
+          to bottom,
+          #243b75 0%,
+          #1d3267 45%,
+          #142650 100%
+        );
+        color: #ffffff;
+      }
+
+      .inactive-card {
+        border-color: #46526a !important;
+        background: #2b3448 !important;
+        color: #d8dfef !important;
+      }
+
+      .inactive-card h3,
+      .inactive-card p {
+        color: #d8dfef !important;
+      }
+
+      .inactive-card .inactive {
+        background: #3d4658 !important;
+        color: #ffffff !important;
+      }
+
+      th {
+        background: #243b75;
+        color: #dbe7ff;
+      }
+
+      td {
+        color: #ffffff;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid rgba(219, 231, 255, 0.18);
+      }
+
+      .comment-box {
+        background: #1d3267;
+        color: #ffffff;
+      }
+
+      .comment-body {
+        color: #ffffff;
+      }
+
+      .sidebar-toggle,
+      body.sidebar-collapsed .sidebar-toggle,
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        background: rgba(255, 255, 255, 0.92) !important;
+        color: #1f3b73 !important;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+      }
+
+      .green,
+      .severity-low,
+      .incident-resolved,
+      .status-resolved {
+        background: #6ee7b7 !important;
+        color: #064e3b !important;
+      }
+
+      .yellow,
+      .severity-medium,
+      .status-in_review {
+        background: #fde68a !important;
+        color: #6b4e00 !important;
+      }
+
+      .red,
+      .severity-high,
+      .incident-open,
+      .status-open {
+        background: #fca5a5 !important;
+        color: #7f1d1d !important;
+      }
+
+      .incident-attention {
+        background: #fcd34d !important;
+        color: #78350f !important;
+      }
+    }
+
+    /* -------------------- Responsive Layout -------------------- */
+
+    @media (max-width: 1050px) {
+      .cards {
+        grid-template-columns: repeat(3, minmax(150px, 1fr));
+      }
+
+      .card {
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      th,
+      td {
+        padding: 10px 6px;
+        font-size: 0.78rem;
+      }
+
+      .cards {
+        grid-template-columns: repeat(3, minmax(130px, 1fr));
+        gap: 12px;
+      }
+
+      .card {
+        min-height: 145px;
+        padding: 16px;
+      }
+
+      .card h3 {
+        font-size: 1rem;
+      }
+
+      .card p {
+        font-size: 0.88rem;
+      }
+
+      .top-header h2 {
+        font-size: 1.6rem;
+      }
+
+      table {
+        font-size: 0.85rem;
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        display: flex;
+        overflow: hidden;
+      }
+
+      .main {
+        flex: 1;
+        width: 100%;
+        height: 100vh;
+        overflow-y: auto;
+        padding: 12px 14px 120px;
+      }
+
+      .top-header {
+        margin-bottom: 20px;
+        padding-left: 58px;
+      }
+
+      .top-header h2 {
+        font-size: 1.45rem;
+        line-height: 1.2;
+      }
+
+      .top-header p {
+        font-size: 0.88rem;
+        line-height: 1.35;
+      }
+
+      .sidebar {
+        position: relative;
+        width: 230px;
+        height: 100vh;
+        min-height: 100vh;
+        flex-shrink: 0;
+        padding: 15px 18px 24px;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        top: 15px !important;
+        left: 170px !important;
+      }
+
+      body.sidebar-collapsed .sidebar-toggle {
+        top: 10px !important;
+        left: 18px !important;
+      }
+
+      body.sidebar-collapsed .sidebar {
+        display: block;
+        width: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+      }
+
+      body.sidebar-collapsed .sidebar * {
+        display: none;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .section {
+        padding: 16px 12px;
+        border-radius: 16px;
+      }
+
+      .section-header h3 {
+        font-size: 1.15rem;
+      }
+
+      .section-subtitle {
+        font-size: 0.78rem;
+      }
+
+      table {
+        width: 100%;
+        table-layout: fixed;
+      }
+
+      th,
+      td {
+        padding: 8px 4px;
+        font-size: 0.68rem;
+        line-height: 1.25;
+        word-break: normal;
+        overflow-wrap: break-word;
+      }
+
+      th {
+        font-size: 0.6rem;
+        letter-spacing: 0;
+      }
+
+      #studentReportsSection th {
+        padding: 8px 3px;
+        font-size: 0.56rem;
+      }
+
+      .status,
+      .severity-badge,
+      .status-select {
+        padding: 5px 6px;
+        font-size: 0.62rem;
+      }
+
+      .status-select {
+        max-width: 100%;
+      }
+
+      .toast,
+      .report-notice {
+        right: 14px;
+        width: calc(100% - 28px);
+      }
+
+      .card .status {
+        min-width: 120px;
+        padding: 10px 18px !important;
+        font-size: 1rem !important;
+        font-weight: 800 !important;
+        text-align: center;
+      }
+
+      .logout-wrapper {
+        right: 18px;
+        bottom: 110px !important;
+        left: 18px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 701px) {
+      .nav-item:not(.disabled):hover {
+        background: rgba(255, 255, 255, 0.22);
+        transform: translateX(4px);
+        transition: 0.2s ease;
+      }
+
+      .nav-item:not(.disabled):active {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(0.98);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <button
+    class="sidebar-toggle"
+    onclick="toggleSidebar()"
+    aria-label="Toggle sidebar"
+  >
+    <img src="../images/cloudicon.png" alt="" />
+  </button>
+
+  <aside class="sidebar">
+    <h1>QuietSpace</h1>
+    <p>Staff Dashboard</p>
+
+    <a class="nav-item active" href="dashboard.html">Overview</a>
+
+    <a class="nav-item" href="QuietScorePage.html">
+      QuietScore Reports
+    </a>
+
+    <a
+      class="nav-item"
+      href="#studentReportsSection"
+      onclick="jumpToStudentReports(); return false;"
+    >
+      Student Reports
+    </a>
+
+    <div
+      class="nav-item disabled"
+      aria-disabled="true"
+      title="Analytics is not available yet."
+    >
+      Analytics
+    </div>
+
+    <div class="logout-wrapper">
+      <button class="logout-btn" onclick="logout()">Log Out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top-header">
+      <h2>Today's Monitoring Overview</h2>
+      <p>
+        View live room status and active QuietScore incidents in real time.
+      </p>
+    </div>
+
+    <div class="cards" id="roomCards">
+      <div class="card">Loading room data...</div>
+    </div>
+
+    <section class="section incidents-section">
+      <div class="section-header">
+        <div>
+          <h3>QuietScore Reports</h3>
+          <p class="section-subtitle">
+            System-generated reports created when a room reaches red status.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-scroll incidents-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Status</th>
+              <th>Timer</th>
+              <th>Opened</th>
+              <th>Escalation</th>
+            </tr>
+          </thead>
+
+          <tbody id="incidentsTableBody">
+            <tr>
+              <td colspan="5" class="empty">
+                Loading QuietScore reports...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="studentReportsSection">
+      <div class="section-header">
+        <h3>Student Reports</h3>
+      </div>
+
+      <div class="table-scroll reports-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Noise Type</th>
+              <th>Severity</th>
+              <th>Comment</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+
+          <tbody id="reportsTableBody">
+            <tr>
+              <td colspan="6" class="empty">
+                Loading reports...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Staff escalation alert -->
+  <div id="toast" class="toast">
+    <div class="toast-header">
+      <span>STAFF ATTENTION NEEDED!</span>
+      <button
+        class="toast-close"
+        onclick="closeToast()"
+        aria-label="Close staff alert"
+      >
+        ×
+      </button>
+    </div>
+
+    <div id="toastMessage" class="toast-message"></div>
+  </div>
+
+  <!-- New student report notification -->
+  <div
+    id="reportNotice"
+    class="report-notice"
+    onclick="jumpToStudentReports()"
+  >
+    <button
+      class="report-notice-close"
+      onclick="event.stopPropagation(); closeReportNotice()"
+      aria-label="Close student report notification"
+    >
+      ×
+    </button>
+
+    <div class="report-notice-title">
+      New student report received
+    </div>
+
+    <div class="report-notice-text">
+      Check Student Reports for details.
+    </div>
+  </div>
+
+  <!-- Full student comment modal -->
+  <div id="commentModal" class="comment-modal">
+    <div class="comment-box">
+      <div class="comment-header">
+        <span>Student Comment</span>
+
+        <button
+          onclick="closeCommentModal()"
+          aria-label="Close student comment"
+        >
+          ×
+        </button>
+      </div>
+
+      <div id="commentText" class="comment-body"></div>
+    </div>
+  </div>
+
+  <script>
+    /*
+     * Prototype authentication guard.
+     * login.html sets quietspaceLoggedIn after a successful staff login.
+     */
+    if (localStorage.getItem("quietspaceLoggedIn") !== "true") {
+      window.location.href = "login.html";
+    }
+
+    let lastReportCount = null;
+    let newReportNoticeTimeout = null;
+    let pendingReportNoticeCount = 0;
+    let isEditingReportStatus = false;
+
+    /*
+     * Load student-submitted noise reports.
+     */
+    async function loadReports() {
+      const tableBody = document.getElementById("reportsTableBody");
+
+      try {
+        const response = await fetch(`/api/reports?t=${Date.now()}`);
+
+        if (!response.ok) {
+          throw new Error("Unable to load reports");
+        }
+
+        const reports = await response.json();
+
+        if (
+          lastReportCount !== null &&
+          reports.length > lastReportCount
+        ) {
+          showStudentReportNotice(
+            reports.length - lastReportCount
+          );
+        }
+
+        lastReportCount = reports.length;
+        tableBody.innerHTML = "";
+
+        if (reports.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="6" class="empty">
+                No reports submitted yet.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        reports.forEach(report => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${report.room_name}</td>
+            <td>${formatText(report.noise_type)}</td>
+            <td>${buildSeverityBadge(report.severity)}</td>
+            <td>${buildCommentCell(report.comments)}</td>
+            <td>
+              ${buildReportStatusDropdown(
+                report.id,
+                report.report_status
+              )}
+            </td>
+            <td>${formatTimeOnly(report.submitted_at)}</td>
+          `;
+
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error("Error loading reports:", error);
+
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="empty">
+              Unable to load reports.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    /*
+     * Load the most recent room readings.
+     *
+     * Room 311 / room_id 1 is currently the active prototype room.
+     * Other returned rooms remain visible but display as inactive.
+     */
+    async function loadLatestReadings() {
+      const roomCards = document.getElementById("roomCards");
+
+      try {
+        const response = await fetch(
+          `/api/readings/latest?t=${Date.now()}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load room readings");
+        }
+
+        const rooms = await response.json();
+
+        roomCards.innerHTML = "";
+
+        rooms.forEach(room => {
+          const isActiveRoom = room.room_id === 1;
+
+          const status = isActiveRoom
+            ? room.status_color || "green"
+            : "inactive";
+
+          const level =
+            isActiveRoom && room.level
+              ? `${room.level} dB`
+              : "—";
+
+          const updated =
+            isActiveRoom && room.recorded_at
+              ? formatTimeOnly(room.recorded_at)
+              : "—";
+
+          const card = document.createElement("div");
+
+          card.className = isActiveRoom
+            ? "card"
+            : "card inactive-card";
+
+          card.innerHTML = `
+            <h3>${room.room_name}</h3>
+            <p>Current Level: ${level}</p>
+            <p>Last Updated: ${updated}</p>
+            <span class="status ${status}">
+              ${
+                isActiveRoom
+                  ? formatText(status)
+                  : "Not Active"
+              }
+            </span>
+          `;
+
+          roomCards.appendChild(card);
+        });
+      } catch (error) {
+        console.error("Error loading readings:", error);
+
+        roomCards.innerHTML = `
+          <div class="card">
+            Unable to load room data.
+          </div>
+        `;
+      }
+    }
+
+    /*
+     * Load QuietScore incidents generated by the room monitor.
+     */
+    async function loadIncidents() {
+      const tableBody =
+        document.getElementById("incidentsTableBody");
+
+      try {
+        const response = await fetch(
+          `/api/incidents?t=${Date.now()}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load incidents");
+        }
+
+        const incidents = await response.json();
+
+        const toast = document.getElementById("toast");
+        const activeToastIncidentId =
+          Number(toast.dataset.incidentId);
+
+        /*
+         * Automatically remove an alert when its incident
+         * has been resolved or no longer exists.
+         */
+        if (activeToastIncidentId) {
+          const activeIncident = incidents.find(
+            incident =>
+              incident.id === activeToastIncidentId
+          );
+
+          if (
+            !activeIncident ||
+            activeIncident.status === "resolved"
+          ) {
+            toast.classList.remove("show");
+            delete toast.dataset.incidentId;
+          }
+        }
+
+        tableBody.innerHTML = "";
+
+        if (incidents.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="5" class="empty">
+                No QuietScore reports yet.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        incidents.forEach(incident => {
+          /*
+           * An open incident with at least three escalations
+           * triggers the staff-attention notification.
+           */
+          if (
+            incident.status === "open" &&
+            incident.escalation_count >= 3
+          ) {
+            showToast(
+              `${incident.room_name} remains excessively loud.\nImmediate staff attention recommended.`,
+              incident.id
+            );
+          }
+
+          const row = document.createElement("tr");
+
+          const statusClass =
+            incident.status === "resolved"
+              ? "incident-resolved"
+              : incident.status === "needs_staff_attention"
+              ? "incident-attention"
+              : "incident-open";
+
+          const priorityLabel = getPriorityLabel(
+            incident.escalation_count,
+            incident.status
+          );
+
+          row.innerHTML = `
+            <td>${incident.room_name}</td>
+            <td>
+              <span class="status ${statusClass}">
+                ${formatText(incident.status)}
+              </span>
+            </td>
+            <td>${incident.timer_remaining || "Completed"}</td>
+            <td>${formatTimeOnly(incident.started_at)}</td>
+            <td class="priority ${priorityLabel.className}">
+              ${priorityLabel.text}
+            </td>
+          `;
+
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error("Error loading incidents:", error);
+
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty">
+              Unable to load QuietScore reports.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    /*
+     * Short comments display directly in the table.
+     * Longer comments receive a View button.
+     */
+    function buildCommentCell(comment) {
+      if (!comment || comment.trim() === "") {
+        return "—";
+      }
+
+      if (comment.length <= 25) {
+        return comment;
+      }
+
+      const safeComment = comment
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'");
+
+      return `
+        ${comment.substring(0, 25)}...
+        <button
+          class="view-btn"
+          onclick="openComment('${safeComment}')"
+        >
+          View
+        </button>
+      `;
+    }
+
+    /*
+     * Convert student-selected severity into a compact badge.
+     */
+    function buildSeverityBadge(level) {
+      if (!level) {
+        return "—";
+      }
+
+      const value = level.toLowerCase();
+
+      if (value === "low") {
+        return `
+          <span class="severity-badge severity-low">
+            !
+          </span>
+        `;
+      }
+
+      if (value === "medium") {
+        return `
+          <span class="severity-badge severity-medium">
+            !!
+          </span>
+        `;
+      }
+
+      if (value === "high") {
+        return `
+          <span class="severity-badge severity-high">
+            !!!
+          </span>
+        `;
+      }
+
+      return level;
+    }
+
+    function openComment(comment) {
+      document.getElementById("commentText").textContent =
+        comment;
+
+      document
+        .getElementById("commentModal")
+        .classList.add("show");
+    }
+
+    function closeCommentModal() {
+      document
+        .getElementById("commentModal")
+        .classList.remove("show");
+    }
+
+    /*
+     * Translate incident escalation count into the
+     * priority indicator displayed in the table.
+     */
+    function getPriorityLabel(escalationCount, status) {
+      if (!escalationCount || escalationCount < 1) {
+        return {
+          text: "—",
+          className: "priority-low"
+        };
+      }
+
+      const marks = "!".repeat(escalationCount);
+
+      if (status === "open") {
+        if (escalationCount >= 3) {
+          return {
+            text: "NEEDS ATTENTION",
+            className: "priority-high"
+          };
+        }
+
+        if (escalationCount >= 2) {
+          return {
+            text: marks,
+            className: "priority-high"
+          };
+        }
+
+        return {
+          text: marks,
+          className: "priority-medium"
+        };
+      }
+
+      /*
+       * Resolved incidents retain their historical
+       * escalation level.
+       */
+      if (escalationCount >= 2) {
+        return {
+          text: marks,
+          className: "priority-high"
+        };
+      }
+
+      return {
+        text: marks,
+        className: "priority-medium"
+      };
+    }
+
+    function formatText(text) {
+      if (!text) {
+        return "";
+      }
+
+      return text
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+    function formatTimeOnly(dateString) {
+      const date = new Date(dateString);
+
+      return date.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    /*
+     * Incidents dismissed by staff are remembered for the
+     * current page session so the same alert does not
+     * immediately reopen.
+     */
+    const acknowledgedAlerts = new Set();
+
+    function showToast(message, incidentId) {
+      if (acknowledgedAlerts.has(incidentId)) {
+        return;
+      }
+
+      const toast = document.getElementById("toast");
+      const toastMessage =
+        document.getElementById("toastMessage");
+
+      toastMessage.textContent = message;
+      toast.dataset.incidentId = incidentId;
+      toast.classList.add("show");
+    }
+
+    function closeToast() {
+      const toast = document.getElementById("toast");
+      const incidentId = toast.dataset.incidentId;
+
+      if (incidentId) {
+        acknowledgedAlerts.add(Number(incidentId));
+      }
+
+      toast.classList.remove("show");
+    }
+
+    function toggleSidebar() {
+      document.body.classList.toggle(
+        "sidebar-collapsed"
+      );
+    }
+
+    /*
+     * Refresh dashboard data while avoiding a student-report
+     * table refresh while staff are using a status dropdown.
+     */
+    function refreshDashboard() {
+      const activeElement = document.activeElement;
+
+      const editingDropdown =
+        activeElement &&
+        activeElement.classList.contains("status-select");
+
+      if (!isEditingReportStatus && !editingDropdown) {
+        loadReports();
+      }
+
+      loadLatestReadings();
+      loadIncidents();
+    }
+
+    /*
+     * Notify staff when the number of student reports increases.
+     */
+    function showStudentReportNotice(count) {
+      const notice =
+        document.getElementById("reportNotice");
+
+      const title =
+        notice.querySelector(".report-notice-title");
+
+      pendingReportNoticeCount += count;
+
+      title.textContent =
+        pendingReportNoticeCount > 1
+          ? `${pendingReportNoticeCount} new student reports received`
+          : "New student report received";
+
+      notice.classList.add("show");
+
+      clearTimeout(newReportNoticeTimeout);
+
+      newReportNoticeTimeout = setTimeout(() => {
+        notice.classList.remove("show");
+        pendingReportNoticeCount = 0;
+      }, 5000);
+    }
+
+    function closeReportNotice() {
+      const notice =
+        document.getElementById("reportNotice");
+
+      notice.classList.remove("show");
+      pendingReportNoticeCount = 0;
+    }
+
+    /*
+     * Student Reports already exists on this dashboard,
+     * so sidebar navigation scrolls to the section.
+     */
+    function jumpToStudentReports() {
+      const reportsSection =
+        document.getElementById("studentReportsSection");
+
+      if (reportsSection) {
+        reportsSection.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+
+      highlightRecentReports();
+    }
+
+    function highlightRecentReports() {
+      const rows = document.querySelectorAll(
+        "#reportsTableBody tr"
+      );
+
+      rows.forEach((row, index) => {
+        if (index < pendingReportNoticeCount) {
+          row.classList.add("highlight-new-report");
+
+          setTimeout(() => {
+            row.classList.remove(
+              "highlight-new-report"
+            );
+          }, 1800);
+        }
+      });
+    }
+
+    /*
+     * Build the editable staff status control for
+     * student-submitted reports.
+     */
+    function buildReportStatusDropdown(
+      reportId,
+      status
+    ) {
+      const currentStatus = status || "open";
+
+      return `
+        <select
+          class="status-select status-${currentStatus}"
+          onfocus="isEditingReportStatus = true"
+          onchange="updateReportStatus(${reportId}, this)"
+        >
+          <option
+            value="open"
+            ${currentStatus === "open" ? "selected" : ""}
+          >
+            Open
+          </option>
+
+          <option
+            value="in_review"
+            ${currentStatus === "in_review" ? "selected" : ""}
+          >
+            In Review
+          </option>
+
+          <option
+            value="resolved"
+            ${currentStatus === "resolved" ? "selected" : ""}
+          >
+            Resolved
+          </option>
+        </select>
+      `;
+    }
+
+    /*
+     * Save a staff-selected student report status.
+     */
+    async function updateReportStatus(
+      reportId,
+      selectElement
+    ) {
+      isEditingReportStatus = true;
+
+      const newStatus = selectElement.value;
+
+      selectElement.className =
+        `status-select status-${newStatus}`;
+
+      try {
+        const response = await fetch(
+          `/api/reports/${reportId}/status`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              report_status: newStatus
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Status update failed");
+        }
+
+        setTimeout(async () => {
+          isEditingReportStatus = false;
+          await loadReports();
+        }, 500);
+      } catch (error) {
+        console.error(
+          "Error updating report status:",
+          error
+        );
+
+        alert("Unable to update report status.");
+        isEditingReportStatus = false;
+      }
+    }
+
+    /*
+     * Clear the prototype login state and return to login.
+     */
+    function logout() {
+      localStorage.removeItem(
+        "quietspaceLoggedIn"
+      );
+
+      sessionStorage.removeItem(
+        "quietspaceLoggedIn"
+      );
+
+      window.location.href =
+        "login.html?logout=1";
+    }
+
+    /*
+     * Initial load and live refresh.
+     */
+    refreshDashboard();
+
+    setInterval(refreshDashboard, 1000);
+
+    window.addEventListener(
+      "focus",
+      refreshDashboard
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      function () {
+        if (!document.hidden) {
+          refreshDashboard();
+        }
+      }
+    );
+  </script>
+</body>
+</html>

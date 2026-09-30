@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuietSpace - Staff Login</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #c5e6f9;
+      color: #1f2a44;
+      min-height: 100vh;
+    }
+
+    .page {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 3rem;
+    }
+
+    .header {
+      width: 100%;
+      height: 300px;
+      overflow: hidden;
+      background-color: #dcecf7;
+    }
+
+    .logo-wrap {
+      width: 100%;
+      height: 100%;
+    }
+
+    .logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 70%;
+      display: block;
+    }
+
+    .login-card {
+      width: min(620px, 92%);
+      background: linear-gradient(
+        to bottom,
+        #ffffff 0%,
+        #f7fbff 45%,
+        #edf5fc 100%
+      );
+      padding: 2.25rem 1.875rem;
+      border-radius: 16px;
+      box-shadow:
+        0 24px 55px rgba(56, 104, 180, 0.20),
+        0 10px 24px rgba(31, 60, 115, 0.10);
+      margin-top: -0.5rem;
+      border: 1px solid rgba(214, 228, 242, 0.95);
+    }
+
+    .title {
+      font-size: clamp(1.9rem, 4vw, 2.7rem);
+      font-weight: 800;
+      margin-bottom: 10px;
+      text-align: center;
+      color: #1f3b73;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 30px;
+      color: #4c5d7a;
+      line-height: 1.6;
+    }
+
+    form {
+      display: grid;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 1rem;
+      color: #1f2a44;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #cfdceb;
+      border-radius: 14px;
+      font-size: 1rem;
+      outline: none;
+      background-color: #f9fcff;
+      color: #1f2a44;
+    }
+
+    input:focus {
+      border-color: #5a8dee;
+      box-shadow: 0 0 0 3px rgba(90, 141, 238, 0.15);
+      background-color: white;
+    }
+
+    .login-btn {
+      background: linear-gradient(to right, #1f77d0, #1768bf);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 15px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(31, 119, 208, 0.25);
+    }
+
+    .login-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(31, 119, 208, 0.3);
+    }
+
+    .helper-text {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #60708a;
+      line-height: 1.4;
+      margin-top: 14px;
+    }
+
+    .message-box {
+      display: none;
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1rem;
+      padding: 14px;
+      border-radius: 14px;
+      line-height: 1.5;
+      font-weight: 700;
+    }
+
+    .message-box.error {
+      display: block;
+      color: #8a1f1f;
+      background-color: #fde8e8;
+      border: 1px solid #f5bbbb;
+    }
+
+    .message-box.success {
+      display: block;
+      color: #1b5e20;
+      background-color: #e8f5e9;
+      border: 1px solid #cde9cf;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #c5e6f9;
+        color: #1f2a44;
+      }
+
+      .login-card {
+        background: linear-gradient(
+          to bottom,
+          #243b75 0%,
+          #1d3267 45%,
+          #142650 100%
+        );
+        border: 1px solid rgba(141, 170, 220, 0.35);
+      }
+
+      .title,
+      label {
+        color: #ffffff;
+      }
+
+      .subtitle,
+      .helper-text {
+        color: #dbe7ff;
+      }
+
+      input[type="email"],
+      input[type="password"] {
+        background-color: #1b2f61;
+        color: #ffffff;
+        border: 1px solid #5f7fc4;
+      }
+
+      input::placeholder {
+        color: #c9d7ff;
+      }
+
+      input:focus {
+        background-color: #22386f;
+        border-color: #9fc0ff;
+        box-shadow: 0 0 0 3px rgba(159, 192, 255, 0.18);
+      }
+
+      .message-box.error {
+        color: #ffd8d8;
+        background-color: #472020;
+        border-color: #8e3a3a;
+      }
+
+      .message-box.success {
+        color: #d9ffe2;
+        background-color: #173b2a;
+        border-color: #2d724f;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .header {
+        height: 180px;
+      }
+
+      .login-card {
+        width: 94%;
+        padding: 24px 18px;
+        margin-top: -20px;
+        border-radius: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <div class="header">
+      <div class="logo-wrap">
+        <img src="../images/logo.png" alt="QuietSpace logo" />
+      </div>
+    </div>
+
+    <div class="login-card">
+
+      <div class="title">Staff Login</div>
+
+      <div class="subtitle">
+        Access the QuietSpace monitoring dashboard to view room activity,
+        reports, and alerts.
+      </div>
+
+      <form id="loginForm">
+
+        <div class="form-group">
+          <label for="email">Staff Email</label>
+          <input
+            type="email"
+            id="email"
+            placeholder="Enter staff email"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter password"
+            required
+          />
+        </div>
+
+        <button type="submit" class="login-btn">
+          Sign In
+        </button>
+
+      </form>
+
+      <div class="helper-text">
+        Authorized staff access only.
+      </div>
+
+      <div class="message-box" id="messageBox"></div>
+
+    </div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const messageBox = document.getElementById("messageBox");
+
+    function showMessage(message, type) {
+      messageBox.textContent = message;
+      messageBox.className = `message-box ${type}`;
+    }
+
+    loginForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const email =
+        document.getElementById("email").value.trim();
+
+      const password =
+        document.getElementById("password").value.trim();
+
+      if (
+        email === "staff@quietspace.com" &&
+        password === "quiet123"
+      ) {
+        localStorage.setItem(
+          "quietspaceLoggedIn",
+          "true"
+        );
+
+        window.location.href = "dashboard.html";
+      } else {
+        showMessage(
+          "Invalid login. Please try again.",
+          "error"
+        );
+      }
+    });
+
+    window.addEventListener("load", () => {
+      const params =
+        new URLSearchParams(window.location.search);
+
+      if (params.get("logout") === "1") {
+        showMessage(
+          "You have been logged out successfully.",
+          "success"
+        );
+
+        setTimeout(() => {
+          messageBox.textContent = "";
+          messageBox.className = "message-box";
+        }, 4000);
+
+        window.history.replaceState(
+          {},
+          document.title,
+          "login.html"
+        );
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuietSpace QuietScore Reports</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef5fb;
+      color: #1f2a44;
+      min-height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 240px;
+      background: #1f3b73;
+      color: white;
+      padding: 28px 20px;
+      height: 100vh;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: width 0.25s ease, padding 0.25s ease;
+      position: relative;
+    }
+
+    .sidebar h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    .sidebar p {
+      font-size: 0.9rem;
+      color: #c9d7ff;
+      margin-bottom: 30px;
+    }
+
+    .nav-item {
+      display: block;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.28);
+      font-weight: 800;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.22);
+      transform: translateX(4px);
+      transition: 0.2s ease;
+    }
+
+    .nav-item.disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .nav-item.disabled:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: none;
+    }
+
+    .logout-wrapper {
+      position: absolute;
+      bottom: 24px;
+      left: 20px;
+      right: 20px;
+    }
+
+    .logout-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255,255,255,0.24);
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      z-index: 300;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: rgba(255,255,255,0.82);
+      color: #1f3b73;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    }
+
+    .sidebar-toggle img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      display: block;
+      margin: auto;
+    }
+
+    body:not(.sidebar-collapsed) .sidebar-toggle {
+      top: 20px;
+      left: calc(240px - 50px);
+    }
+
+    body.sidebar-collapsed .sidebar-toggle {
+      top: 20px;
+      left: 18px;
+      background: rgba(31,59,115,0.92);
+      color: white;
+    }
+
+    body.sidebar-collapsed .sidebar {
+      width: 0;
+      padding: 0;
+    }
+
+    body.sidebar-collapsed .sidebar * {
+      display: none;
+    }
+
+    .main {
+      flex: 1;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 24px 32px 32px 32px;
+      transition: all 0.25s ease;
+    }
+
+    .top-header {
+      position: relative;
+      margin-bottom: 24px;
+      padding-left: 58px;
+    }
+
+    .top-header h2 {
+      font-size: 2rem;
+      color: #1f3b73;
+      margin-bottom: 6px;
+    }
+
+    .top-header p {
+      color: #60708a;
+    }
+
+    .section {
+      background: white;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 12px 28px rgba(31, 60, 115, 0.10);
+      border: 1px solid #d7e4f2;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .section-header h3 {
+      color: #1f3b73;
+      font-size: 1.4rem;
+    }
+
+    .section-subtitle {
+      color: #60708a;
+      font-size: 0.92rem;
+      margin-top: 5px;
+    }
+
+    .month-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .month-btn,
+    .today-btn {
+      border: none;
+      border-radius: 10px;
+      padding: 9px 13px;
+      cursor: pointer;
+      background: #1f3b73;
+      color: white;
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    .month-label {
+      min-width: 150px;
+      text-align: center;
+      font-weight: 800;
+      color: #1f3b73;
+      font-size: 1rem;
+    }
+
+    .overview-cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: white;
+      border-radius: 18px;
+      padding: 20px;
+      border: 1px solid #d7e4f2;
+      box-shadow: 0 12px 28px rgba(31, 60, 115, 0.10);
+    }
+
+    .summary-card h4 {
+      color: #60708a;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .summary-value {
+      color: #1f3b73;
+      font-size: 1.7rem;
+      font-weight: 900;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.85fr) minmax(480px, 1.5fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .calendar {
+      width: 100%;
+    }
+
+    .calendar-weekdays,
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 7px;
+    }
+
+    .calendar-weekdays div {
+      text-align: center;
+      font-size: 0.73rem;
+      font-weight: 800;
+      color: #60708a;
+      padding-bottom: 5px;
+      text-transform: uppercase;
+    }
+
+    .calendar-day {
+      position: relative;
+      min-height: 52px;
+      border: 1px solid #d7e4f2;
+      background: #f8fbff;
+      border-radius: 11px;
+      padding: 7px;
+      text-align: left;
+      cursor: pointer;
+      color: #1f2a44;
+      transition: 0.18s ease;
+    }
+
+    .calendar-day:hover {
+      transform: translateY(-1px);
+      border-color: #9bb6dd;
+      box-shadow: 0 5px 14px rgba(31, 60, 115, 0.10);
+    }
+
+    .calendar-day.blank {
+      border: none;
+      background: transparent;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .calendar-day.selected {
+      background: #1f3b73;
+      color: white;
+      border-color: #1f3b73;
+    }
+
+    .calendar-day.has-reports::after {
+      content: "";
+      position: absolute;
+      right: 7px;
+      bottom: 7px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #3f7cff;
+    }
+
+    .calendar-day.selected.has-reports::after {
+      background: white;
+    }
+
+    .report-count {
+      display: block;
+      margin-top: 5px;
+      font-size: 0.65rem;
+      color: #60708a;
+      font-weight: 700;
+    }
+
+    .calendar-day.selected .report-count {
+      color: #dbe7ff;
+    }
+
+    .calendar-help {
+      color: #60708a;
+      font-size: 0.8rem;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+
+    .selected-date-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .selected-date-title {
+      color: #1f3b73;
+      font-weight: 900;
+      font-size: 1rem;
+    }
+
+    .clear-date-btn {
+      border: 1px solid #c6d5e8;
+      background: #f7faff;
+      color: #1f3b73;
+      border-radius: 9px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 560px;
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid #e1e9f3;
+      font-size: 0.86rem;
+      vertical-align: top;
+    }
+
+    th {
+      color: #4c5d7a;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: white;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.75rem;
+    }
+
+    .incident-open {
+      background: #fde8e8;
+      color: #8a1f1f;
+    }
+
+    .incident-resolved {
+      background: #e8f5e9;
+      color: #1b5e20;
+    }
+
+    .incident-attention {
+      background: #fff3cd;
+      color: #8a5a00;
+    }
+
+    .priority {
+      font-weight: 800;
+    }
+
+    .priority-low,
+    .priority-medium {
+      color: #8a6d00;
+    }
+
+    .priority-high {
+      color: #8a1f1f;
+    }
+
+    .empty {
+      text-align: center;
+      color: #60708a;
+      padding: 28px;
+    }
+
+    @media (max-width: 1050px) {
+      .overview-cards {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        overflow: hidden;
+      }
+
+      .main {
+        width: 100%;
+        padding: 12px 14px 100px 14px;
+      }
+
+      .sidebar {
+        width: 230px;
+        padding: 15px 18px 24px 18px;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        top: 15px !important;
+        left: 170px !important;
+      }
+
+      body.sidebar-collapsed .sidebar-toggle {
+        top: 10px !important;
+        left: 18px !important;
+      }
+
+      .top-header {
+        padding-left: 58px;
+        margin-bottom: 20px;
+      }
+
+      .top-header h2 {
+        font-size: 1.45rem;
+      }
+
+      .top-header p {
+        font-size: 0.88rem;
+        line-height: 1.35;
+      }
+
+      .overview-cards {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .summary-card {
+        padding: 15px;
+      }
+
+      .summary-value {
+        font-size: 1.4rem;
+      }
+
+      .section {
+        padding: 16px 12px;
+        border-radius: 16px;
+      }
+
+      .calendar-day {
+        min-height: 46px;
+        padding: 5px;
+        font-size: 0.78rem;
+      }
+
+      .report-count {
+        display: none;
+      }
+
+      .logout-wrapper {
+        bottom: 110px !important;
+        left: 18px;
+        right: 18px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body,
+      .main {
+        background: #0f1d3a;
+        color: #ffffff;
+      }
+
+      .sidebar {
+        background: #10275a;
+      }
+
+      .top-header h2,
+      .section-header h3,
+      .month-label,
+      .selected-date-title,
+      .summary-value {
+        color: #ffffff;
+      }
+
+      .top-header p,
+      .section-subtitle,
+      .calendar-help,
+      .report-count {
+        color: #dbe7ff;
+      }
+
+      .section,
+      .summary-card {
+        background: linear-gradient(
+          to bottom,
+          #243b75 0%,
+          #1d3267 45%,
+          #142650 100%
+        );
+        border: 1px solid rgba(141, 170, 220, 0.35);
+        color: #ffffff;
+      }
+
+      .summary-card h4 {
+        color: #dbe7ff;
+      }
+
+      .calendar-day {
+        background: #162b58;
+        border-color: rgba(141, 170, 220, 0.35);
+        color: white;
+      }
+
+      .calendar-day.selected {
+        background: #4f7ee8;
+        border-color: #4f7ee8;
+      }
+
+      .clear-date-btn {
+        background: #1d3267;
+        border-color: #49618f;
+        color: white;
+      }
+
+      th {
+        background: #243b75;
+        color: #dbe7ff;
+      }
+
+      td {
+        color: #ffffff;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid rgba(219, 231, 255, 0.18);
+      }
+
+      body.sidebar-collapsed .sidebar-toggle,
+      body:not(.sidebar-collapsed) .sidebar-toggle,
+      .sidebar-toggle {
+        background: rgba(255, 255, 255, 0.92) !important;
+        color: #1f3b73 !important;
+      }
+
+      .incident-open {
+        background: #fca5a5 !important;
+        color: #7f1d1d !important;
+      }
+
+      .incident-resolved {
+        background: #6ee7b7 !important;
+        color: #064e3b !important;
+      }
+
+      .incident-attention {
+        background: #fcd34d !important;
+        color: #78350f !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()">
+    <img src="../images/cloudicon.png" alt="Menu">
+  </button>
+
+  <aside class="sidebar">
+    <h1>QuietSpace</h1>
+    <p>Staff Dashboard</p>
+
+    <a class="nav-item" href="dashboard.html">Overview</a>
+
+    <a class="nav-item active" href="QuietScorePage.html">
+      QuietScore Reports
+    </a>
+
+    <span class="nav-item disabled">Student Reports</span>
+    <span class="nav-item disabled">Analytics</span>
+
+    <div class="logout-wrapper">
+      <button class="logout-btn" onclick="logout()">Log Out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="top-header">
+      <h2>QuietScore Report History</h2>
+      <p>
+        Review system-generated noise incidents by month or select a specific day.
+      </p>
+    </div>
+
+    <div class="overview-cards">
+
+      <div class="summary-card">
+        <h4>Total Reports</h4>
+        <div class="summary-value" id="totalReports">0</div>
+      </div>
+
+      <div class="summary-card">
+        <h4>Resolved</h4>
+        <div class="summary-value" id="resolvedReports">0</div>
+      </div>
+
+      <div class="summary-card">
+        <h4>Needs Attention</h4>
+        <div class="summary-value" id="attentionReports">0</div>
+      </div>
+
+      <div class="summary-card">
+        <h4>Busiest Room</h4>
+        <div class="summary-value" id="busiestRoom">—</div>
+      </div>
+
+    </div>
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <div>
+          <h3>Report History</h3>
+          <p class="section-subtitle">
+            Use the calendar to narrow the report list to one day.
+          </p>
+        </div>
+
+        <div class="month-controls">
+          <button class="month-btn" onclick="changeMonth(-1)">←</button>
+
+          <div class="month-label" id="monthLabel"></div>
+
+          <button class="month-btn" onclick="changeMonth(1)">→</button>
+
+          <button class="today-btn" onclick="goToCurrentMonth()">
+            This Month
+          </button>
+        </div>
+
+      </div>
+
+      <div class="content-grid">
+
+        <div>
+
+          <div class="calendar">
+
+            <div class="calendar-weekdays">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
+
+            <div class="calendar-days" id="calendarDays"></div>
+
+          </div>
+
+          <p class="calendar-help">
+            Dates with a blue dot contain QuietScore reports.
+            Click a date to view only that day's incidents.
+          </p>
+
+        </div>
+
+        <div>
+
+          <div class="selected-date-bar">
+
+            <div class="selected-date-title" id="selectedDateTitle">
+              All reports this month
+            </div>
+
+            <button
+              class="clear-date-btn"
+              id="clearDateBtn"
+              onclick="clearSelectedDate()"
+              style="display:none;"
+            >
+              Show Full Month
+            </button>
+
+          </div>
+
+          <div class="table-scroll">
+
+            <table>
+
+              <thead>
+                <tr>
+                  <th>Room</th>
+                  <th>Status</th>
+                  <th>Opened</th>
+                  <th>Escalation</th>
+                  <th>Timer</th>
+                </tr>
+              </thead>
+
+              <tbody id="reportsTableBody">
+
+                <tr>
+                  <td colspan="5" class="empty">
+                    Loading QuietScore reports...
+                  </td>
+                </tr>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+<script>
+
+  let allIncidents = [];
+
+  let displayedMonth = new Date();
+
+  displayedMonth = new Date(
+    displayedMonth.getFullYear(),
+    displayedMonth.getMonth(),
+    1
+  );
+
+  let selectedDate = null;
+
+
+  async function loadQuietScoreReports() {
+
+    const tableBody =
+      document.getElementById("reportsTableBody");
+
+    try {
+
+      const response =
+        await fetch(`/api/incidents?t=${Date.now()}`);
+
+      if (!response.ok) {
+        throw new Error("Unable to load incidents");
+      }
+
+      allIncidents = await response.json();
+
+      renderPage();
+
+    } catch (error) {
+
+      console.error(
+        "Error loading QuietScore reports:",
+        error
+      );
+
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="empty">
+            Unable to load QuietScore reports.
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+
+  function renderPage() {
+
+    document.getElementById("monthLabel").textContent =
+      displayedMonth.toLocaleDateString([], {
+        month: "long",
+        year: "numeric"
+      });
+
+    const monthIncidents = getMonthIncidents();
+
+    updateSummaryCards(monthIncidents);
+
+    renderCalendar(monthIncidents);
+
+    renderTable(monthIncidents);
+  }
+
+
+  function getMonthIncidents() {
+
+    const year = displayedMonth.getFullYear();
+
+    const month = displayedMonth.getMonth();
+
+    return allIncidents.filter(incident => {
+
+      if (!incident.started_at) return false;
+
+      const incidentDate =
+        new Date(incident.started_at);
+
+      return (
+        incidentDate.getFullYear() === year &&
+        incidentDate.getMonth() === month
+      );
+    });
+  }
+
+
+  function renderCalendar(monthIncidents) {
+
+    const calendarDays =
+      document.getElementById("calendarDays");
+
+    calendarDays.innerHTML = "";
+
+    const year =
+      displayedMonth.getFullYear();
+
+    const month =
+      displayedMonth.getMonth();
+
+    const firstDay =
+      new Date(year, month, 1).getDay();
+
+    const daysInMonth =
+      new Date(year, month + 1, 0).getDate();
+
+    const countByDay = {};
+
+
+    monthIncidents.forEach(incident => {
+
+      const day =
+        new Date(incident.started_at).getDate();
+
+      countByDay[day] =
+        (countByDay[day] || 0) + 1;
+    });
+
+
+    for (let i = 0; i < firstDay; i++) {
+
+      const blank =
+        document.createElement("div");
+
+      blank.className =
+        "calendar-day blank";
+
+      calendarDays.appendChild(blank);
+    }
+
+
+    for (
+      let day = 1;
+      day <= daysInMonth;
+      day++
+    ) {
+
+      const button =
+        document.createElement("button");
+
+      button.className =
+        "calendar-day";
+
+      button.type = "button";
+
+      const reportCount =
+        countByDay[day] || 0;
+
+
+      if (reportCount > 0) {
+        button.classList.add("has-reports");
+      }
+
+
+      if (
+        selectedDate &&
+        selectedDate.getFullYear() === year &&
+        selectedDate.getMonth() === month &&
+        selectedDate.getDate() === day
+      ) {
+        button.classList.add("selected");
+      }
+
+
+      button.innerHTML = `
+        <strong>${day}</strong>
+
+        ${
+          reportCount > 0
+            ? `
+              <span class="report-count">
+                ${reportCount}
+                report${reportCount === 1 ? "" : "s"}
+              </span>
+            `
+            : ""
+        }
+      `;
+
+
+      button.onclick =
+        () => selectDate(day);
+
+
+      calendarDays.appendChild(button);
+    }
+  }
+
+
+  function renderTable(monthIncidents) {
+
+    const tableBody =
+      document.getElementById("reportsTableBody");
+
+    let incidentsToShow =
+      monthIncidents;
+
+
+    if (selectedDate) {
+
+      incidentsToShow =
+        monthIncidents.filter(incident => {
+
+          const incidentDate =
+            new Date(incident.started_at);
+
+          return (
+            incidentDate.getFullYear() ===
+              selectedDate.getFullYear() &&
+
+            incidentDate.getMonth() ===
+              selectedDate.getMonth() &&
+
+            incidentDate.getDate() ===
+              selectedDate.getDate()
+          );
+        });
+    }
+
+
+    incidentsToShow.sort(
+      (a, b) =>
+        new Date(b.started_at) -
+        new Date(a.started_at)
+    );
+
+
+    tableBody.innerHTML = "";
+
+
+    if (incidentsToShow.length === 0) {
+
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="empty">
+
+            ${
+              selectedDate
+                ? "No QuietScore reports were created on this date."
+                : "No QuietScore reports were created this month."
+            }
+
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+
+    incidentsToShow.forEach(incident => {
+
+      const row =
+        document.createElement("tr");
+
+
+      const statusClass =
+
+        incident.status === "resolved"
+
+          ? "incident-resolved"
+
+          : incident.status ===
+            "needs_staff_attention"
+
+          ? "incident-attention"
+
+          : "incident-open";
+
+
+      const priorityLabel =
+        getPriorityLabel(
+          incident.escalation_count,
+          incident.status
+        );
+
+
+      row.innerHTML = `
+
+        <td>
+          ${incident.room_name || "—"}
+        </td>
+
+        <td>
+
+          <span
+            class="status ${statusClass}"
+          >
+            ${formatText(incident.status)}
+          </span>
+
+        </td>
+
+        <td>
+          ${formatDateTime(incident.started_at)}
+        </td>
+
+        <td
+          class="
+            priority
+            ${priorityLabel.className}
+          "
+        >
+          ${priorityLabel.text}
+        </td>
+
+        <td>
+          ${incident.timer_remaining || "Completed"}
+        </td>
+
+      `;
+
+
+      tableBody.appendChild(row);
+    });
+  }
+
+
+  function updateSummaryCards(monthIncidents) {
+
+    const total =
+      monthIncidents.length;
+
+
+    const resolved =
+      monthIncidents.filter(
+        incident =>
+          incident.status === "resolved"
+      ).length;
+
+
+    const attention =
+      monthIncidents.filter(
+        incident =>
+          incident.status ===
+            "needs_staff_attention" ||
+          Number(
+            incident.escalation_count
+          ) >= 3
+      ).length;
+
+
+    const roomCounts = {};
+
+
+    monthIncidents.forEach(incident => {
+
+      const room =
+        incident.room_name || "Unknown";
+
+      roomCounts[room] =
+        (roomCounts[room] || 0) + 1;
+    });
+
+
+    let busiestRoom = "—";
+
+    let highestCount = 0;
+
+
+    Object.entries(roomCounts)
+      .forEach(([room, count]) => {
+
+        if (count > highestCount) {
+
+          busiestRoom = room;
+
+          highestCount = count;
+        }
+
+      });
+
+
+    document.getElementById(
+      "totalReports"
+    ).textContent = total;
+
+
+    document.getElementById(
+      "resolvedReports"
+    ).textContent = resolved;
+
+
+    document.getElementById(
+      "attentionReports"
+    ).textContent = attention;
+
+
+    document.getElementById(
+      "busiestRoom"
+    ).textContent = busiestRoom;
+  }
+
+
+  function selectDate(day) {
+
+    selectedDate = new Date(
+      displayedMonth.getFullYear(),
+      displayedMonth.getMonth(),
+      day
+    );
+
+
+    document.getElementById(
+      "selectedDateTitle"
+    ).textContent =
+
+      selectedDate.toLocaleDateString([], {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      });
+
+
+    document.getElementById(
+      "clearDateBtn"
+    ).style.display = "inline-block";
+
+
+    renderCalendar(
+      getMonthIncidents()
+    );
+
+
+    renderTable(
+      getMonthIncidents()
+    );
+  }
+
+
+  function clearSelectedDate() {
+
+    selectedDate = null;
+
+
+    document.getElementById(
+      "selectedDateTitle"
+    ).textContent =
+      "All reports this month";
+
+
+    document.getElementById(
+      "clearDateBtn"
+    ).style.display = "none";
+
+
+    renderCalendar(
+      getMonthIncidents()
+    );
+
+
+    renderTable(
+      getMonthIncidents()
+    );
+  }
+
+
+  function changeMonth(offset) {
+
+    displayedMonth = new Date(
+
+      displayedMonth.getFullYear(),
+
+      displayedMonth.getMonth() + offset,
+
+      1
+    );
+
+
+    selectedDate = null;
+
+    document.getElementById(
+      "selectedDateTitle"
+    ).textContent =
+      "All reports this month";
+
+    document.getElementById(
+      "clearDateBtn"
+    ).style.display = "none";
+
+
+    renderPage();
+  }
+
+
+  function goToCurrentMonth() {
+
+    const now = new Date();
+
+
+    displayedMonth = new Date(
+
+      now.getFullYear(),
+
+      now.getMonth(),
+
+      1
+    );
+
+
+    selectedDate = null;
+
+    document.getElementById(
+      "selectedDateTitle"
+    ).textContent =
+      "All reports this month";
+
+    document.getElementById(
+      "clearDateBtn"
+    ).style.display = "none";
+
+
+    renderPage();
+  }
+
+
+  function getPriorityLabel(
+    escalationCount,
+    status
+  ) {
+
+    const count =
+      Number(escalationCount) || 0;
+
+
+    if (count < 1) {
+
+      return {
+        text: "—",
+        className: "priority-low"
+      };
+    }
+
+
+    const marks =
+      "!".repeat(count);
+
+
+    if (
+      status === "open" &&
+      count >= 3
+    ) {
+
+      return {
+        text: "NEEDS ATTENTION",
+        className: "priority-high"
+      };
+    }
+
+
+    if (count >= 2) {
+
+      return {
+        text: marks,
+        className: "priority-high"
+      };
+    }
+
+
+    return {
+      text: marks,
+      className: "priority-medium"
+    };
+  }
+
+
+  function formatText(text) {
+
+    if (!text) return "—";
+
+    return text
+      .replace(/_/g, " ")
+      .replace(
+        /\b\w/g,
+        char => char.toUpperCase()
+      );
+  }
+
+
+  function formatDateTime(dateString) {
+
+    if (!dateString) return "—";
+
+    const date =
+      new Date(dateString);
+
+
+    return date.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  }
+
+
+  function toggleSidebar() {
+
+    document.body.classList.toggle(
+      "sidebar-collapsed"
+    );
+  }
+
+
+  function logout() {
+
+    localStorage.removeItem(
+      "quietspaceLoggedIn"
+    );
+
+    sessionStorage.removeItem(
+      "quietspaceLoggedIn"
+    );
+
+
+    window.location.href =
+      "login.html?logout=1";
+  }
+
+
+  loadQuietScoreReports();
+
+</script>
+
+</body>
+</html>
