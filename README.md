@@ -10,6 +10,17 @@ The system monitors room noise levels and displays a simple color-coded QuietSco
 
 Students can also submit noise reports through a QR-code reporting page, while staff can view room activity, student reports, and QuietScore incidents through the staff dashboard.
 
+## Live Frontend Demo
+
+The QuietSpace frontend is deployed using GitHub Pages.
+
+- [Room Noise Display](https://kanyliar.github.io/QuietSpace/webpages/index.html)
+- [Student Noise Reporting](https://kanyliar.github.io/QuietSpace/webpages/reportingPage.html)
+- [Staff Login](https://kanyliar.github.io/QuietSpace/webpages/login.html)
+- [Staff Dashboard](https://kanyliar.github.io/QuietSpace/webpages/dashboard.html)
+
+> **Note:** This deployment demonstrates the QuietSpace frontend. Features requiring the Node.js/Express backend and MySQL database are not available through the GitHub Pages deployment.
+
 ## Project Structure
 
 ```text
