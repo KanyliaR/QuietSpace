@@ -558,30 +558,136 @@
 
     /* -------------------- Dark Mode -------------------- */
 
+    /* -------------------- Dark Mode Theme Classes -------------------- */
+
+    body.dark-theme,
+    body.dark-theme .main {
+      background: #0f1d3a;
+      color: #ffffff;
+    }
+
+    body.dark-theme .sidebar {
+      background: #10275a;
+    }
+
+    body.dark-theme .top-header h2,
+    body.dark-theme .section-header h3,
+    body.dark-theme .card h3 {
+      color: #ffffff;
+    }
+
+    body.dark-theme .top-header p,
+    body.dark-theme .section-subtitle {
+      color: #dbe7ff;
+    }
+
+    body.dark-theme .card,
+    body.dark-theme .section {
+      border: 1px solid rgba(141, 170, 220, 0.35);
+      background: linear-gradient(
+        to bottom,
+        #243b75 0%,
+        #1d3267 45%,
+        #142650 100%
+      );
+      color: #ffffff;
+    }
+
+    body.dark-theme .inactive-card {
+      border-color: #46526a !important;
+      background: #2b3448 !important;
+      color: #d8dfef !important;
+    }
+
+    body.dark-theme .inactive-card h3,
+    body.dark-theme .inactive-card p {
+      color: #d8dfef !important;
+    }
+
+    body.dark-theme .inactive-card .inactive {
+      background: #3d4658 !important;
+      color: #ffffff !important;
+    }
+
+    body.dark-theme th {
+      background: #243b75;
+      color: #dbe7ff;
+    }
+
+    body.dark-theme td {
+      color: #ffffff;
+      border-bottom: 1px solid rgba(219, 231, 255, 0.18);
+    }
+
+    body.dark-theme .comment-box {
+      background: #1d3267;
+      color: #ffffff;
+    }
+
+    body.dark-theme .comment-body {
+      color: #ffffff;
+    }
+
+    body.dark-theme .sidebar-toggle,
+    body.dark-theme.sidebar-collapsed .sidebar-toggle,
+    body.dark-theme:not(.sidebar-collapsed) .sidebar-toggle {
+      background: rgba(255, 255, 255, 0.92) !important;
+      color: #1f3b73 !important;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    body.dark-theme .green,
+    body.dark-theme .severity-low,
+    body.dark-theme .incident-resolved,
+    body.dark-theme .status-resolved {
+      background: #6ee7b7 !important;
+      color: #064e3b !important;
+    }
+
+    body.dark-theme .yellow,
+    body.dark-theme .severity-medium,
+    body.dark-theme .status-in_review {
+      background: #fde68a !important;
+      color: #6b4e00 !important;
+    }
+
+    body.dark-theme .red,
+    body.dark-theme .severity-high,
+    body.dark-theme .incident-open,
+    body.dark-theme .status-open {
+      background: #fca5a5 !important;
+      color: #7f1d1d !important;
+    }
+
+    body.dark-theme .incident-attention {
+      background: #fcd34d !important;
+      color: #78350f !important;
+    }
+
     @media (prefers-color-scheme: dark) {
-      body,
-      .main {
+      body:not(.light-theme),
+      body:not(.light-theme) .main {
         background: #0f1d3a;
         color: #ffffff;
       }
 
-      .sidebar {
+      body:not(.light-theme) .sidebar {
         background: #10275a;
       }
 
-      .top-header h2,
-      .section-header h3,
-      .card h3 {
+      body:not(.light-theme) .top-header h2,
+      body:not(.light-theme) .section-header h3,
+      body:not(.light-theme) .card h3 {
         color: #ffffff;
       }
 
-      .top-header p,
-      .section-subtitle {
+      body:not(.light-theme) .top-header p,
+      body:not(.light-theme) .section-subtitle {
         color: #dbe7ff;
       }
 
-      .card,
-      .section {
+      body:not(.light-theme) .card,
+      body:not(.light-theme) .section {
         border: 1px solid rgba(141, 170, 220, 0.35);
         background: linear-gradient(
           to bottom,
@@ -592,77 +698,77 @@
         color: #ffffff;
       }
 
-      .inactive-card {
+      body:not(.light-theme) .inactive-card {
         border-color: #46526a !important;
         background: #2b3448 !important;
         color: #d8dfef !important;
       }
 
-      .inactive-card h3,
-      .inactive-card p {
+      body:not(.light-theme) .inactive-card h3,
+      body:not(.light-theme) .inactive-card p {
         color: #d8dfef !important;
       }
 
-      .inactive-card .inactive {
+      body:not(.light-theme) .inactive-card .inactive {
         background: #3d4658 !important;
         color: #ffffff !important;
       }
 
-      th {
+      body:not(.light-theme) th {
         background: #243b75;
         color: #dbe7ff;
       }
 
-      td {
+      body:not(.light-theme) td {
         color: #ffffff;
       }
 
-      th,
-      td {
+      body:not(.light-theme) th,
+      body:not(.light-theme) td {
         border-bottom: 1px solid rgba(219, 231, 255, 0.18);
       }
 
-      .comment-box {
+      body:not(.light-theme) .comment-box {
         background: #1d3267;
         color: #ffffff;
       }
 
-      .comment-body {
+      body:not(.light-theme) .comment-body {
         color: #ffffff;
       }
 
-      .sidebar-toggle,
-      body.sidebar-collapsed .sidebar-toggle,
-      body:not(.sidebar-collapsed) .sidebar-toggle {
+      body:not(.light-theme) .sidebar-toggle,
+      body:not(.light-theme).sidebar-collapsed .sidebar-toggle,
+      body:not(.light-theme):not(.sidebar-collapsed) .sidebar-toggle {
         background: rgba(255, 255, 255, 0.92) !important;
         color: #1f3b73 !important;
         box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
       }
 
-      .green,
-      .severity-low,
-      .incident-resolved,
-      .status-resolved {
+      body:not(.light-theme) .green,
+      body:not(.light-theme) .severity-low,
+      body:not(.light-theme) .incident-resolved,
+      body:not(.light-theme) .status-resolved {
         background: #6ee7b7 !important;
         color: #064e3b !important;
       }
 
-      .yellow,
-      .severity-medium,
-      .status-in_review {
+      body:not(.light-theme) .yellow,
+      body:not(.light-theme) .severity-medium,
+      body:not(.light-theme) .status-in_review {
         background: #fde68a !important;
         color: #6b4e00 !important;
       }
 
-      .red,
-      .severity-high,
-      .incident-open,
-      .status-open {
+      body:not(.light-theme) .red,
+      body:not(.light-theme) .severity-high,
+      body:not(.light-theme) .incident-open,
+      body:not(.light-theme) .status-open {
         background: #fca5a5 !important;
         color: #7f1d1d !important;
       }
 
-      .incident-attention {
+      body:not(.light-theme) .incident-attention {
         background: #fcd34d !important;
         color: #78350f !important;
       }
@@ -774,8 +880,8 @@
       }
 
       .cards {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: repeat(3, minmax(100px, 1fr));
+        gap: 10px;
       }
 
       .section {
@@ -902,6 +1008,13 @@
     >
       Analytics
     </div>
+
+    <a
+      class="nav-item"
+      href="settings.html"
+    >
+      Settings
+    </a>
 
     <div class="logout-wrapper">
       <button class="logout-btn" onclick="logout()">Log Out</button>
@@ -1041,6 +1154,26 @@
   </div>
 
   <script>
+    /*
+     * Global Theme Support (Default: Dark Mode)
+     */
+    function applyGlobalTheme() {
+      const theme = localStorage.getItem("quietspace_theme");
+      if (theme === "light") {
+        document.body.classList.add("light-theme");
+        document.body.classList.remove("dark-theme");
+      } else {
+        document.body.classList.add("dark-theme");
+        document.body.classList.remove("light-theme");
+      }
+    }
+    applyGlobalTheme();
+    window.addEventListener("storage", (e) => {
+      if (e.key === "quietspace_theme") {
+        applyGlobalTheme();
+      }
+    });
+
     /*
      * Prototype authentication guard.
      * login.html sets quietspaceLoggedIn after a successful staff login.

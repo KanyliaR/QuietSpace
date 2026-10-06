@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=950, user-scalable=yes" />
+  <title>QuietSpace Settings</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ----------------------------------------------------
+       Default Theme: QuietSpace Navy Gradient Blue (Dark Mode)
+       ---------------------------------------------------- */
+    :root {
+      --bg-color: #0f1d3a;
+      --text-color: #ffffff;
+      --text-muted: #c9d7ff;
+      --sidebar-bg: #10275a;
+      --card-bg: linear-gradient(to bottom, #243b75 0%, #1d3267 45%, #142650 100%);
+      --card-border: rgba(141, 170, 220, 0.35);
+      --card-shadow: rgba(0, 0, 0, 0.35);
+      --section-title: #ffffff;
+      --input-bg: #1b2f61;
+      --input-border: #5f7fc4;
+      --input-text: #ffffff;
+      --meter-wrap-bg: rgba(16, 39, 90, 0.7);
+      --meter-wrap-border: rgba(141, 170, 220, 0.3);
+      --item-box-bg: rgba(29, 50, 103, 0.55);
+      --item-box-border: rgba(141, 170, 220, 0.25);
+      --btn-secondary-bg: #1b2f61;
+      --btn-secondary-color: #ffffff;
+      --btn-secondary-border: #5f7fc4;
+      --badge-yellow-bg: #4d3800;
+      --badge-yellow-color: #ffe082;
+      --badge-yellow-border: #ffc107;
+      --badge-red-bg: #5c181f;
+      --badge-red-color: #ffb4ba;
+      --badge-red-border: #e63946;
+    }
+
+    /* ----------------------------------------------------
+       Light Theme (Only when user explicitly chooses Light Mode)
+       ---------------------------------------------------- */
+    body.light-theme {
+      --bg-color: #eef5fb;
+      --text-color: #1f2a44;
+      --text-muted: #60708a;
+      --sidebar-bg: #1f3b73;
+      --card-bg: #ffffff;
+      --card-border: #d7e4f2;
+      --card-shadow: rgba(31, 60, 115, 0.08);
+      --section-title: #1f3b73;
+      --input-bg: #fdfdfd;
+      --input-border: #d0deee;
+      --input-text: #1f2a44;
+      --meter-wrap-bg: #f4f8fc;
+      --meter-wrap-border: #e1ecf8;
+      --item-box-bg: #f9fbfd;
+      --item-box-border: #e5edf5;
+      --btn-secondary-bg: #e4edf8;
+      --btn-secondary-color: #1f3b73;
+      --btn-secondary-border: #c9d8ea;
+      --badge-yellow-bg: #fff3cd;
+      --badge-yellow-color: #856404;
+      --badge-yellow-border: #ffeeba;
+      --badge-red-bg: #f8d7da;
+      --badge-red-color: #721c24;
+      --badge-red-border: #f5c6cb;
+    }
+
+    html {
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      accent-color: #1f3b73;
+      transition: background 0.25s ease, color 0.25s ease;
+      width: 100%;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: var(--sidebar-bg);
+      color: white;
+      padding: 28px 20px;
+      height: 100vh;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: width 0.25s ease, padding 0.25s ease, background 0.25s ease;
+      position: relative;
+    }
+
+    .sidebar h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    .sidebar p {
+      font-size: 0.9rem;
+      color: #c9d7ff;
+      margin-bottom: 30px;
+    }
+
+    .nav-item {
+      display: block;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.28);
+      font-weight: 800;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.22);
+      transform: translateX(4px);
+    }
+
+    .nav-item.disabled {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .nav-item.disabled:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: none;
+    }
+
+    .logout-wrapper {
+      position: absolute;
+      bottom: 24px;
+      left: 20px;
+      right: 20px;
+    }
+
+    .logout-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .sidebar-toggle {
+      position: fixed;
+      z-index: 300;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: rgba(255, 255, 255, 0.88);
+      color: #1f3b73;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar-toggle img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      display: block;
+      margin: auto;
+    }
+
+    body:not(.sidebar-collapsed) .sidebar-toggle {
+      top: 20px;
+      left: calc(240px - 50px);
+    }
+
+    body.sidebar-collapsed .sidebar-toggle {
+      top: 20px;
+      left: 18px;
+      background: rgba(31, 59, 115, 0.92);
+      color: white;
+    }
+
+    body.sidebar-collapsed .sidebar {
+      width: 0;
+      padding: 0;
+    }
+
+    body.sidebar-collapsed .sidebar * {
+      display: none;
+    }
+
+    /* Main Area */
+    .main {
+      flex: 1;
+      min-width: 900px;
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 24px 32px 56px 32px;
+      transition: all 0.25s ease;
+      scroll-behavior: smooth;
+    }
+
+    .top-header {
+      position: relative;
+      margin-bottom: 24px;
+      padding-left: 58px;
+    }
+
+    .top-header h2 {
+      font-size: 2rem;
+      color: var(--section-title);
+      margin-bottom: 6px;
+    }
+
+    .top-header p {
+      color: var(--text-muted);
+    }
+
+    .alert-banner {
+      display: none;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .alert-banner.success {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-banner.error {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8d7da;
+      color: #721c24;
+      border: 1.5px solid #dc3545;
+    }
+
+    .alert-banner.info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #cce5ff;
+      color: #004085;
+      border: 1px solid #b8daff;
+    }
+
+    .content-container {
+      max-width: 900px;
+      min-width: 860px;
+      width: 100%;
+    }
+
+    .section {
+      background: var(--card-bg);
+      border-radius: 18px;
+      padding: 26px 28px;
+      box-shadow: 0 10px 26px var(--card-shadow);
+      border: 1px solid var(--card-border);
+      margin-bottom: 24px;
+      transition: all 0.25s ease;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--section-title);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 22px;
+      line-height: 1.45;
+    }
+
+    /* Theme Switcher Buttons */
+    .theme-switcher-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 8px;
+    }
+
+    .theme-card {
+      border: 2px solid var(--item-box-border);
+      background: var(--item-box-bg);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    .theme-card:hover {
+      border-color: #3b6fd4;
+      transform: translateY(-2px);
+    }
+
+    .theme-card.active {
+      border-color: #3b6fd4;
+      background: rgba(59, 111, 212, 0.15);
+      box-shadow: 0 0 0 2px #3b6fd4;
+    }
+
+    .theme-icon {
+      font-size: 1.4rem;
+    }
+
+    /* Live Threshold Meter Bar */
+    .threshold-meter-wrap {
+      margin-bottom: 26px;
+      background: var(--meter-wrap-bg);
+      padding: 16px 20px;
+      border-radius: 14px;
+      border: 1px solid var(--meter-wrap-border);
+    }
+
+    .meter-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .meter-bar {
+      display: flex;
+      height: 38px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: white;
+      text-align: center;
+      line-height: 38px;
+    }
+
+    .meter-segment {
+      transition: width 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+
+    .meter-segment.green {
+      background: #2cb67d;
+    }
+
+    .meter-segment.yellow {
+      background: #ffb703;
+      color: #3b2a00;
+    }
+
+    .meter-segment.red {
+      background: #e63946;
+    }
+
+    /* Form Rows & Inputs */
+    .setting-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .setting-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .setting-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .setting-label {
+      font-weight: 700;
+      color: var(--section-title);
+      font-size: 0.98rem;
+    }
+
+    .setting-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .setting-badge.yellow {
+      background: var(--badge-yellow-bg);
+      color: var(--badge-yellow-color);
+      border: 1px solid var(--badge-yellow-border);
+    }
+
+    .setting-badge.red {
+      background: var(--badge-red-bg);
+      color: var(--badge-red-color);
+      border: 1px solid var(--badge-red-border);
+    }
+
+    .setting-hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .error-text {
+      color: #ff6b6b;
+      font-size: 0.84rem;
+      font-weight: 700;
+      display: none;
+      margin-top: 4px;
+    }
+
+    /* Sliders */
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      background: #c3d7f0;
+      margin-top: 4px;
+    }
+
+    body.dark-theme input[type="range"] {
+      background: #253a6e;
+    }
+
+    /* Number inputs */
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .input-box {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--input-border);
+      border-radius: 10px;
+      font-size: 1rem;
+      color: var(--input-text);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      background: var(--input-bg);
+    }
+
+    .input-box:focus {
+      border-color: #3b6fd4;
+      box-shadow: 0 0 0 3px rgba(59, 111, 212, 0.25);
+    }
+
+    /* Input Error State with automatic shake & red border */
+    .input-error {
+      border-color: #e63946 !important;
+      box-shadow: 0 0 0 3.5px rgba(230, 57, 70, 0.35) !important;
+      animation: fieldShake 0.35s ease;
+    }
+
+    @keyframes fieldShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    /* Checkbox & Policy Items */
+    .checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: var(--item-box-bg);
+      border: 1px solid var(--item-box-border);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .checkbox-item:hover {
+      background: rgba(59, 111, 212, 0.1);
+      border-color: #9cbde7;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .checkbox-text {
+      flex: 1;
+    }
+
+    .checkbox-title {
+      font-weight: 700;
+      color: var(--text-color);
+      font-size: 0.95rem;
+      margin-bottom: 3px;
+    }
+
+    .checkbox-desc {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Action Buttons */
+    .button-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: #1f3b73;
+      color: white;
+      box-shadow: 0 6px 18px rgba(31, 59, 115, 0.25);
+    }
+
+    body.dark-theme .btn-primary {
+      background: #3460b5;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: #162c56;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px rgba(31, 59, 115, 0.35);
+    }
+
+    body.dark-theme .btn-primary:hover {
+      background: #274b92;
+    }
+
+    .btn-secondary {
+      background: var(--btn-secondary-bg);
+      color: var(--btn-secondary-color);
+      border: 1px solid var(--btn-secondary-border);
+    }
+
+    .btn-secondary:hover {
+      filter: brightness(0.95);
+    }
+
+    .last-saved-tag {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+  </style>
+  <script>
+    (function() {
+      const theme = localStorage.getItem("quietspace_theme") || "dark";
+      if (theme === "dark" || (theme === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark-theme");
+      }
+    })();
+  </script>
+</head>
+<body class="dark-theme">
+
+  <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar Navigation">
+    <img src="../images/cloudicon.png" alt="Menu" />
+  </button>
+
+  <aside class="sidebar">
+    <h1>QuietSpace</h1>
+    <p>Staff Dashboard</p>
+
+    <a class="nav-item" href="dashboard.html">Overview</a>
+
+    <a class="nav-item" href="QuietScorePage.html">
+      QuietScore Reports
+    </a>
+
+    <a class="nav-item" href="dashboard.html#studentReportsSection">
+      Student Reports
+    </a>
+
+    <span class="nav-item disabled" title="Analytics is not available yet.">Analytics</span>
+
+    <a class="nav-item active" href="settings.html">
+      Settings
+    </a>
+
+    <div class="logout-wrapper">
+      <button class="logout-btn" onclick="logout()">Log Out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top-header">
+      <h2>System Settings</h2>
+      <p>Configure room noise thresholds, appearance, room management, and security controls.</p>
+    </div>
+
+    <div class="content-container">
+      <div id="alertBanner" class="alert-banner">
+        <span id="alertMessage"></span>
+      </div>
+
+      <!-- Appearance / Theme Section -->
+      <section class="section" id="themeSection">
+        <h3 class="section-title">Display Theme & Appearance</h3>
+        <p class="section-desc">
+          Choose your interface theme. Select the classic QuietSpace soft blue theme or high-contrast dark navy mode.
+        </p>
+
+        <div class="theme-switcher-grid">
+          <div class="theme-card" id="themeCardLight" onclick="selectTheme('light')">
+            <span class="theme-icon">☀️</span>
+            <div>
+              <div>Light Mode</div>
+              <div style="font-size:0.75rem; font-weight:normal; opacity:0.8;">QuietSpace Blue</div>
+            </div>
+          </div>
+
+          <div class="theme-card active" id="themeCardDark" onclick="selectTheme('dark')">
+            <span class="theme-icon">🌙</span>
+            <div>
+              <div>Dark Mode (Default)</div>
+              <div style="font-size:0.75rem; font-weight:normal; opacity:0.8;">Deep Navy Gradient</div>
+            </div>
+          </div>
+
+          <div class="theme-card" id="themeCardSystem" onclick="selectTheme('system')">
+            <span class="theme-icon">💻</span>
+            <div>
+              <div>System Auto</div>
+              <div style="font-size:0.75rem; font-weight:normal; opacity:0.8;">Device Default</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Decibel Thresholds Section -->
+      <section class="section" id="thresholdSection">
+        <h3 class="section-title">Decibel Threshold Sensitivity</h3>
+        <p class="section-desc">
+          Set the relative noise level boundaries for in-room microphones. When room volume crosses these thresholds, the display transitions between Quiet, Warning, and Too Loud.
+        </p>
+
+        <!-- Live Visual Meter Bar -->
+        <div class="threshold-meter-wrap">
+          <div class="meter-label-row">
+            <span>Room State Range Preview</span>
+            <span id="meterSummary">Green: 0–9 | Yellow: 10–16 | Red: 17+</span>
+          </div>
+          <div class="meter-bar">
+            <div id="meterGreen" class="meter-segment green" style="width: 25%;">Quiet (0–9)</div>
+            <div id="meterYellow" class="meter-segment yellow" style="width: 20%;">Warning (10–16)</div>
+            <div id="meterRed" class="meter-segment red" style="width: 55%;">Too Loud (17+)</div>
+          </div>
+        </div>
+
+        <!-- Yellow Threshold Slider -->
+        <div class="setting-row" id="row-yellow-threshold">
+          <div class="setting-header">
+            <label class="setting-label" for="yellow-threshold">Yellow Warning Threshold</label>
+            <span class="setting-badge yellow" id="yellowValueBadge">Level 10</span>
+          </div>
+          <input
+            type="range"
+            id="yellow-threshold"
+            name="yellow-threshold"
+            min="2"
+            max="30"
+            value="10"
+            oninput="updateThresholdMeter(); clearError('yellow-threshold');"
+          />
+          <span class="setting-hint">
+            Sound level required to trigger the Yellow warning state on the in-room display. Default: 10.
+          </span>
+          <div class="error-text" id="error-yellow-threshold"></div>
+        </div>
+
+        <!-- Red Threshold Slider -->
+        <div class="setting-row" id="row-red-threshold" style="margin-top: 18px;">
+          <div class="setting-header">
+            <label class="setting-label" for="red-threshold">Red Alert Threshold</label>
+            <span class="setting-badge red" id="redValueBadge">Level 17</span>
+          </div>
+          <input
+            type="range"
+            id="red-threshold"
+            name="red-threshold"
+            min="5"
+            max="50"
+            value="17"
+            oninput="updateThresholdMeter(); clearError('red-threshold');"
+          />
+          <span class="setting-hint">
+            Sound level required to trigger the Red "Too Loud" countdown and create an incident. Must be strictly higher than Yellow. Default: 17.
+          </span>
+          <div class="error-text" id="error-red-threshold"></div>
+        </div>
+      </section>
+
+      <!-- Room & Admin Accounts Section -->
+      <section class="section" id="facilitySection">
+        <h3 class="section-title">Facility & Staff Configuration</h3>
+        <p class="section-desc">
+          Manage the number of active library study rooms and authorized staff seats.
+        </p>
+
+        <div class="input-grid">
+          <div class="setting-row" id="row-room-amount">
+            <label class="setting-label" for="room-amount">Total Study Rooms</label>
+            <input
+              type="number"
+              class="input-box"
+              id="room-amount"
+              name="room-amount"
+              min="1"
+              max="50"
+              value="3"
+              oninput="clearError('room-amount')"
+            />
+            <span class="setting-hint">Active study rooms monitored by QuietSpace (e.g. 311, 312, 313).</span>
+            <div class="error-text" id="error-room-amount"></div>
+          </div>
+
+          <div class="setting-row" id="row-admin-accounts">
+            <label class="setting-label" for="admin-accounts">Staff Accounts</label>
+            <input
+              type="number"
+              class="input-box"
+              id="admin-accounts"
+              name="admin-accounts"
+              min="1"
+              max="20"
+              value="1"
+              oninput="clearError('admin-accounts')"
+            />
+            <span class="setting-hint">Designated administrative accounts with management access.</span>
+            <div class="error-text" id="error-admin-accounts"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Security & Login Policies -->
+      <section class="section" id="securitySection">
+        <h3 class="section-title">Security & Login Policies</h3>
+        <p class="section-desc">
+          Staff login safeguards, consecutive attempt limits, automatic login duration, and idle session timeouts.
+        </p>
+
+        <div class="input-grid" style="margin-bottom: 22px;">
+          <!-- Consecutive Login Attempts -->
+          <div class="setting-row" id="row-max-login-attempts">
+            <label class="setting-label" for="max-login-attempts">Allowed Consecutive Login Attempts</label>
+            <input
+              type="number"
+              class="input-box"
+              id="max-login-attempts"
+              name="max-login-attempts"
+              min="1"
+              max="20"
+              value="5"
+              oninput="clearError('max-login-attempts')"
+            />
+            <span class="setting-hint">
+              Number of consecutive failed passwords allowed before locking the account for 15 minutes. Default: 5.
+            </span>
+            <div class="error-text" id="error-max-login-attempts"></div>
+          </div>
+
+          <!-- Automatic Login Session Time -->
+          <div class="setting-row" id="row-auto-login-hours">
+            <label class="setting-label" for="auto-login-hours">Automatic Login Duration (Hours)</label>
+            <input
+              type="number"
+              class="input-box"
+              id="auto-login-hours"
+              name="auto-login-hours"
+              min="1"
+              max="720"
+              value="24"
+              oninput="clearError('auto-login-hours')"
+            />
+            <span class="setting-hint">
+              How long staff remain automatically logged in without entering credentials again. Default: 24 hours.
+            </span>
+            <div class="error-text" id="error-auto-login-hours"></div>
+          </div>
+        </div>
+
+        <div class="input-grid" style="margin-bottom: 22px;">
+          <!-- Automatic Inactivity Logout Time -->
+          <div class="setting-row" id="row-auto-logout-minutes">
+            <label class="setting-label" for="auto-logout-minutes">Automatic Idle Logout (Minutes)</label>
+            <input
+              type="number"
+              class="input-box"
+              id="auto-logout-minutes"
+              name="auto-logout-minutes"
+              min="1"
+              max="240"
+              value="30"
+              oninput="clearError('auto-logout-minutes')"
+            />
+            <span class="setting-hint">
+              Minutes of staff inactivity before automatic logout occurs. Default: 30 minutes.
+            </span>
+            <div class="error-text" id="error-auto-logout-minutes"></div>
+          </div>
+        </div>
+
+        <div class="checkbox-list">
+          <label class="checkbox-item" for="lockout-time">
+            <input type="checkbox" id="lockout-time" name="lockout-time" checked />
+            <div class="checkbox-text">
+              <div class="checkbox-title">Enforce Failed Attempt Lockout Protection</div>
+              <div class="checkbox-desc">Enforces temporary 15-minute account lockout when consecutive attempt limit is exceeded.</div>
+            </div>
+          </label>
+
+          <label class="checkbox-item" for="automatic-logout">
+            <input type="checkbox" id="automatic-logout" name="automatic-logout" checked />
+            <div class="checkbox-text">
+              <div class="checkbox-title">Enforce Automatic Inactivity Logout</div>
+              <div class="checkbox-desc">Automatically signs staff out after the configured idle timeout to protect sensitive logs.</div>
+            </div>
+          </label>
+
+          <label class="checkbox-item" for="sessions-expire">
+            <input type="checkbox" id="sessions-expire" name="sessions-expire" checked />
+            <div class="checkbox-text">
+              <div class="checkbox-title">Browser Close Session Expiration</div>
+              <div class="checkbox-desc">Require credential re-entry if the browser window or tab is closed.</div>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Buttons Row -->
+      <div class="button-row">
+        <button class="btn btn-primary" id="saveBtn" onclick="saveSettings()">
+          Save Settings
+        </button>
+        <button class="btn btn-secondary" id="resetBtn" onclick="resetSettings()">
+          Reset to Defaults
+        </button>
+        <span class="last-saved-tag" id="lastSavedText"></span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "quietspace_settings";
+    const THEME_KEY = "quietspace_theme";
+
+    const DEFAULT_SETTINGS = {
+      theme: "dark",
+      yellowThreshold: 10,
+      redThreshold: 17,
+      roomAmount: 3,
+      adminAccounts: 1,
+      maxLoginAttempts: 5,
+      autoLoginHours: 24,
+      autoLogoutMinutes: 30,
+      lockoutTime: true,
+      automaticLogout: true,
+      sessionsExpire: true,
+      lastSaved: null
+    };
+
+    let currentTheme = "dark";
+
+    // ----------------------------------------------------
+    // Theme Management (Light / Dark Mode)
+    // ----------------------------------------------------
+    function selectTheme(mode) {
+      currentTheme = mode;
+      localStorage.setItem(THEME_KEY, mode);
+      applyTheme(mode);
+
+      document.getElementById("themeCardLight").classList.toggle("active", mode === "light");
+      document.getElementById("themeCardDark").classList.toggle("active", mode === "dark");
+      document.getElementById("themeCardSystem").classList.toggle("active", mode === "system");
+
+      // Broadcast theme change across all open pages/tabs in real-time
+      window.dispatchEvent(new Event("storage"));
+    }
+
+    function applyTheme(mode) {
+      if (mode === "dark") {
+        document.body.classList.add("dark-theme");
+      } else if (mode === "light") {
+        document.body.classList.remove("dark-theme");
+      } else if (mode === "system") {
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.body.classList.toggle("dark-theme", prefersDark);
+      }
+    }
+
+    // Listen for OS theme changes if on system setting
+    if (window.matchMedia) {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+        if (currentTheme === "system") {
+          applyTheme("system");
+        }
+      });
+    }
+
+    // ----------------------------------------------------
+    // Sidebar Controls & Responsive Desktop Scaling
+    // ----------------------------------------------------
+    function toggleSidebar() {
+      document.body.classList.toggle("sidebar-collapsed");
+      autoFitDesktopLayout();
+    }
+
+    function autoFitDesktopLayout() {
+      const isCollapsed = document.body.classList.contains("sidebar-collapsed");
+      const targetWidth = isCollapsed ? 950 : 1190;
+      const winWidth = window.innerWidth;
+
+      if (winWidth < targetWidth) {
+        const scale = winWidth / targetWidth;
+        document.body.style.zoom = scale;
+
+        // Ensure vertical scrolling in .main spans full device screen height
+        const effectiveHeight = window.innerHeight / scale;
+        document.body.style.height = effectiveHeight + "px";
+        const mainEl = document.querySelector(".main");
+        if (mainEl) {
+          mainEl.style.height = effectiveHeight + "px";
+        }
+      } else {
+        document.body.style.zoom = "1";
+        document.body.style.height = "";
+        const mainEl = document.querySelector(".main");
+        if (mainEl) {
+          mainEl.style.height = "";
+        }
+      }
+    }
+
+    // Default sidebar to collapsed on narrow screens (like phone/iPad) so full PC settings layout fits
+    if (window.innerWidth < 950) {
+      document.body.classList.add("sidebar-collapsed");
+    }
+
+    window.addEventListener("resize", autoFitDesktopLayout);
+    window.addEventListener("orientationchange", () => {
+      setTimeout(autoFitDesktopLayout, 100);
+    });
+
+    function logout() {
+      localStorage.removeItem("quietspaceLoggedIn");
+      sessionStorage.removeItem("quietspaceLoggedIn");
+      window.location.href = "login.html?logout=1";
+    }
+
+    // ----------------------------------------------------
+    // UI & Alert Banner
+    // ----------------------------------------------------
+    let alertTimeout = null;
+
+    function showAlert(message, type = "success") {
+      const banner = document.getElementById("alertBanner");
+      const text = document.getElementById("alertMessage");
+
+      banner.className = `alert-banner ${type}`;
+      text.textContent = message;
+      banner.style.display = "flex";
+
+      if (alertTimeout) {
+        clearTimeout(alertTimeout);
+      }
+
+      alertTimeout = setTimeout(() => {
+        banner.style.display = "none";
+      }, 5000);
+    }
+
+    // ----------------------------------------------------
+    // Error Highlighting & Auto-Scroll to Validation Error
+    // ----------------------------------------------------
+    function highlightError(fieldId, message) {
+      const inputEl = document.getElementById(fieldId);
+      const rowEl = document.getElementById(`row-${fieldId}`);
+      const errorTextEl = document.getElementById(`error-${fieldId}`);
+
+      if (inputEl) {
+        inputEl.classList.add("input-error");
+      }
+
+      if (errorTextEl) {
+        errorTextEl.textContent = message;
+        errorTextEl.style.display = "block";
+      }
+
+      // Automatically smooth scroll right to the problematic element!
+      const targetScroll = rowEl || inputEl;
+      if (targetScroll) {
+        targetScroll.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (inputEl) {
+          inputEl.focus();
+        }
+      }
+
+      showAlert(message, "error");
+    }
+
+    function clearError(fieldId) {
+      const inputEl = document.getElementById(fieldId);
+      const errorTextEl = document.getElementById(`error-${fieldId}`);
+      if (inputEl) {
+        inputEl.classList.remove("input-error");
+      }
+      if (errorTextEl) {
+        errorTextEl.textContent = "";
+        errorTextEl.style.display = "none";
+      }
+    }
+
+    function clearAllErrors() {
+      const errorInputs = document.querySelectorAll(".input-error");
+      errorInputs.forEach(el => el.classList.remove("input-error"));
+
+      const errorTexts = document.querySelectorAll(".error-text");
+      errorTexts.forEach(el => {
+        el.textContent = "";
+        el.style.display = "none";
+      });
+    }
+
+    // ----------------------------------------------------
+    // Visual Threshold Meter
+    // ----------------------------------------------------
+    function updateThresholdMeter() {
+      const yellowInput = document.getElementById("yellow-threshold");
+      const redInput = document.getElementById("red-threshold");
+
+      let yellow = parseInt(yellowInput.value, 10);
+      let red = parseInt(redInput.value, 10);
+
+      document.getElementById("yellowValueBadge").textContent = `Level ${yellow}`;
+      document.getElementById("redValueBadge").textContent = `Level ${red}`;
+
+      const meterSummary = document.getElementById("meterSummary");
+      const meterGreen = document.getElementById("meterGreen");
+      const meterYellow = document.getElementById("meterYellow");
+      const meterRed = document.getElementById("meterRed");
+
+      if (yellow >= red) {
+        meterSummary.textContent = "Warning: Red threshold must be greater than Yellow threshold!";
+        meterSummary.style.color = "#dc3545";
+        meterGreen.style.width = "40%";
+        meterYellow.style.width = "20%";
+        meterRed.style.width = "40%";
+        return;
+      }
+
+      meterSummary.style.color = "var(--text-muted)";
+      meterSummary.textContent = `Green: 0–${yellow - 1} | Yellow: ${yellow}–${red - 1} | Red: ${red}+`;
+
+      const maxScale = Math.max(35, red + 10);
+      const greenPct = Math.round((yellow / maxScale) * 100);
+      const yellowPct = Math.round(((red - yellow) / maxScale) * 100);
+      const redPct = Math.max(15, 100 - greenPct - yellowPct);
+
+      meterGreen.style.width = `${greenPct}%`;
+      meterGreen.textContent = `Quiet (0–${yellow - 1})`;
+
+      meterYellow.style.width = `${yellowPct}%`;
+      meterYellow.textContent = `Warning (${yellow}–${red - 1})`;
+
+      meterRed.style.width = `${redPct}%`;
+      meterRed.textContent = `Too Loud (${red}+)`;
+    }
+
+    // ----------------------------------------------------
+    // Settings Load & Populate
+    // ----------------------------------------------------
+    function loadSettings() {
+      let settings = { ...DEFAULT_SETTINGS };
+
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          settings = { ...settings, ...parsed };
+        }
+      } catch (err) {
+        console.warn("Could not parse saved settings, using defaults:", err);
+      }
+
+      // Theme strictly defaults to dark
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      selectTheme(savedTheme === "light" ? "light" : "dark");
+
+      // Form values
+      document.getElementById("yellow-threshold").value = settings.yellowThreshold;
+      document.getElementById("red-threshold").value = settings.redThreshold;
+      document.getElementById("room-amount").value = settings.roomAmount;
+      document.getElementById("admin-accounts").value = settings.adminAccounts;
+      document.getElementById("max-login-attempts").value = settings.maxLoginAttempts;
+      document.getElementById("auto-login-hours").value = settings.autoLoginHours;
+      document.getElementById("auto-logout-minutes").value = settings.autoLogoutMinutes;
+      document.getElementById("lockout-time").checked = !!settings.lockoutTime;
+      document.getElementById("automatic-logout").checked = !!settings.automaticLogout;
+      document.getElementById("sessions-expire").checked = !!settings.sessionsExpire;
+
+      if (settings.lastSaved) {
+        const date = new Date(settings.lastSaved);
+        document.getElementById("lastSavedText").textContent =
+          `Last saved: ${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+      } else {
+        document.getElementById("lastSavedText").textContent = "";
+      }
+
+      clearAllErrors();
+      updateThresholdMeter();
+    }
+
+    // ----------------------------------------------------
+    // Save Settings with Automatic Error Scrolling
+    // ----------------------------------------------------
+    function saveSettings() {
+      clearAllErrors();
+
+      const yellow = parseInt(document.getElementById("yellow-threshold").value, 10);
+      const red = parseInt(document.getElementById("red-threshold").value, 10);
+      const roomAmount = parseInt(document.getElementById("room-amount").value, 10);
+      const adminAccounts = parseInt(document.getElementById("admin-accounts").value, 10);
+      const maxLoginAttempts = parseInt(document.getElementById("max-login-attempts").value, 10);
+      const autoLoginHours = parseInt(document.getElementById("auto-login-hours").value, 10);
+      const autoLogoutMinutes = parseInt(document.getElementById("auto-logout-minutes").value, 10);
+      const lockoutTime = document.getElementById("lockout-time").checked;
+      const automaticLogout = document.getElementById("automatic-logout").checked;
+      const sessionsExpire = document.getElementById("sessions-expire").checked;
+
+      // Validate Thresholds
+      if (isNaN(yellow) || yellow < 1) {
+        highlightError("yellow-threshold", "Yellow threshold must be a valid number of at least 1.");
+        return;
+      }
+
+      if (isNaN(red) || red < 1) {
+        highlightError("red-threshold", "Red threshold must be a valid number of at least 1.");
+        return;
+      }
+
+      if (yellow >= red) {
+        highlightError("red-threshold", `Red threshold (${red}) must be strictly higher than Yellow threshold (${yellow}).`);
+        return;
+      }
+
+      // Validate Rooms
+      if (isNaN(roomAmount) || roomAmount < 1) {
+        highlightError("room-amount", "Total study rooms must be at least 1.");
+        return;
+      }
+
+      // Validate Staff Accounts
+      if (isNaN(adminAccounts) || adminAccounts < 1) {
+        highlightError("admin-accounts", "Staff accounts must be at least 1.");
+        return;
+      }
+
+      // Validate Consecutive Login Attempts
+      if (isNaN(maxLoginAttempts) || maxLoginAttempts < 1) {
+        highlightError("max-login-attempts", "Allowed consecutive login attempts must be at least 1.");
+        return;
+      }
+
+      // Validate Automatic Login Time
+      if (isNaN(autoLoginHours) || autoLoginHours < 1) {
+        highlightError("auto-login-hours", "Automatic login duration must be at least 1 hour.");
+        return;
+      }
+
+      // Validate Automatic Logout Time
+      if (isNaN(autoLogoutMinutes) || autoLogoutMinutes < 1) {
+        highlightError("auto-logout-minutes", "Automatic idle logout time must be at least 1 minute.");
+        return;
+      }
+
+      const updated = {
+        theme: currentTheme,
+        yellowThreshold: yellow,
+        redThreshold: red,
+        roomAmount: roomAmount,
+        adminAccounts: adminAccounts,
+        maxLoginAttempts: maxLoginAttempts,
+        autoLoginHours: autoLoginHours,
+        autoLogoutMinutes: autoLogoutMinutes,
+        lockoutTime: lockoutTime,
+        automaticLogout: automaticLogout,
+        sessionsExpire: sessionsExpire,
+        lastSaved: new Date().toISOString()
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+        const date = new Date(updated.lastSaved);
+        document.getElementById("lastSavedText").textContent =
+          `Last saved: ${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+
+        showAlert("Settings saved successfully! Thresholds and security rules are active.", "success");
+      } catch (err) {
+        console.error("Error saving settings to localStorage:", err);
+        showAlert("Failed to save settings. Local storage may be full or disabled.", "error");
+      }
+    }
+
+    // ----------------------------------------------------
+    // Reset Settings
+    // ----------------------------------------------------
+    function resetSettings() {
+      if (!confirm("Are you sure you want to reset all settings to system defaults?")) {
+        return;
+      }
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+        localStorage.setItem(THEME_KEY, "dark");
+      } catch (err) {
+        console.warn("Error resetting localStorage settings:", err);
+      }
+
+      loadSettings();
+      showAlert("All settings have been reset to system defaults.", "info");
+    }
+
+    // Initialize on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      loadSettings();
+      autoFitDesktopLayout();
+    });
+  </script>
+</body>
+</html>

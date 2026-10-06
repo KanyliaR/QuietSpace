@@ -530,34 +530,126 @@
       }
     }
 
+    /* -------------------- Dark Mode Theme Classes -------------------- */
+
+    body.dark-theme,
+    body.dark-theme .main {
+      background: #0f1d3a;
+      color: #ffffff;
+    }
+
+    body.dark-theme .sidebar {
+      background: #10275a;
+    }
+
+    body.dark-theme .top-header h2,
+    body.dark-theme .section-header h3,
+    body.dark-theme .month-label,
+    body.dark-theme .selected-date-title,
+    body.dark-theme .summary-value {
+      color: #ffffff;
+    }
+
+    body.dark-theme .top-header p,
+    body.dark-theme .section-subtitle,
+    body.dark-theme .calendar-help,
+    body.dark-theme .report-count {
+      color: #dbe7ff;
+    }
+
+    body.dark-theme .section,
+    body.dark-theme .summary-card {
+      background: linear-gradient(
+        to bottom,
+        #243b75 0%,
+        #1d3267 45%,
+        #142650 100%
+      );
+      border: 1px solid rgba(141, 170, 220, 0.35);
+      color: #ffffff;
+    }
+
+    body.dark-theme .summary-card h4 {
+      color: #dbe7ff;
+    }
+
+    body.dark-theme .calendar-day {
+      background: #162b58;
+      border-color: rgba(141, 170, 220, 0.35);
+      color: white;
+    }
+
+    body.dark-theme .calendar-day.selected {
+      background: #4f7ee8;
+      border-color: #4f7ee8;
+    }
+
+    body.dark-theme .clear-date-btn {
+      background: #1d3267;
+      border-color: #49618f;
+      color: white;
+    }
+
+    body.dark-theme th {
+      background: #243b75;
+      color: #dbe7ff;
+    }
+
+    body.dark-theme td {
+      color: #ffffff;
+      border-bottom: 1px solid rgba(219, 231, 255, 0.18);
+    }
+
+    body.dark-theme body.sidebar-collapsed .sidebar-toggle,
+    body.dark-theme body:not(.sidebar-collapsed) .sidebar-toggle,
+    body.dark-theme .sidebar-toggle {
+      background: rgba(255, 255, 255, 0.92) !important;
+      color: #1f3b73 !important;
+    }
+
+    body.dark-theme .incident-open {
+      background: #fca5a5 !important;
+      color: #7f1d1d !important;
+    }
+
+    body.dark-theme .incident-resolved {
+      background: #6ee7b7 !important;
+      color: #064e3b !important;
+    }
+
+    body.dark-theme .incident-attention {
+      background: #fcd34d !important;
+      color: #78350f !important;
+    }
+
     @media (prefers-color-scheme: dark) {
-      body,
-      .main {
+      body:not(.light-theme),
+      body:not(.light-theme) .main {
         background: #0f1d3a;
         color: #ffffff;
       }
 
-      .sidebar {
+      body:not(.light-theme) .sidebar {
         background: #10275a;
       }
 
-      .top-header h2,
-      .section-header h3,
-      .month-label,
-      .selected-date-title,
-      .summary-value {
+      body:not(.light-theme) .top-header h2,
+      body:not(.light-theme) .section-header h3,
+      body:not(.light-theme) .month-label,
+      body:not(.light-theme) .selected-date-title,
+      body:not(.light-theme) .summary-value {
         color: #ffffff;
       }
 
-      .top-header p,
-      .section-subtitle,
-      .calendar-help,
-      .report-count {
+      body:not(.light-theme) .top-header p,
+      body:not(.light-theme) .section-subtitle,
+      body:not(.light-theme) .calendar-help,
+      body:not(.light-theme) .report-count {
         color: #dbe7ff;
       }
 
-      .section,
-      .summary-card {
+      body:not(.light-theme) .section,
+      body:not(.light-theme) .summary-card {
         background: linear-gradient(
           to bottom,
           #243b75 0%,
@@ -568,59 +660,59 @@
         color: #ffffff;
       }
 
-      .summary-card h4 {
+      body:not(.light-theme) .summary-card h4 {
         color: #dbe7ff;
       }
 
-      .calendar-day {
+      body:not(.light-theme) .calendar-day {
         background: #162b58;
         border-color: rgba(141, 170, 220, 0.35);
         color: white;
       }
 
-      .calendar-day.selected {
+      body:not(.light-theme) .calendar-day.selected {
         background: #4f7ee8;
         border-color: #4f7ee8;
       }
 
-      .clear-date-btn {
+      body:not(.light-theme) .clear-date-btn {
         background: #1d3267;
         border-color: #49618f;
         color: white;
       }
 
-      th {
+      body:not(.light-theme) th {
         background: #243b75;
         color: #dbe7ff;
       }
 
-      td {
+      body:not(.light-theme) td {
         color: #ffffff;
       }
 
-      th,
-      td {
+      body:not(.light-theme) th,
+      body:not(.light-theme) td {
         border-bottom: 1px solid rgba(219, 231, 255, 0.18);
       }
 
-      body.sidebar-collapsed .sidebar-toggle,
-      body:not(.sidebar-collapsed) .sidebar-toggle,
-      .sidebar-toggle {
+      body:not(.light-theme) body.sidebar-collapsed .sidebar-toggle,
+      body:not(.light-theme) body:not(.sidebar-collapsed) .sidebar-toggle,
+      body:not(.light-theme) .sidebar-toggle {
         background: rgba(255, 255, 255, 0.92) !important;
         color: #1f3b73 !important;
       }
 
-      .incident-open {
+      body:not(.light-theme) .incident-open {
         background: #fca5a5 !important;
         color: #7f1d1d !important;
       }
 
-      .incident-resolved {
+      body:not(.light-theme) .incident-resolved {
         background: #6ee7b7 !important;
         color: #064e3b !important;
       }
 
-      .incident-attention {
+      body:not(.light-theme) .incident-attention {
         background: #fcd34d !important;
         color: #78350f !important;
       }
@@ -646,6 +738,8 @@
 
     <span class="nav-item disabled">Student Reports</span>
     <span class="nav-item disabled">Analytics</span>
+
+    <a class="nav-item" href="settings.html">Settings</a>
 
     <div class="logout-wrapper">
       <button class="logout-btn" onclick="logout()">Log Out</button>
@@ -793,6 +887,25 @@
   </main>
 
 <script>
+  /*
+   * Global Theme Support (Default: Dark Mode)
+   */
+  function applyGlobalTheme() {
+    const theme = localStorage.getItem("quietspace_theme");
+    if (theme === "light") {
+      document.body.classList.add("light-theme");
+      document.body.classList.remove("dark-theme");
+    } else {
+      document.body.classList.add("dark-theme");
+      document.body.classList.remove("light-theme");
+    }
+  }
+  applyGlobalTheme();
+  window.addEventListener("storage", (e) => {
+    if (e.key === "quietspace_theme") {
+      applyGlobalTheme();
+    }
+  });
 
   let allIncidents = [];
 
