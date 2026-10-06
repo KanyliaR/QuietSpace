@@ -214,6 +214,137 @@
       display: none;
     }
 
+    /* ----------------------------------------------------
+       Mobile / Phone Overlay Sidebar (Covers Half the Screen)
+       ---------------------------------------------------- */
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(2px);
+      z-index: 450;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    body.phone-mode .sidebar,
+    body:not(.sidebar-collapsed).phone-mode .sidebar {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      bottom: 0 !important;
+      width: 50% !important;
+      max-width: 50vw;
+      height: 100vh !important;
+      z-index: 500 !important;
+      box-shadow: 6px 0 24px rgba(0, 0, 0, 0.5);
+      transition: transform 0.25s ease, opacity 0.25s ease !important;
+      overflow-y: auto !important;
+    }
+
+    body.phone-mode.sidebar-collapsed .sidebar {
+      transform: translateX(-100%) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      display: block !important;
+      width: 50% !important;
+      padding: 28px 20px !important;
+    }
+
+    body.phone-mode:not(.sidebar-collapsed) .sidebar {
+      transform: translateX(0) !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      display: block !important;
+      width: 50% !important;
+    }
+
+    body.phone-mode.sidebar-collapsed .sidebar * {
+      display: block !important;
+    }
+
+    body.phone-mode:not(.sidebar-collapsed) .sidebar * {
+      display: block !important;
+    }
+
+    body.phone-mode:not(.sidebar-collapsed) .sidebar-toggle {
+      left: calc(50% - 50px) !important;
+      top: 20px !important;
+      z-index: 600 !important;
+    }
+
+    body.phone-mode.sidebar-collapsed .sidebar-toggle {
+      left: 18px !important;
+      top: 20px !important;
+      z-index: 600 !important;
+    }
+
+    body.phone-mode:not(.sidebar-collapsed) .sidebar-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 50% !important;
+        max-width: 50vw;
+        height: 100vh !important;
+        z-index: 500 !important;
+        box-shadow: 6px 0 24px rgba(0, 0, 0, 0.5);
+        transition: transform 0.25s ease, opacity 0.25s ease !important;
+        overflow-y: auto !important;
+      }
+
+      body.sidebar-collapsed .sidebar {
+        transform: translateX(-100%) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        display: block !important;
+        width: 50% !important;
+        padding: 28px 20px !important;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        display: block !important;
+        width: 50% !important;
+      }
+
+      body.sidebar-collapsed .sidebar * {
+        display: block !important;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        left: calc(50% - 50px) !important;
+        top: 20px !important;
+        z-index: 600 !important;
+      }
+
+      body.sidebar-collapsed .sidebar-toggle {
+        left: 18px !important;
+        top: 20px !important;
+        z-index: 600 !important;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .main {
+        width: 100% !important;
+        flex: 1 !important;
+        margin-left: 0 !important;
+      }
+    }
+
     /* Main Area */
     .main {
       flex: 1;
@@ -678,6 +809,9 @@
 </head>
 <body class="dark-theme">
 
+  <!-- Mobile Overlay Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
   <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar Navigation">
     <img src="../images/cloudicon.png" alt="Menu" />
   </button>
@@ -1034,8 +1168,12 @@
     }
 
     function autoFitDesktopLayout() {
-      const isCollapsed = document.body.classList.contains("sidebar-collapsed");
-      const targetWidth = isCollapsed ? 950 : 1190;
+      const isNarrow = window.innerWidth < 950 || window.matchMedia("(max-width: 900px)").matches || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+      document.body.classList.toggle("phone-mode", isNarrow);
+
+      // On phone, sidebar overlaps on top of content without scooting .main over,
+      // so desktop targetWidth remains 950.
+      const targetWidth = 950;
       const winWidth = window.innerWidth;
 
       if (winWidth < targetWidth) {
