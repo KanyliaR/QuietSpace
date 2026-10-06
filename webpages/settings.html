@@ -232,10 +232,39 @@
       padding-left: 58px;
     }
 
+    .top-header-title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
     .top-header h2 {
       font-size: 2rem;
       color: var(--section-title);
-      margin-bottom: 6px;
+      margin: 0;
+    }
+
+    .auth-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      background: rgba(230, 57, 70, 0.16);
+      color: #ff9da4;
+      border: 1px solid rgba(230, 57, 70, 0.45);
+    }
+
+    body.light-theme .auth-badge {
+      background: #fee2e2;
+      color: #991b1b;
+      border-color: #fca5a5;
     }
 
     .top-header p {
@@ -624,6 +653,21 @@
     }
   </style>
   <script>
+    /*
+     * Prototype Authentication Guard: Authorized personnel only
+     * Requires valid login session from login.html.
+     */
+    (function () {
+      const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
+      const expiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
+
+      if (!isLoggedIn || (expiresAt > 0 && Date.now() > expiresAt)) {
+        localStorage.removeItem("quietspaceLoggedIn");
+        localStorage.removeItem("quietspaceSessionExpiresAt");
+        window.location.replace("login.html?redirect=settings&restricted=1");
+      }
+    })();
+
     (function() {
       const theme = localStorage.getItem("quietspace_theme") || "dark";
       if (theme === "dark" || (theme === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
@@ -665,7 +709,10 @@
 
   <main class="main">
     <div class="top-header">
-      <h2>System Settings</h2>
+      <div class="top-header-title-row">
+        <h2>System Settings</h2>
+        <span class="auth-badge">🔒 Authorized Personnel Only</span>
+      </div>
       <p>Configure room noise thresholds, appearance, room management, and security controls.</p>
     </div>
 

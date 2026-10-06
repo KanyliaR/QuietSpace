@@ -888,6 +888,21 @@
 
 <script>
   /*
+   * Prototype Authentication Guard: Authorized personnel only
+   * Requires valid login session from login.html.
+   */
+  (function () {
+    const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
+    const expiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
+
+    if (!isLoggedIn || (expiresAt > 0 && Date.now() > expiresAt)) {
+      localStorage.removeItem("quietspaceLoggedIn");
+      localStorage.removeItem("quietspaceSessionExpiresAt");
+      window.location.replace("login.html?redirect=reports&restricted=1");
+    }
+  })();
+
+  /*
    * Global Theme Support (Default: Dark Mode)
    */
   function applyGlobalTheme() {

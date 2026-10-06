@@ -1175,11 +1175,15 @@
     });
 
     /*
-     * Prototype authentication guard.
-     * login.html sets quietspaceLoggedIn after a successful staff login.
+     * Prototype Authentication Guard: Authorized personnel only
+     * Requires valid login session from login.html.
      */
-    if (localStorage.getItem("quietspaceLoggedIn") !== "true") {
-      window.location.href = "login.html";
+    const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
+    const sessionExpiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
+    if (!isLoggedIn || (sessionExpiresAt > 0 && Date.now() > sessionExpiresAt)) {
+      localStorage.removeItem("quietspaceLoggedIn");
+      localStorage.removeItem("quietspaceSessionExpiresAt");
+      window.location.replace("login.html?redirect=dashboard&restricted=1");
     }
 
     let lastReportCount = null;
