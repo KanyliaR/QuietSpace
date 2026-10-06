@@ -165,13 +165,68 @@
       border: 1px solid #cde9cf;
     }
 
+    /* -------------------- Dark Mode Theme Classes -------------------- */
+    body.dark-theme {
+      background-color: #0f1d3a;
+      color: #ffffff;
+    }
+
+    body.dark-theme .login-card {
+      background: linear-gradient(
+        to bottom,
+        #243b75 0%,
+        #1d3267 45%,
+        #142650 100%
+      );
+      border: 1px solid rgba(141, 170, 220, 0.35);
+    }
+
+    body.dark-theme .title,
+    body.dark-theme label {
+      color: #ffffff;
+    }
+
+    body.dark-theme .subtitle,
+    body.dark-theme .helper-text {
+      color: #dbe7ff;
+    }
+
+    body.dark-theme input[type="email"],
+    body.dark-theme input[type="password"] {
+      background-color: #1b2f61;
+      color: #ffffff;
+      border: 1px solid #5f7fc4;
+    }
+
+    body.dark-theme input::placeholder {
+      color: #c9d7ff;
+    }
+
+    body.dark-theme input:focus {
+      background-color: #22386f;
+      border-color: #9fc0ff;
+      box-shadow: 0 0 0 3px rgba(159, 192, 255, 0.18);
+    }
+
+    body.dark-theme .message-box.error {
+      color: #ffd8d8;
+      background-color: #472020;
+      border-color: #8e3a3a;
+    }
+
+    body.dark-theme .message-box.success {
+      color: #d9ffe2;
+      background-color: #173b2a;
+      border-color: #2d724f;
+    }
+
     @media (prefers-color-scheme: dark) {
-      body {
-        background-color: #c5e6f9;
-        color: #1f2a44;
+      body:not(.light-theme) {
+        background-color: #0f1d3a;
+        color: #ffffff;
       }
 
-      .login-card {
+      body:not(.light-theme) .login-card {
         background: linear-gradient(
           to bottom,
           #243b75 0%,
@@ -181,40 +236,40 @@
         border: 1px solid rgba(141, 170, 220, 0.35);
       }
 
-      .title,
-      label {
+      body:not(.light-theme) .title,
+      body:not(.light-theme) label {
         color: #ffffff;
       }
 
-      .subtitle,
-      .helper-text {
+      body:not(.light-theme) .subtitle,
+      body:not(.light-theme) .helper-text {
         color: #dbe7ff;
       }
 
-      input[type="email"],
-      input[type="password"] {
+      body:not(.light-theme) input[type="email"],
+      body:not(.light-theme) input[type="password"] {
         background-color: #1b2f61;
         color: #ffffff;
         border: 1px solid #5f7fc4;
       }
 
-      input::placeholder {
+      body:not(.light-theme) input::placeholder {
         color: #c9d7ff;
       }
 
-      input:focus {
+      body:not(.light-theme) input:focus {
         background-color: #22386f;
         border-color: #9fc0ff;
         box-shadow: 0 0 0 3px rgba(159, 192, 255, 0.18);
       }
 
-      .message-box.error {
+      body:not(.light-theme) .message-box.error {
         color: #ffd8d8;
         background-color: #472020;
         border-color: #8e3a3a;
       }
 
-      .message-box.success {
+      body:not(.light-theme) .message-box.success {
         color: #d9ffe2;
         background-color: #173b2a;
         border-color: #2d724f;
@@ -292,6 +347,26 @@
   </div>
 
   <script>
+    /*
+     * Global Theme Support (Default: Dark Mode)
+     */
+    function applyGlobalTheme() {
+      const theme = localStorage.getItem("quietspace_theme");
+      if (theme === "light") {
+        document.body.classList.add("light-theme");
+        document.body.classList.remove("dark-theme");
+      } else {
+        document.body.classList.add("dark-theme");
+        document.body.classList.remove("light-theme");
+      }
+    }
+    applyGlobalTheme();
+    window.addEventListener("storage", (e) => {
+      if (e.key === "quietspace_theme") {
+        applyGlobalTheme();
+      }
+    });
+
     const loginForm = document.getElementById("loginForm");
     const messageBox = document.getElementById("messageBox");
 
@@ -309,25 +384,82 @@
       const password =
         document.getElementById("password").value.trim();
 
+      // Check lockout policy from settings if configured
+      let settings = {};
+      try {
+        const raw = localStorage.getItem("quietspace_settings");
+        if (raw) settings = JSON.parse(raw);
+      } catch (e) {}
+
+      if (settings.lockoutTime) {
+        const lockoutUntil = parseInt(localStorage.getItem("quietspaceLockoutUntil") || "0", 10);
+        if (Date.now() < lockoutUntil) {
+          const minutesLeft = Math.ceil((lockoutUntil - Date.now()) / 60000);
+          showMessage(
+            `Account temporarily locked due to failed attempts. Try again in ${minutesLeft} min.`,
+            "error"
+          );
+          return;
+        }
+      }
+
       if (
         email === "staff@quietspace.com" &&
         password === "quiet123"
       ) {
+        localStorage.removeItem("quietspaceFailedAttempts");
+        localStorage.removeItem("quietspaceLockoutUntil");
+
+        const autoLoginHours = Number(settings.autoLoginHours) || 24;
+        const expiresAt = Date.now() + autoLoginHours * 60 * 60 * 1000;
+
         localStorage.setItem(
           "quietspaceLoggedIn",
           "true"
         );
+        localStorage.setItem(
+          "quietspaceSessionExpiresAt",
+          String(expiresAt)
+        );
 
         window.location.href = "dashboard.html";
       } else {
-        showMessage(
-          "Invalid login. Please try again.",
-          "error"
-        );
+        if (settings.lockoutTime) {
+          const maxAttempts = Number(settings.maxLoginAttempts) || 5;
+          let attempts = parseInt(localStorage.getItem("quietspaceFailedAttempts") || "0", 10) + 1;
+          localStorage.setItem("quietspaceFailedAttempts", attempts);
+          if (attempts >= maxAttempts) {
+            localStorage.setItem("quietspaceLockoutUntil", Date.now() + 15 * 60 * 1000);
+            showMessage(
+              `Account locked for 15 minutes due to ${maxAttempts} consecutive failed attempts.`,
+              "error"
+            );
+            return;
+          }
+          showMessage(
+            `Invalid login. ${maxAttempts - attempts} attempt(s) remaining before account lockout.`,
+            "error"
+          );
+        } else {
+          showMessage(
+            "Invalid login. Please try again.",
+            "error"
+          );
+        }
       }
     });
 
     window.addEventListener("load", () => {
+      // Check automatic login session expiration
+      const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
+      const expiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
+      if (isLoggedIn && expiresAt && Date.now() < expiresAt) {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("logout") !== "1") {
+          window.location.href = "dashboard.html";
+          return;
+        }
+      }
       const params =
         new URLSearchParams(window.location.search);
 
