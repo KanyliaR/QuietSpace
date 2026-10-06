@@ -892,11 +892,14 @@
         top: 15px !important;
         left: calc(50% - 48px) !important;
         z-index: 600 !important;
+        left: calc(50% - 48px) !important;
+        z-index: 600 !important;
       }
 
       body.sidebar-collapsed .sidebar-toggle {
         top: 10px !important;
         left: 18px !important;
+        z-index: 600 !important;
         z-index: 600 !important;
       }
 
@@ -909,8 +912,20 @@
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.25s ease;
+      .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 450;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
       }
 
+      body:not(.sidebar-collapsed) .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
       body:not(.sidebar-collapsed) .sidebar-backdrop {
         opacity: 1;
         pointer-events: auto;
@@ -1012,6 +1027,9 @@
 </head>
 
 <body>
+  <!-- Mobile Overlay Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
   <!-- Mobile Overlay Backdrop -->
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
@@ -1672,6 +1690,10 @@
       document.body.classList.toggle(
         "sidebar-collapsed"
       );
+    }
+
+    if (window.innerWidth <= 700) {
+      document.body.classList.add("sidebar-collapsed");
     }
 
     /*

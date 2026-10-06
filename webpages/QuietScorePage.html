@@ -509,11 +509,30 @@
         top: 15px !important;
         left: calc(50% - 48px) !important;
         z-index: 600 !important;
+        left: calc(50% - 48px) !important;
+        z-index: 600 !important;
       }
 
       body.sidebar-collapsed .sidebar-toggle {
         top: 10px !important;
         left: 18px !important;
+        z-index: 600 !important;
+      }
+
+      .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 450;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
         z-index: 600 !important;
       }
 
@@ -777,6 +796,9 @@
   <!-- Mobile Overlay Backdrop -->
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
+  <!-- Mobile Overlay Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
   <button class="sidebar-toggle" onclick="toggleSidebar()">
     <img src="../images/cloudicon.png" alt="Menu">
   </button>
@@ -791,7 +813,7 @@
       QuietScore Reports
     </a>
 
-    <span class="nav-item disabled">Student Reports</span>
+    <a class="nav-item" href="dashboard.html#studentReportsSection">Student Reports</a>
     <span class="nav-item disabled">Analytics</span>
 
     <a class="nav-item" href="settings.html">Settings</a>
@@ -1580,6 +1602,10 @@
     document.body.classList.toggle(
       "sidebar-collapsed"
     );
+  }
+
+  if (window.innerWidth <= 700) {
+    document.body.classList.add("sidebar-collapsed");
   }
 
 
