@@ -422,7 +422,14 @@
           String(expiresAt)
         );
 
-        window.location.href = "dashboard.html";
+        const redirectParam = new URLSearchParams(window.location.search).get("redirect");
+        if (redirectParam === "settings") {
+          window.location.href = "settings.html";
+        } else if (redirectParam === "reports") {
+          window.location.href = "QuietScorePage.html";
+        } else {
+          window.location.href = "dashboard.html";
+        }
       } else {
         if (settings.lockoutTime) {
           const maxAttempts = Number(settings.maxLoginAttempts) || 5;
@@ -456,14 +463,26 @@
       if (isLoggedIn && expiresAt && Date.now() < expiresAt) {
         const params = new URLSearchParams(window.location.search);
         if (params.get("logout") !== "1") {
-          window.location.href = "dashboard.html";
+          const redirectParam = params.get("redirect");
+          if (redirectParam === "settings") {
+            window.location.href = "settings.html";
+          } else if (redirectParam === "reports") {
+            window.location.href = "QuietScorePage.html";
+          } else {
+            window.location.href = "dashboard.html";
+          }
           return;
         }
       }
       const params =
         new URLSearchParams(window.location.search);
 
-      if (params.get("logout") === "1") {
+      if (params.get("restricted") === "1") {
+        showMessage(
+          "Authorized personnel only. Please sign in to access that section.",
+          "error"
+        );
+      } else if (params.get("logout") === "1") {
         showMessage(
           "You have been logged out successfully.",
           "success"
