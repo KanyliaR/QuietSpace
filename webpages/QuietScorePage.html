@@ -1627,6 +1627,25 @@
 
   loadQuietScoreReports();
 
+  // Real-time incident updates via Server-Sent Events (SSE)
+  if (window.EventSource) {
+    try {
+      const sseSource = new EventSource("/api/events");
+      const refreshEvents = [
+        "incident_started",
+        "incident_escalated",
+        "incident_resolved"
+      ];
+      refreshEvents.forEach(evt => {
+        sseSource.addEventListener(evt, () => {
+          loadQuietScoreReports();
+        });
+      });
+    } catch (e) {
+      console.warn("SSE connection error on QuietScore page:", e);
+    }
+  }
+
 </script>
 
 </body>

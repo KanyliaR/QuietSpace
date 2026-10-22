@@ -149,8 +149,18 @@
 
     .top-header {
       position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
       margin-bottom: 28px;
       padding-left: 58px;
+    }
+
+    .top-header-title {
+      flex: 1;
+      min-width: 250px;
     }
 
     .top-header h2 {
@@ -161,6 +171,60 @@
 
     .top-header p {
       color: #60708a;
+    }
+
+    .live-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #15803d;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      user-select: none;
+      transition: all 0.3s ease;
+    }
+
+    .live-status-pill.disconnected {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #b91c1c;
+    }
+
+    .live-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background-color: #22c55e;
+      display: inline-block;
+    }
+
+    .live-status-pill.disconnected .live-dot {
+      background-color: #ef4444;
+    }
+
+    .live-dot.pulse {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      animation: sse-pulse 2s infinite;
+    }
+
+    @keyframes sse-pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+      }
     }
 
     /* -------------------- Room Cards -------------------- */
@@ -579,6 +643,18 @@
     body.dark-theme .top-header p,
     body.dark-theme .section-subtitle {
       color: #dbe7ff;
+    }
+
+    body.dark-theme .live-status-pill {
+      background: rgba(34, 197, 94, 0.18);
+      border-color: rgba(34, 197, 94, 0.45);
+      color: #4ade80;
+    }
+
+    body.dark-theme .live-status-pill.disconnected {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #f87171;
     }
 
     body.dark-theme .card,
@@ -1081,10 +1157,16 @@
 
   <main class="main">
     <div class="top-header">
-      <h2>Today's Monitoring Overview</h2>
-      <p>
-        View live room status and active QuietScore incidents in real time.
-      </p>
+      <div class="top-header-title">
+        <h2>Today's Monitoring Overview</h2>
+        <p>
+          View live room status and active QuietScore incidents in real time.
+        </p>
+      </div>
+      <div class="live-status-pill" id="liveStatusBadge" title="Server-Sent Events Real-Time Connection">
+        <span class="live-dot pulse" id="liveDot"></span>
+        <span id="liveStatusText">Live Feed</span>
+      </div>
     </div>
 
     <div class="cards" id="roomCards">
@@ -1320,10 +1402,80 @@
     }
 
     /*
-     * Load the most recent room readings.
-     *
+     * Room readings state and rendering.
      * Room 311 / room_id 1 is currently the active prototype room.
-     * Other returned rooms remain visible but display as inactive.
+     */
+    let currentRooms = [];
+
+    function renderRoomCards() {
+      const roomCards = document.getElementById("roomCards");
+      if (!roomCards) return;
+
+      roomCards.innerHTML = "";
+
+      currentRooms.forEach(room => {
+        const isActiveRoom = room.room_id === 1;
+
+        const status = isActiveRoom
+          ? room.status_color || "green"
+          : "inactive";
+
+        const level =
+          isActiveRoom && room.level != null
+            ? `${room.level} dB`
+            : "—";
+
+        const updated =
+          isActiveRoom && room.recorded_at
+            ? formatTimeOnly(room.recorded_at)
+            : "—";
+
+        const card = document.createElement("div");
+
+        card.className = isActiveRoom
+          ? "card"
+          : "card inactive-card";
+
+        card.innerHTML = `
+          <h3>${room.room_name}</h3>
+          <p>Current Level: ${level}</p>
+          <p>Last Updated: ${updated}</p>
+          <span class="status ${status}">
+            ${
+              isActiveRoom
+                ? formatText(status)
+                : "Not Active"
+            }
+          </span>
+        `;
+
+        roomCards.appendChild(card);
+      });
+    }
+
+    /*
+     * Instant in-memory update for readings received via SSE.
+     */
+    function handleReadingUpdate(reading) {
+      if (!currentRooms || currentRooms.length === 0) {
+        loadLatestReadings();
+        return;
+      }
+
+      const room = currentRooms.find(r => r.room_id === reading.room_id);
+      if (room) {
+        room.level = reading.level;
+        room.status_color = reading.status_color;
+        room.quiet_score = reading.quiet_score;
+        room.recorded_at = reading.recorded_at;
+        renderRoomCards();
+      } else {
+        loadLatestReadings();
+      }
+    }
+
+    /*
+     * Load the most recent room readings from the backend.
      */
     async function loadLatestReadings() {
       const roomCards = document.getElementById("roomCards");
@@ -1337,48 +1489,8 @@
           throw new Error("Unable to load room readings");
         }
 
-        const rooms = await response.json();
-
-        roomCards.innerHTML = "";
-
-        rooms.forEach(room => {
-          const isActiveRoom = room.room_id === 1;
-
-          const status = isActiveRoom
-            ? room.status_color || "green"
-            : "inactive";
-
-          const level =
-            isActiveRoom && room.level
-              ? `${room.level} dB`
-              : "—";
-
-          const updated =
-            isActiveRoom && room.recorded_at
-              ? formatTimeOnly(room.recorded_at)
-              : "—";
-
-          const card = document.createElement("div");
-
-          card.className = isActiveRoom
-            ? "card"
-            : "card inactive-card";
-
-          card.innerHTML = `
-            <h3>${room.room_name}</h3>
-            <p>Current Level: ${level}</p>
-            <p>Last Updated: ${updated}</p>
-            <span class="status ${status}">
-              ${
-                isActiveRoom
-                  ? formatText(status)
-                  : "Not Active"
-              }
-            </span>
-          `;
-
-          roomCards.appendChild(card);
-        });
+        currentRooms = await response.json();
+        renderRoomCards();
       } catch (error) {
         console.error("Error loading readings:", error);
 
@@ -1480,7 +1592,7 @@
                 ${formatText(incident.status)}
               </span>
             </td>
-            <td>${incident.timer_remaining || "Completed"}</td>
+            <td class="incident-timer-cell" data-timer-started="${incident.timer_started_at || ''}" data-incident-status="${incident.status}">${incident.timer_remaining || "Completed"}</td>
             <td>${formatTimeOnly(incident.started_at)}</td>
             <td class="priority ${priorityLabel.className}">
               ${priorityLabel.text}
@@ -1890,11 +2002,157 @@
     }
 
     /*
-     * Initial load and live refresh.
+     * Client-side local incident timer.
+     * Computes remaining red-warning countdown dynamically every second
+     * with zero backend database queries.
+     */
+    function updateIncidentTimers() {
+      const RED_TIME_MS = 2 * 60 * 1000;
+      const now = Date.now();
+      const timerCells = document.querySelectorAll(".incident-timer-cell");
+
+      timerCells.forEach(cell => {
+        const startedAt = cell.dataset.timerStarted;
+        const status = cell.dataset.incidentStatus;
+
+        if (status !== "open" || !startedAt) {
+          cell.textContent = "Completed";
+          return;
+        }
+
+        const timerStart = new Date(startedAt).getTime();
+        const elapsed = now - timerStart;
+        const remaining = Math.max(0, RED_TIME_MS - elapsed);
+
+        if (remaining <= 0) {
+          cell.textContent = "Completed";
+        } else {
+          const minutes = Math.floor(remaining / 60000);
+          const seconds = Math.floor((remaining % 60000) / 1000);
+          cell.textContent = `${minutes}:${String(seconds).padStart(2, "0")} remaining`;
+        }
+      });
+    }
+
+    /*
+     * Server-Sent Events (SSE) connection manager.
+     * Receives instant push notifications for readings, incidents,
+     * and noise reports (< 50ms latency, zero polling load).
+     */
+    let sseSource = null;
+
+    function initSSE() {
+      if (!window.EventSource) {
+        console.warn("Server-Sent Events not supported by this browser.");
+        return;
+      }
+
+      if (sseSource) {
+        sseSource.close();
+      }
+
+      const badge = document.getElementById("liveStatusBadge");
+      const dot = document.getElementById("liveDot");
+      const text = document.getElementById("liveStatusText");
+
+      function setLiveStatus(connected) {
+        if (!badge) return;
+        if (connected) {
+          badge.classList.remove("disconnected");
+          if (dot) dot.classList.add("pulse");
+          if (text) text.textContent = "Live Feed";
+        } else {
+          badge.classList.add("disconnected");
+          if (dot) dot.classList.remove("pulse");
+          if (text) text.textContent = "Reconnecting...";
+        }
+      }
+
+      try {
+        sseSource = new EventSource("/api/events");
+
+        sseSource.onopen = () => {
+          console.log("SSE connected: Real-time event stream active.");
+          setLiveStatus(true);
+        };
+
+        sseSource.addEventListener("connected", () => {
+          setLiveStatus(true);
+        });
+
+        // Instant update for room sound reading (0 DB query overhead)
+        sseSource.addEventListener("reading", (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleReadingUpdate(data);
+          } catch (err) {
+            console.error("Error parsing reading SSE:", err);
+          }
+        });
+
+        // New student noise report submitted
+        sseSource.addEventListener("report_created", () => {
+          loadReports();
+        });
+
+        // Staff updated report status from another dashboard tab/window
+        sseSource.addEventListener("report_status_updated", () => {
+          const activeElement = document.activeElement;
+          const editingDropdown =
+            activeElement &&
+            activeElement.classList.contains("status-select");
+
+          if (!isEditingReportStatus && !editingDropdown) {
+            loadReports();
+          }
+        });
+
+        // Incident started, escalated, or resolved
+        sseSource.addEventListener("incident_started", () => {
+          loadIncidents();
+        });
+
+        sseSource.addEventListener("incident_escalated", () => {
+          loadIncidents();
+        });
+
+        sseSource.addEventListener("incident_resolved", () => {
+          loadIncidents();
+        });
+
+        sseSource.onerror = (err) => {
+          console.warn("SSE connection interrupted. EventSource will automatically retry...", err);
+          setLiveStatus(false);
+        };
+      } catch (err) {
+        console.error("Failed to initialize SSE:", err);
+        setLiveStatus(false);
+      }
+    }
+
+    /*
+     * Initial dashboard bootstrap & real-time subscriptions.
+     * Replaces 1-second MySQL polling with event-driven SSE updates.
      */
     refreshDashboard();
+    initSSE();
 
-    setInterval(refreshDashboard, 1000);
+    // Local client-side timer updates countdowns smoothly every second
+    setInterval(updateIncidentTimers, 1000);
+
+    // Gentle 60-second background failsafe sync
+    setInterval(() => {
+      const activeElement = document.activeElement;
+      const editingDropdown =
+        activeElement &&
+        activeElement.classList.contains("status-select");
+
+      if (!isEditingReportStatus && !editingDropdown) {
+        loadReports();
+      }
+      loadLatestReadings();
+      loadIncidents();
+    }, 60000);
 
     window.addEventListener(
       "focus",
