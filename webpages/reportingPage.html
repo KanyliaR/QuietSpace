@@ -380,17 +380,82 @@
        Dark Mode
     ----------------------------- */
 
+    /* -------------------- Dark Mode Theme Classes -------------------- */
+    body.dark-theme {
+      background-color: #0f1d3a;
+      color: #ffffff;
+    }
+
+    body.dark-theme .header {
+      background-color: #10275a;
+    }
+
+    body.dark-theme .form-card {
+      background: linear-gradient(
+        to bottom,
+        #243b75 0%,
+        #1d3267 45%,
+        #142650 100%
+      );
+      border: 1px solid rgba(141, 170, 220, 0.35);
+      box-shadow:
+        0 24px 55px rgba(31, 59, 115, 0.28),
+        0 10px 24px rgba(5, 15, 40, 0.22);
+    }
+
+    body.dark-theme .title,
+    body.dark-theme label {
+      color: #ffffff;
+    }
+
+    body.dark-theme .subtitle,
+    body.dark-theme .helper-text {
+      color: #dbe7ff;
+    }
+
+    body.dark-theme input[type="text"],
+    body.dark-theme select,
+    body.dark-theme textarea {
+      background-color: #1b2f61;
+      color: #ffffff;
+      border-color: #5f7fc4;
+    }
+
+    body.dark-theme input::placeholder,
+    body.dark-theme textarea::placeholder {
+      color: #c9d7ff;
+    }
+
+    body.dark-theme input[readonly] {
+      background-color: #243b75;
+      color: #ffffff;
+    }
+
+    body.dark-theme select:focus,
+    body.dark-theme textarea:focus,
+    body.dark-theme input[type="text"]:focus {
+      background-color: #22386f;
+      border-color: #9fc0ff;
+      box-shadow: 0 0 0 3px rgba(159, 192, 255, 0.18);
+    }
+
+    body.dark-theme .error-message {
+      color: #ffd8d8;
+      background-color: #472020;
+      border-color: #8e3a3a;
+    }
+
     @media (prefers-color-scheme: dark) {
-      body {
-        background-color: #c5e6f9;
-        color: #1f2a44;
+      body:not(.light-theme) {
+        background-color: #0f1d3a;
+        color: #ffffff;
       }
 
-      .header {
-        background-color: #dcecf7;
+      body:not(.light-theme) .header {
+        background-color: #10275a;
       }
 
-      .form-card {
+      body:not(.light-theme) .form-card {
         background: linear-gradient(
           to bottom,
           #243b75 0%,
@@ -406,37 +471,37 @@
           0 10px 24px rgba(5, 15, 40, 0.22);
       }
 
-      .title,
-      label {
+      body:not(.light-theme) .title,
+      body:not(.light-theme) label {
         color: #ffffff;
       }
 
-      .subtitle,
-      .helper-text {
+      body:not(.light-theme) .subtitle,
+      body:not(.light-theme) .helper-text {
         color: #dbe7ff;
       }
 
-      input[type="text"],
-      select,
-      textarea {
+      body:not(.light-theme) input[type="text"],
+      body:not(.light-theme) select,
+      body:not(.light-theme) textarea {
         background-color: #1b2f61;
         color: #ffffff;
         border-color: #5f7fc4;
       }
 
-      input::placeholder,
-      textarea::placeholder {
+      body:not(.light-theme) input::placeholder,
+      body:not(.light-theme) textarea::placeholder {
         color: #c9d7ff;
       }
 
-      input[readonly] {
+      body:not(.light-theme) input[readonly] {
         background-color: #243b75;
         color: #ffffff;
       }
 
-      select:focus,
-      textarea:focus,
-      input[type="text"]:focus {
+      body:not(.light-theme) select:focus,
+      body:not(.light-theme) textarea:focus,
+      body:not(.light-theme) input[type="text"]:focus {
         background-color: #22386f;
         border-color: #9fc0ff;
 
@@ -444,7 +509,7 @@
           0 0 0 3px rgba(159, 192, 255, 0.18);
       }
 
-      .error-message {
+      body:not(.light-theme) .error-message {
         color: #ffd8d8;
         background-color: #472020;
         border-color: #8e3a3a;
@@ -777,6 +842,25 @@
   </div>
 
   <script>
+    /*
+     * Global Theme Support (Default: Dark Mode)
+     */
+    function applyGlobalTheme() {
+      const theme = localStorage.getItem("quietspace_theme");
+      if (theme === "light") {
+        document.body.classList.add("light-theme");
+        document.body.classList.remove("dark-theme");
+      } else {
+        document.body.classList.add("dark-theme");
+        document.body.classList.remove("light-theme");
+      }
+    }
+    applyGlobalTheme();
+    window.addEventListener("storage", (e) => {
+      if (e.key === "quietspace_theme") {
+        applyGlobalTheme();
+      }
+    });
 
     /* -----------------------------
        Room Configuration

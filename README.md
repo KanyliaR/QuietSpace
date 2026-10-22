@@ -18,6 +18,7 @@ The QuietSpace frontend is deployed using GitHub Pages.
 - [Student Noise Reporting](https://kanyliar.github.io/QuietSpace/webpages/reportingPage.html)
 - [Staff Login](https://kanyliar.github.io/QuietSpace/webpages/login.html)
 - [Staff Dashboard](https://kanyliar.github.io/QuietSpace/webpages/dashboard.html)
+- [Settings Section](https://kanyliar.github.io/QuietSpace/webpages/settings.html)
 
 > **Note:** This deployment demonstrates the QuietSpace frontend. Features requiring the Node.js/Express backend and MySQL database are not available through the GitHub Pages deployment.
 

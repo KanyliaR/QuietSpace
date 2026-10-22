@@ -467,18 +467,89 @@
       }
 
       .sidebar {
-        width: 230px;
-        padding: 15px 18px 24px 18px;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 50% !important;
+        max-width: 50vw;
+        height: 100vh !important;
+        z-index: 500 !important;
+        padding: 20px 16px 24px 18px;
+        box-shadow: 6px 0 24px rgba(0, 0, 0, 0.45);
+        transition: transform 0.25s ease, opacity 0.25s ease !important;
+        overflow-y: auto !important;
+      }
+
+      body.sidebar-collapsed .sidebar {
+        transform: translateX(-100%) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        display: block !important;
+        width: 50% !important;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        display: block !important;
+        width: 50% !important;
+      }
+
+      body.sidebar-collapsed .sidebar * {
+        display: block !important;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar * {
+        display: block !important;
       }
 
       body:not(.sidebar-collapsed) .sidebar-toggle {
         top: 15px !important;
-        left: 170px !important;
+        left: calc(50% - 48px) !important;
+        z-index: 600 !important;
+        left: calc(50% - 48px) !important;
+        z-index: 600 !important;
       }
 
       body.sidebar-collapsed .sidebar-toggle {
         top: 10px !important;
         left: 18px !important;
+        z-index: 600 !important;
+      }
+
+      .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 450;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 600 !important;
+      }
+
+      .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 450;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
       }
 
       .top-header {
@@ -530,34 +601,126 @@
       }
     }
 
+    /* -------------------- Dark Mode Theme Classes -------------------- */
+
+    body.dark-theme,
+    body.dark-theme .main {
+      background: #0f1d3a;
+      color: #ffffff;
+    }
+
+    body.dark-theme .sidebar {
+      background: #10275a;
+    }
+
+    body.dark-theme .top-header h2,
+    body.dark-theme .section-header h3,
+    body.dark-theme .month-label,
+    body.dark-theme .selected-date-title,
+    body.dark-theme .summary-value {
+      color: #ffffff;
+    }
+
+    body.dark-theme .top-header p,
+    body.dark-theme .section-subtitle,
+    body.dark-theme .calendar-help,
+    body.dark-theme .report-count {
+      color: #dbe7ff;
+    }
+
+    body.dark-theme .section,
+    body.dark-theme .summary-card {
+      background: linear-gradient(
+        to bottom,
+        #243b75 0%,
+        #1d3267 45%,
+        #142650 100%
+      );
+      border: 1px solid rgba(141, 170, 220, 0.35);
+      color: #ffffff;
+    }
+
+    body.dark-theme .summary-card h4 {
+      color: #dbe7ff;
+    }
+
+    body.dark-theme .calendar-day {
+      background: #162b58;
+      border-color: rgba(141, 170, 220, 0.35);
+      color: white;
+    }
+
+    body.dark-theme .calendar-day.selected {
+      background: #4f7ee8;
+      border-color: #4f7ee8;
+    }
+
+    body.dark-theme .clear-date-btn {
+      background: #1d3267;
+      border-color: #49618f;
+      color: white;
+    }
+
+    body.dark-theme th {
+      background: #243b75;
+      color: #dbe7ff;
+    }
+
+    body.dark-theme td {
+      color: #ffffff;
+      border-bottom: 1px solid rgba(219, 231, 255, 0.18);
+    }
+
+    body.dark-theme body.sidebar-collapsed .sidebar-toggle,
+    body.dark-theme body:not(.sidebar-collapsed) .sidebar-toggle,
+    body.dark-theme .sidebar-toggle {
+      background: rgba(255, 255, 255, 0.92) !important;
+      color: #1f3b73 !important;
+    }
+
+    body.dark-theme .incident-open {
+      background: #fca5a5 !important;
+      color: #7f1d1d !important;
+    }
+
+    body.dark-theme .incident-resolved {
+      background: #6ee7b7 !important;
+      color: #064e3b !important;
+    }
+
+    body.dark-theme .incident-attention {
+      background: #fcd34d !important;
+      color: #78350f !important;
+    }
+
     @media (prefers-color-scheme: dark) {
-      body,
-      .main {
+      body:not(.light-theme),
+      body:not(.light-theme) .main {
         background: #0f1d3a;
         color: #ffffff;
       }
 
-      .sidebar {
+      body:not(.light-theme) .sidebar {
         background: #10275a;
       }
 
-      .top-header h2,
-      .section-header h3,
-      .month-label,
-      .selected-date-title,
-      .summary-value {
+      body:not(.light-theme) .top-header h2,
+      body:not(.light-theme) .section-header h3,
+      body:not(.light-theme) .month-label,
+      body:not(.light-theme) .selected-date-title,
+      body:not(.light-theme) .summary-value {
         color: #ffffff;
       }
 
-      .top-header p,
-      .section-subtitle,
-      .calendar-help,
-      .report-count {
+      body:not(.light-theme) .top-header p,
+      body:not(.light-theme) .section-subtitle,
+      body:not(.light-theme) .calendar-help,
+      body:not(.light-theme) .report-count {
         color: #dbe7ff;
       }
 
-      .section,
-      .summary-card {
+      body:not(.light-theme) .section,
+      body:not(.light-theme) .summary-card {
         background: linear-gradient(
           to bottom,
           #243b75 0%,
@@ -568,59 +731,59 @@
         color: #ffffff;
       }
 
-      .summary-card h4 {
+      body:not(.light-theme) .summary-card h4 {
         color: #dbe7ff;
       }
 
-      .calendar-day {
+      body:not(.light-theme) .calendar-day {
         background: #162b58;
         border-color: rgba(141, 170, 220, 0.35);
         color: white;
       }
 
-      .calendar-day.selected {
+      body:not(.light-theme) .calendar-day.selected {
         background: #4f7ee8;
         border-color: #4f7ee8;
       }
 
-      .clear-date-btn {
+      body:not(.light-theme) .clear-date-btn {
         background: #1d3267;
         border-color: #49618f;
         color: white;
       }
 
-      th {
+      body:not(.light-theme) th {
         background: #243b75;
         color: #dbe7ff;
       }
 
-      td {
+      body:not(.light-theme) td {
         color: #ffffff;
       }
 
-      th,
-      td {
+      body:not(.light-theme) th,
+      body:not(.light-theme) td {
         border-bottom: 1px solid rgba(219, 231, 255, 0.18);
       }
 
-      body.sidebar-collapsed .sidebar-toggle,
-      body:not(.sidebar-collapsed) .sidebar-toggle,
-      .sidebar-toggle {
+      body:not(.light-theme) body.sidebar-collapsed .sidebar-toggle,
+      body:not(.light-theme) body:not(.sidebar-collapsed) .sidebar-toggle,
+      body:not(.light-theme) .sidebar-toggle {
         background: rgba(255, 255, 255, 0.92) !important;
         color: #1f3b73 !important;
       }
 
-      .incident-open {
+      body:not(.light-theme) .incident-open {
         background: #fca5a5 !important;
         color: #7f1d1d !important;
       }
 
-      .incident-resolved {
+      body:not(.light-theme) .incident-resolved {
         background: #6ee7b7 !important;
         color: #064e3b !important;
       }
 
-      .incident-attention {
+      body:not(.light-theme) .incident-attention {
         background: #fcd34d !important;
         color: #78350f !important;
       }
@@ -629,6 +792,12 @@
 </head>
 
 <body>
+
+  <!-- Mobile Overlay Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
+  <!-- Mobile Overlay Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
   <button class="sidebar-toggle" onclick="toggleSidebar()">
     <img src="../images/cloudicon.png" alt="Menu">
@@ -644,8 +813,10 @@
       QuietScore Reports
     </a>
 
-    <span class="nav-item disabled">Student Reports</span>
+    <a class="nav-item" href="dashboard.html#studentReportsSection">Student Reports</a>
     <span class="nav-item disabled">Analytics</span>
+
+    <a class="nav-item" href="settings.html">Settings</a>
 
     <div class="logout-wrapper">
       <button class="logout-btn" onclick="logout()">Log Out</button>
@@ -793,6 +964,40 @@
   </main>
 
 <script>
+  /*
+   * Prototype Authentication Guard: Authorized personnel only
+   * Requires valid login session from login.html.
+   */
+  (function () {
+    const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
+    const expiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
+
+    if (!isLoggedIn || (expiresAt > 0 && Date.now() > expiresAt)) {
+      localStorage.removeItem("quietspaceLoggedIn");
+      localStorage.removeItem("quietspaceSessionExpiresAt");
+      window.location.replace("login.html?redirect=reports&restricted=1");
+    }
+  })();
+
+  /*
+   * Global Theme Support (Default: Dark Mode)
+   */
+  function applyGlobalTheme() {
+    const theme = localStorage.getItem("quietspace_theme");
+    if (theme === "light") {
+      document.body.classList.add("light-theme");
+      document.body.classList.remove("dark-theme");
+    } else {
+      document.body.classList.add("dark-theme");
+      document.body.classList.remove("light-theme");
+    }
+  }
+  applyGlobalTheme();
+  window.addEventListener("storage", (e) => {
+    if (e.key === "quietspace_theme") {
+      applyGlobalTheme();
+    }
+  });
 
   let allIncidents = [];
 
@@ -1399,6 +1604,10 @@
     );
   }
 
+  if (window.innerWidth <= 700) {
+    document.body.classList.add("sidebar-collapsed");
+  }
+
 
   function logout() {
 
@@ -1417,6 +1626,25 @@
 
 
   loadQuietScoreReports();
+
+  // Real-time incident updates via Server-Sent Events (SSE)
+  if (window.EventSource) {
+    try {
+      const sseSource = new EventSource("/api/events");
+      const refreshEvents = [
+        "incident_started",
+        "incident_escalated",
+        "incident_resolved"
+      ];
+      refreshEvents.forEach(evt => {
+        sseSource.addEventListener(evt, () => {
+          loadQuietScoreReports();
+        });
+      });
+    } catch (e) {
+      console.warn("SSE connection error on QuietScore page:", e);
+    }
+  }
 
 </script>
 

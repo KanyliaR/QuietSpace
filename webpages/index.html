@@ -653,17 +653,39 @@
 
 
     /*
-      Determine the target room state from the averaged
-      browser microphone level.
+      Load the active decibel threshold settings from localStorage,
+      or fall back to the default relative thresholds.
+    */
+    function getActiveThresholds() {
+      try {
+        const saved = localStorage.getItem("quietspace_settings");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const yellow = Number(parsed.yellowThreshold);
+          const red = Number(parsed.redThreshold);
+          if (!isNaN(yellow) && !isNaN(red) && red > yellow && yellow > 0) {
+            return { yellow, red };
+          }
+        }
+      } catch (err) {
+        console.warn("Could not read quietspace_settings from localStorage:", err);
+      }
+      return { yellow: 10, red: 17 };
+    }
 
-      These are prototype relative thresholds, not dB values.
+
+    /*
+      Determine the target room state from the averaged
+      browser microphone level using active configured thresholds.
     */
     function getStateFromLevel(level) {
-      if (level < 10) {
+      const thresholds = getActiveThresholds();
+
+      if (level < thresholds.yellow) {
         return "green";
       }
 
-      if (level < 17) {
+      if (level < thresholds.red) {
         return "yellow";
       }
 
