@@ -704,8 +704,14 @@ app.use((req, res) => {
 // Start Server
 // -----------------------------
 
-app.listen(PORT, () => {
-  console.log(
-    `QuietSpace server running on port ${PORT}`
-  );
-});
+let serverInstance = null;
+
+if (require.main === module) {
+  serverInstance = app.listen(PORT, () => {
+    console.log(
+      `QuietSpace server running on port ${PORT}`
+    );
+  });
+}
+
+module.exports = { app, db, server: serverInstance };
