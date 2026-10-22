@@ -61,6 +61,54 @@ app.get("/", (req, res) => {
 });
 
 // -----------------------------
+// Server-Sent Events (SSE) Setup
+// -----------------------------
+
+const sseClients = new Set();
+
+/**
+ * Broadcast an event payload to all connected SSE clients.
+ */
+function broadcastSSE(event, data) {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+    } catch (err) {
+      sseClients.delete(client);
+    }
+  }
+}
+
+// Keep-alive heartbeat every 20 seconds to prevent connection drops on proxies
+setInterval(() => {
+  for (const client of sseClients) {
+    try {
+      client.write(": ping\n\n");
+    } catch (err) {
+      sseClients.delete(client);
+    }
+  }
+}, 20000);
+
+// SSE connection endpoint for real-time dashboards
+app.get("/api/events", (req, res) => {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive"
+  });
+
+  // Flush headers and confirm connection
+  res.write("event: connected\ndata: {}\n\n");
+  sseClients.add(res);
+
+  req.on("close", () => {
+    sseClients.delete(res);
+  });
+});
+
+// -----------------------------
 // Noise Reports
 // -----------------------------
 
@@ -117,6 +165,16 @@ app.post("/api/reports", (req, res) => {
           message: "Error saving report"
         });
       }
+
+      broadcastSSE("report_created", {
+        report_id: result.insertId,
+        room_id: Number(room_id),
+        noise_type,
+        severity,
+        comments: comments || null,
+        report_status: "open",
+        submitted_at: new Date().toISOString()
+      });
 
       res.status(201).json({
         message: "Report submitted successfully",
@@ -200,6 +258,11 @@ app.put("/api/reports/:id/status", (req, res) => {
         });
       }
 
+      broadcastSSE("report_status_updated", {
+        report_id: Number(reportId),
+        report_status
+      });
+
       res.json({
         message: "Report status updated",
         changed: result.affectedRows
@@ -274,6 +337,14 @@ app.post("/api/readings", (req, res) => {
           message: "Error saving reading"
         });
       }
+
+      broadcastSSE("reading", {
+        room_id: Number(room_id),
+        level: Number(level),
+        quiet_score,
+        status_color,
+        recorded_at: new Date().toISOString()
+      });
 
       res.status(201).json({
         message: "Reading saved successfully",
@@ -490,6 +561,15 @@ app.post(
                 });
             }
 
+            broadcastSSE("incident_started", {
+              incident_id: result.insertId,
+              room_id: Number(room_id),
+              trigger_level,
+              status: "open",
+              escalation_count: 1,
+              timer_started_at: new Date().toISOString()
+            });
+
             res.status(201).json({
               message: "Incident started",
               incident_id:
@@ -541,6 +621,11 @@ app.post(
           });
         }
 
+        broadcastSSE("incident_resolved", {
+          room_id: Number(room_id),
+          resolved_at: new Date().toISOString()
+        });
+
         res.json({
           message: "Incident resolved",
           changed: result.affectedRows
@@ -590,6 +675,11 @@ app.post(
               "Error escalating incident"
           });
         }
+
+        broadcastSSE("incident_escalated", {
+          room_id: Number(room_id),
+          timer_started_at: new Date().toISOString()
+        });
 
         res.json({
           message: "Incident escalated",
