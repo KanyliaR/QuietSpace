@@ -81,7 +81,7 @@ function broadcastSSE(event, data) {
 }
 
 // Keep-alive heartbeat every 20 seconds to prevent connection drops on proxies
-setInterval(() => {
+const heartbeatInterval = setInterval(() => {
   for (const client of sseClients) {
     try {
       client.write(": ping\n\n");
@@ -90,6 +90,10 @@ setInterval(() => {
     }
   }
 }, 20000);
+
+if (heartbeatInterval.unref) {
+  heartbeatInterval.unref();
+}
 
 // SSE connection endpoint for real-time dashboards
 app.get("/api/events", (req, res) => {
@@ -714,4 +718,10 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, db, server: serverInstance };
+module.exports = {
+  app,
+  db,
+  server: serverInstance,
+  broadcastSSE,
+  sseClients
+};

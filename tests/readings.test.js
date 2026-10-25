@@ -5,8 +5,16 @@ const mockQuery = jest.fn();
 const mockConnect = jest.fn((cb) => {
   if (cb) cb(null);
 });
+const mockGetConnection = jest.fn((cb) => {
+  if (cb) cb(null, { release: jest.fn() });
+});
 
 jest.mock("mysql2", () => ({
+  createPool: jest.fn(() => ({
+    getConnection: mockGetConnection,
+    query: mockQuery,
+    end: jest.fn()
+  })),
   createConnection: jest.fn(() => ({
     connect: mockConnect,
     query: mockQuery,

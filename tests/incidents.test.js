@@ -5,8 +5,16 @@ const mockQuery = jest.fn();
 const mockConnect = jest.fn((cb) => {
   if (cb) cb(null);
 });
+const mockGetConnection = jest.fn((cb) => {
+  if (cb) cb(null, { release: jest.fn() });
+});
 
 jest.mock("mysql2", () => ({
+  createPool: jest.fn(() => ({
+    getConnection: mockGetConnection,
+    query: mockQuery,
+    end: jest.fn()
+  })),
   createConnection: jest.fn(() => ({
     connect: mockConnect,
     query: mockQuery,
@@ -14,7 +22,7 @@ jest.mock("mysql2", () => ({
   }))
 }));
 
-const { app } = require("../server");
+const { app, sseClients } = require("../server");
 
 describe("Incidents API (/api/incidents)", () => {
   let consoleErrorSpy;
@@ -22,6 +30,7 @@ describe("Incidents API (/api/incidents)", () => {
   beforeEach(() => {
     mockQuery.mockReset();
     jest.clearAllMocks();
+    if (sseClients) sseClients.clear();
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -162,7 +171,10 @@ describe("Incidents API (/api/incidents)", () => {
       expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
-    test("returns 201 with new incident_id on successful creation", async () => {
+    test("returns 201 with new incident_id on successful creation and broadcasts SSE", async () => {
+      const mockClient = { write: jest.fn() };
+      sseClients.add(mockClient);
+
       mockQuery
         .mockImplementationOnce((sql, params, callback) => {
           callback(null, []);
@@ -179,6 +191,31 @@ describe("Incidents API (/api/incidents)", () => {
       expect(res.status).toBe(201);
       expect(res.body.message).toMatch(/incident started/i);
       expect(res.body.incident_id).toBe(77);
+
+      expect(mockClient.write).toHaveBeenCalledTimes(1);
+      const payload = mockClient.write.mock.calls[0][0];
+      expect(payload).toContain("event: incident_started");
+      expect(payload).toContain('"incident_id":77');
+      expect(payload).toContain('"room_id":1');
+      expect(payload).toContain('"status":"open"');
+      expect(payload).toContain('"escalation_count":1');
+    });
+
+    test("does not broadcast new incident_started when incident is already open", async () => {
+      const mockClient = { write: jest.fn() };
+      sseClients.add(mockClient);
+
+      mockQuery.mockImplementation((sql, params, callback) => {
+        callback(null, [{ id: 55 }]);
+      });
+
+      const res = await request(app)
+        .post("/api/incidents/start")
+        .send({ room_id: 1, trigger_level: "red" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.incident_id).toBe(55);
+      expect(mockClient.write).not.toHaveBeenCalled();
     });
   });
 
@@ -204,7 +241,10 @@ describe("Incidents API (/api/incidents)", () => {
       expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
-    test("returns 200 with changed rows count on success", async () => {
+    test("returns 200 with changed rows count on success and broadcasts SSE", async () => {
+      const mockClient = { write: jest.fn() };
+      sseClients.add(mockClient);
+
       mockQuery.mockImplementation((sql, params, callback) => {
         expect(params).toEqual([1]);
         callback(null, { affectedRows: 1 });
@@ -217,6 +257,11 @@ describe("Incidents API (/api/incidents)", () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toMatch(/incident resolved/i);
       expect(res.body.changed).toBe(1);
+
+      expect(mockClient.write).toHaveBeenCalledTimes(1);
+      const payload = mockClient.write.mock.calls[0][0];
+      expect(payload).toContain("event: incident_resolved");
+      expect(payload).toContain('"room_id":1');
     });
   });
 
@@ -242,8 +287,13 @@ describe("Incidents API (/api/incidents)", () => {
       expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
-    test("returns 200 with changed rows count on success", async () => {
+    test("returns 200 with changed rows count and broadcasts SSE on success", async () => {
+      const mockClient = { write: jest.fn() };
+      sseClients.add(mockClient);
+
       mockQuery.mockImplementation((sql, params, callback) => {
+        expect(sql).toContain("escalation_count =");
+        expect(sql).toContain("timer_started_at =");
         expect(params).toEqual([1]);
         callback(null, { affectedRows: 1 });
       });
@@ -255,6 +305,41 @@ describe("Incidents API (/api/incidents)", () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toMatch(/incident escalated/i);
       expect(res.body.changed).toBe(1);
+
+      expect(mockClient.write).toHaveBeenCalledTimes(1);
+      const payload = mockClient.write.mock.calls[0][0];
+      expect(payload).toContain("event: incident_escalated");
+      expect(payload).toContain('"room_id":1');
+    });
+
+    test("returns 200 with changed: 0 when no open incident exists for the room", async () => {
+      mockQuery.mockImplementation((sql, params, callback) => {
+        callback(null, { affectedRows: 0 });
+      });
+
+      const res = await request(app)
+        .post("/api/incidents/escalate")
+        .send({ room_id: 999 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toMatch(/incident escalated/i);
+      expect(res.body.changed).toBe(0);
+    });
+
+    test("handles multiple sequential escalations", async () => {
+      let callCount = 0;
+      mockQuery.mockImplementation((sql, params, callback) => {
+        callCount++;
+        callback(null, { affectedRows: 1 });
+      });
+
+      const res1 = await request(app).post("/api/incidents/escalate").send({ room_id: 1 });
+      expect(res1.status).toBe(200);
+
+      const res2 = await request(app).post("/api/incidents/escalate").send({ room_id: 1 });
+      expect(res2.status).toBe(200);
+
+      expect(callCount).toBe(2);
     });
   });
 });
