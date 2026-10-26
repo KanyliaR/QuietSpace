@@ -368,8 +368,8 @@
         The QR code directs students to the room-specific
         noise-reporting workflow.
       -->
-      <div class="report-card" id="reportCard">
-
+      <div class="report-card" id="reportCard" onclick="window.location.href = document.getElementById('reportLink')?.href || 'reportingPage.html?room=' + ROOM_ID" style="cursor: pointer;" title="Click or scan to report noise for this room">
+        <a id="reportLink" href="reportingPage.html?room=311" style="display: none;"></a>
         <div class="report-text-wrap">
           <div class="report-title">
             Need to report noise?
@@ -477,12 +477,108 @@
     let countdownInterval = null;
 
     /*
-      Current prototype room.
-
-      Room 311 maps to room_id 1 in the backend.
-      Multi-room support can later provide this dynamically.
+      Dynamic room configuration.
+      Reads room number or ID dynamically from the URL query parameter
+      (e.g., ?room=312 or ?room_id=2), matching what reportingPage.html supports.
     */
-    const ROOM_ID = 1;
+    const DEFAULT_ROOM_IDS = {
+      "311": 1,
+      "312": 2,
+      "313": 3
+    };
+
+    let ROOM_ID = 1;
+    let ROOM_NAME = "Room 311";
+
+    function parseRoomFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      const roomIdParam = params.get("room_id") || params.get("id");
+      const roomParam = params.get("room");
+
+      if (roomIdParam && !isNaN(Number(roomIdParam))) {
+        const parsedId = Number(roomIdParam);
+        return {
+          id: parsedId,
+          name: `Room ${parsedId}`
+        };
+      }
+
+      if (roomParam) {
+        const clean = roomParam.replace(/Room\s*/i, "").trim();
+        if (DEFAULT_ROOM_IDS[clean]) {
+          return {
+            id: DEFAULT_ROOM_IDS[clean],
+            name: `Room ${clean}`
+          };
+        }
+        if (!isNaN(Number(clean))) {
+          return {
+            id: Number(clean),
+            name: `Room ${clean}`
+          };
+        }
+        return {
+          id: 1,
+          name: roomParam
+        };
+      }
+
+      return {
+        id: 1,
+        name: "Room 311"
+      };
+    }
+
+    const initialRoom = parseRoomFromURL();
+    ROOM_ID = initialRoom.id;
+    ROOM_NAME = initialRoom.name;
+
+    function updateRoomDisplay(name, id) {
+      ROOM_ID = id;
+      ROOM_NAME = name;
+      const roomLabel = document.getElementById("roomLabel");
+      if (roomLabel) {
+        const displayLabel = name.toLowerCase().startsWith("study room")
+          ? name
+          : (name.toLowerCase().startsWith("room") ? `Study ${name}` : `Study Room ${name}`);
+        roomLabel.textContent = displayLabel;
+      }
+      document.title = `QuietSpace - Study ${name.replace(/^Study\s*/i, "")}`;
+
+      const reportLink = document.getElementById("reportLink");
+      if (reportLink) {
+        const clean = name.replace(/Room\s*/i, "").trim();
+        reportLink.href = `reportingPage.html?room=${encodeURIComponent(clean)}&room_id=${id}`;
+      }
+    }
+
+    async function fetchRoomDetails() {
+      try {
+        const res = await fetch("/api/rooms");
+        if (!res.ok) return;
+        const rooms = await res.json();
+        const params = new URLSearchParams(window.location.search);
+        const roomIdParam = params.get("room_id") || params.get("id");
+        const roomParam = params.get("room");
+
+        let matched = null;
+        if (roomIdParam) {
+          matched = rooms.find(r => r.id === Number(roomIdParam) || r.room_id === Number(roomIdParam));
+        } else if (roomParam) {
+          const clean = roomParam.replace(/Room\s*/i, "").trim().toLowerCase();
+          matched = rooms.find(r =>
+            String(r.id) === clean ||
+            (r.room_name && r.room_name.toLowerCase().includes(clean))
+          );
+        }
+
+        if (matched) {
+          updateRoomDisplay(matched.room_name, matched.id);
+        }
+      } catch (err) {
+        console.warn("Could not fetch rooms from API:", err);
+      }
+    }
 
     /*
       Noise-state timing configuration.
@@ -1479,6 +1575,10 @@
         return;
       }
     }
+
+    // Initialize dynamic room display on page load
+    updateRoomDisplay(ROOM_NAME, ROOM_ID);
+    fetchRoomDetails();
   </script>
 </body>
 </html>

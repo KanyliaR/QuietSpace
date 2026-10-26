@@ -872,23 +872,76 @@
       "313": 3
     };
 
+    let resolvedRoomId = 2;
+
     function getRoomFromURL() {
       const params =
         new URLSearchParams(window.location.search);
 
-      const room =
-        params.get("room");
+      const roomIdParam = params.get("room_id") || params.get("id");
+      const roomParam = params.get("room");
 
-      if (ROOM_IDS[room]) {
-        return room;
+      if (roomIdParam && !isNaN(Number(roomIdParam))) {
+        resolvedRoomId = Number(roomIdParam);
+        return String(roomIdParam);
       }
 
-      // Used only when testing without a QR code.
+      if (roomParam) {
+        const clean = roomParam.replace(/Room\s*/i, "").trim();
+        if (ROOM_IDS[clean]) {
+          resolvedRoomId = ROOM_IDS[clean];
+          return clean;
+        }
+        if (!isNaN(Number(clean))) {
+          resolvedRoomId = Number(clean);
+          return clean;
+        }
+        return roomParam;
+      }
+
+      // Default fallback
+      resolvedRoomId = 2;
       return "312";
     }
 
     const room =
       getRoomFromURL();
+
+    // Async sync with database rooms
+    async function syncRoomsFromApi() {
+      try {
+        const res = await fetch("/api/rooms");
+        if (!res.ok) return;
+        const rooms = await res.json();
+        rooms.forEach((r) => {
+          const cleanName = r.room_name.replace(/Room\s*/i, "").trim();
+          ROOM_IDS[cleanName] = r.id;
+          ROOM_IDS[r.room_name] = r.id;
+          ROOM_IDS[String(r.id)] = r.id;
+        });
+
+        const params = new URLSearchParams(window.location.search);
+        const rParam = params.get("room") || params.get("room_id") || params.get("id");
+        if (rParam) {
+          const clean = rParam.replace(/Room\s*/i, "").trim().toLowerCase();
+          const found = rooms.find(
+            (r) =>
+              String(r.id) === clean ||
+              r.room_name.toLowerCase().includes(clean)
+          );
+          if (found) {
+            resolvedRoomId = found.id;
+            roomDisplay.value = found.room_name.startsWith("Study Room")
+              ? found.room_name
+              : `Study Room ${found.room_name.replace(/Room\s*/i, "")}`;
+            roomValue.value = found.room_name.replace(/Room\s*/i, "").trim();
+          }
+        }
+      } catch (err) {
+        console.warn("Could not sync rooms in reporting page:", err);
+      }
+    }
+    syncRoomsFromApi();
 
     /* -----------------------------
        Page Elements
@@ -1060,7 +1113,7 @@
 
         const reportData = {
           room_id:
-            ROOM_IDS[roomValue.value],
+            ROOM_IDS[roomValue.value] || resolvedRoomId || Number(roomValue.value) || 1,
 
           noise_type:
             finalNoiseType,

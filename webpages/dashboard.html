@@ -1403,7 +1403,7 @@
 
     /*
      * Room readings state and rendering.
-     * Room 311 / room_id 1 is currently the active prototype room.
+     * Queries /api/rooms dynamically and renders live cards for every room in the database.
      */
     let currentRooms = [];
 
@@ -1413,8 +1413,19 @@
 
       roomCards.innerHTML = "";
 
+      if (currentRooms.length === 0) {
+        roomCards.innerHTML = `
+          <div class="card" style="opacity: 0.7;">
+            No study rooms configured. Add rooms in Settings.
+          </div>
+        `;
+        return;
+      }
+
       currentRooms.forEach(room => {
-        const isActiveRoom = room.room_id === 1;
+        const roomId = room.id || room.room_id;
+        // Dynamically determined: active unless explicitly disabled (is_active === 0)
+        const isActiveRoom = room.is_active !== 0 && room.is_active !== false;
 
         const status = isActiveRoom
           ? room.status_color || "green"
@@ -1449,6 +1460,13 @@
           </span>
         `;
 
+        card.style.cursor = "pointer";
+        card.title = `View in-room display for ${room.room_name}`;
+        card.onclick = () => {
+          const roomNum = room.room_name.replace(/Room\s*/i, "").trim();
+          window.open(`index.html?room=${encodeURIComponent(roomNum)}&room_id=${roomId}`, "_blank");
+        };
+
         roomCards.appendChild(card);
       });
     }
@@ -1462,7 +1480,7 @@
         return;
       }
 
-      const room = currentRooms.find(r => r.room_id === reading.room_id);
+      const room = currentRooms.find(r => (r.room_id || r.id) === reading.room_id);
       if (room) {
         room.level = reading.level;
         room.status_color = reading.status_color;
@@ -1475,24 +1493,24 @@
     }
 
     /*
-     * Load the most recent room readings from the backend.
+     * Load dynamic rooms and their latest readings from the backend.
      */
     async function loadLatestReadings() {
       const roomCards = document.getElementById("roomCards");
 
       try {
         const response = await fetch(
-          `/api/readings/latest?t=${Date.now()}`
+          `/api/rooms?t=${Date.now()}`
         );
 
         if (!response.ok) {
-          throw new Error("Unable to load room readings");
+          throw new Error("Unable to load rooms");
         }
 
         currentRooms = await response.json();
         renderRoomCards();
       } catch (error) {
-        console.error("Error loading readings:", error);
+        console.error("Error loading rooms:", error);
 
         roomCards.innerHTML = `
           <div class="card">
@@ -2118,6 +2136,15 @@
 
         sseSource.addEventListener("incident_resolved", () => {
           loadIncidents();
+        });
+
+        // Room added, renamed, or status toggled
+        sseSource.addEventListener("room_created", () => {
+          loadLatestReadings();
+        });
+
+        sseSource.addEventListener("room_updated", () => {
+          loadLatestReadings();
         });
 
         sseSource.onerror = (err) => {

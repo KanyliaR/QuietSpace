@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     room_name VARCHAR(100) NOT NULL,
     location VARCHAR(255) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
@@ -119,7 +120,7 @@ CREATE TABLE IF NOT EXISTS incidents (
 -- Starter Rooms
 -- -----------------------------------------------------
 
-INSERT IGNORE INTO rooms (id, room_name, location) VALUES
-    (1, 'Room 311', 'Bluford Library 3rd Floor'),
-    (2, 'Room 312', 'Bluford Library 3rd Floor'),
-    (3, 'Room 313', 'Bluford Library 3rd Floor');
+INSERT IGNORE INTO rooms (id, room_name, location, is_active) VALUES
+    (1, 'Room 311', 'Bluford Library 3rd Floor', 1),
+    (2, 'Room 312', 'Bluford Library 3rd Floor', 1),
+    (3, 'Room 313', 'Bluford Library 3rd Floor', 1);
