@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QuietSpace - Room Noise Display</title>
+  <script src="demo-store.js"></script>
 
   <style>
     * {
@@ -558,29 +559,35 @@
 
     async function fetchRoomDetails() {
       try {
-        const res = await fetch(`${API_BASE}/api/rooms`);
-        if (!res.ok) return;
-        const rooms = await res.json();
+        let rooms = [];
+        if (window.QuietSpaceStore) {
+          const res = await QuietSpaceStore.getRooms();
+          rooms = res.rooms;
+        } else {
+          const res = await fetch(`${API_BASE}/api/rooms`);
+          if (res.ok) rooms = await res.json();
+        }
+
         const params = new URLSearchParams(window.location.search);
         const roomIdParam = params.get("room_id") || params.get("id");
         const roomParam = params.get("room");
 
         let matched = null;
         if (roomIdParam) {
-          matched = rooms.find(r => r.id === Number(roomIdParam) || r.room_id === Number(roomIdParam));
+          matched = rooms.find(r => (r.id || r.room_id) === Number(roomIdParam));
         } else if (roomParam) {
           const clean = roomParam.replace(/Room\s*/i, "").trim().toLowerCase();
           matched = rooms.find(r =>
-            String(r.id) === clean ||
+            String(r.id || r.room_id) === clean ||
             (r.room_name && r.room_name.toLowerCase().includes(clean))
           );
         }
 
         if (matched) {
-          updateRoomDisplay(matched.room_name, matched.id);
+          updateRoomDisplay(matched.room_name, matched.id || matched.room_id);
         }
       } catch (err) {
-        console.warn("Could not fetch rooms from API:", err);
+        console.warn("Could not fetch rooms:", err);
       }
     }
 
@@ -834,25 +841,36 @@
         quiet_score: getQuietScore(state)
       };
 
-      try {
-        await fetch(`${API_BASE}/api/readings`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(readingData)
-        });
-
-        console.log(
-          "Sent reading to backend:",
-          readingData
-        );
-      } catch (error) {
-        console.error(
-          "Error sending reading:",
-          error
-        );
+      const api = window.QuietSpaceStore ? QuietSpaceStore.getApiBase() : API_BASE;
+      if (api !== null) {
+        try {
+          await fetch(`${api}/api/readings`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(readingData)
+          });
+        } catch (error) {
+          // Backend unreachable, fallback to local storage
+        }
       }
+
+      // Also update local storage rooms so other demo tabs reflect the reading
+      try {
+        const raw = localStorage.getItem("quietspace_demo_rooms");
+        if (raw) {
+          const rooms = JSON.parse(raw);
+          const target = rooms.find(r => (r.id || r.room_id) === ROOM_ID);
+          if (target) {
+            target.level = level;
+            target.status_color = state;
+            target.quiet_score = getQuietScore(state);
+            target.recorded_at = new Date().toISOString();
+            localStorage.setItem("quietspace_demo_rooms", JSON.stringify(rooms));
+          }
+        }
+      } catch (e) {}
     }
 
 
@@ -1178,23 +1196,19 @@
 
 
     /*
-      Create a new backend incident when the room
+      Create a new incident when the room
       enters the red state.
     */
     async function startIncident() {
-      console.log(
-        "START INCIDENT FIRED"
-      );
-
-      try {
-        const response =
+      const api = window.QuietSpaceStore ? QuietSpaceStore.getApiBase() : API_BASE;
+      if (api !== null) {
+        try {
           await fetch(
-            `${API_BASE}/api/incidents/start`,
+            `${api}/api/incidents/start`,
             {
               method: "POST",
               headers: {
-                "Content-Type":
-                  "application/json"
+                "Content-Type": "application/json"
               },
               body: JSON.stringify({
                 room_id: ROOM_ID,
@@ -1202,71 +1216,109 @@
               })
             }
           );
-
-        const data =
-          await response.json();
-
-        console.log(data);
-      } catch (error) {
-        console.error(
-          "Error starting incident:",
-          error
-        );
+        } catch (error) {
+          console.warn("Backend error starting incident:", error);
+        }
       }
-    }
 
+      // Local demo storage sync
+      try {
+        const raw = localStorage.getItem("quietspace_demo_incidents");
+        const incidents = raw ? JSON.parse(raw) : [];
+        const existing = incidents.find(i => (i.room_id === ROOM_ID || i.room_name === ROOM_NAME) && i.status === "open");
+        if (!existing) {
+          incidents.unshift({
+            id: Date.now(),
+            room_id: ROOM_ID,
+            room_name: ROOM_NAME,
+            status: "open",
+            escalation_count: 1,
+            timer_started_at: new Date().toISOString(),
+            started_at: new Date().toISOString()
+          });
+          localStorage.setItem("quietspace_demo_incidents", JSON.stringify(incidents));
+          if (window.QuietSpaceStore) QuietSpaceStore.broadcastSync("incident_started");
+        }
+      } catch (e) {}
+    }
 
     /*
       Mark the active room incident as resolved.
     */
     async function resolveIncident() {
-      try {
-        await fetch(
-          `${API_BASE}/api/incidents/resolve`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              room_id: ROOM_ID
-            })
-          }
-        );
-      } catch (error) {
-        console.error(
-          "Error resolving incident:",
-          error
-        );
+      const api = window.QuietSpaceStore ? QuietSpaceStore.getApiBase() : API_BASE;
+      if (api !== null) {
+        try {
+          await fetch(
+            `${api}/api/incidents/resolve`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                room_id: ROOM_ID
+              })
+            }
+          );
+        } catch (error) {
+          console.warn("Backend error resolving incident:", error);
+        }
       }
+
+      // Local demo storage sync
+      try {
+        const raw = localStorage.getItem("quietspace_demo_incidents");
+        if (raw) {
+          const incidents = JSON.parse(raw);
+          const active = incidents.find(i => (i.room_id === ROOM_ID || i.room_name === ROOM_NAME) && i.status === "open");
+          if (active) {
+            active.status = "resolved";
+            localStorage.setItem("quietspace_demo_incidents", JSON.stringify(incidents));
+            if (window.QuietSpaceStore) QuietSpaceStore.broadcastSync("incident_resolved");
+          }
+        }
+      } catch (e) {}
     }
 
-
     /*
-      Increase the escalation level of the active
-      room incident.
+      Increase the escalation level of the active room incident.
     */
     async function escalateIncident() {
+      const api = window.QuietSpaceStore ? QuietSpaceStore.getApiBase() : API_BASE;
+      if (api !== null) {
+        try {
+          await fetch(
+            `${api}/api/incidents/escalate`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                room_id: ROOM_ID
+              })
+            }
+          );
+        } catch (error) {
+          console.warn("Backend error escalating incident:", error);
+        }
+      }
+
+      // Local demo storage sync
       try {
-        await fetch(
-          `${API_BASE}/api/incidents/escalate`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              room_id: ROOM_ID
-            })
+        const raw = localStorage.getItem("quietspace_demo_incidents");
+        if (raw) {
+          const incidents = JSON.parse(raw);
+          const active = incidents.find(i => (i.room_id === ROOM_ID || i.room_name === ROOM_NAME) && i.status === "open");
+          if (active) {
+            active.escalation_count = (active.escalation_count || 1) + 1;
+            localStorage.setItem("quietspace_demo_incidents", JSON.stringify(incidents));
+            if (window.QuietSpaceStore) QuietSpaceStore.broadcastSync("incident_escalated");
           }
-        );
-      } catch (error) {
-        console.error(
-          "Error escalating incident:",
-          error
-        );
+        }
+      } catch (e) {}
+    }
       }
     }
 

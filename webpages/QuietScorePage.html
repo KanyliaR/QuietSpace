@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QuietSpace QuietScore Reports</title>
+  <script src="demo-store.js"></script>
 
   <style>
     * {
@@ -1021,15 +1022,19 @@
       document.getElementById("reportsTableBody");
 
     try {
+      if (window.QuietSpaceStore) {
+        const res = await QuietSpaceStore.getIncidents();
+        allIncidents = res.incidents;
+      } else {
+        const response =
+          await fetch(`${API_BASE}/api/incidents?t=${Date.now()}`);
 
-      const response =
-        await fetch(`${API_BASE}/api/incidents?t=${Date.now()}`);
+        if (!response.ok) {
+          throw new Error("Unable to load incidents");
+        }
 
-      if (!response.ok) {
-        throw new Error("Unable to load incidents");
+        allIncidents = await response.json();
       }
-
-      allIncidents = await response.json();
 
       renderPage();
 
@@ -1630,10 +1635,11 @@
 
   loadQuietScoreReports();
 
-  // Real-time incident updates via Server-Sent Events (SSE)
-  if (window.EventSource) {
+  // Real-time incident updates via Server-Sent Events (SSE) or local storage sync
+  const api = window.QuietSpaceStore ? QuietSpaceStore.getApiBase() : API_BASE;
+  if (api !== null && window.EventSource) {
     try {
-      const sseSource = new EventSource(`${API_BASE}/api/events`);
+      const sseSource = new EventSource(`${api}/api/events`);
       const refreshEvents = [
         "incident_started",
         "incident_escalated",
@@ -1648,6 +1654,16 @@
       console.warn("SSE connection error on QuietScore page:", e);
     }
   }
+
+  // Cross-tab synchronization via localStorage events
+  window.addEventListener("storage", (e) => {
+    if (e.key === "quietspace_demo_incidents" || e.key === "quietspace_sync_ping") {
+      loadQuietScoreReports();
+    }
+  });
+  window.addEventListener("quietspace:sync", () => {
+    loadQuietScoreReports();
+  });
 
 </script>
 
