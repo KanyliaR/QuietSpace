@@ -269,4 +269,49 @@ describe("Server-Sent Events (SSE) Stream (/api/events)", () => {
       }, 50);
     });
   });
+
+  test("broadcasts 'room_created' and 'room_updated' events over SSE", (done) => {
+    let step = 0;
+    const req = http.get(`${baseUrl}/api/events`, (res) => {
+      let buffer = "";
+
+      res.on("data", (chunk) => {
+        buffer += chunk.toString();
+
+        if (step === 0 && buffer.includes("event: room_created")) {
+          expect(buffer).toContain('"room_name":"Room 315"');
+          step = 1;
+          buffer = "";
+
+          // Toggle room status
+          mockQuery
+            .mockImplementationOnce((sql, params, callback) => {
+              callback(null, { affectedRows: 1 });
+            })
+            .mockImplementationOnce((sql, params, callback) => {
+              callback(null, [{ id: 5, room_name: "Room 315", location: "3rd Floor", is_active: 0 }]);
+            });
+
+          request(baseUrl)
+            .patch("/api/rooms/5/toggle")
+            .catch(done);
+        } else if (step === 1 && buffer.includes("event: room_updated")) {
+          expect(buffer).toContain('"room_id":5');
+          expect(buffer).toContain('"is_active":0');
+          req.destroy();
+          done();
+        }
+      });
+
+      setTimeout(async () => {
+        mockQuery.mockImplementationOnce((sql, params, callback) => {
+          callback(null, { insertId: 5, affectedRows: 1 });
+        });
+
+        await request(baseUrl)
+          .post("/api/rooms")
+          .send({ room_name: "Room 315", location: "3rd Floor" });
+      }, 50);
+    });
+  });
 });
