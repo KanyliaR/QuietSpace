@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QuietSpace Staff Dashboard</title>
+  <script src="demo-store.js"></script>
 
   <style>
     * {
@@ -1326,6 +1327,16 @@
       window.location.replace("login.html?redirect=dashboard&restricted=1");
     }
 
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
     const API_BASE = (window.location.protocol === "http:" || window.location.protocol === "https:") && window.location.port === "3000"
       ? ""
       : "http://localhost:3000";
@@ -1342,13 +1353,15 @@
       const tableBody = document.getElementById("reportsTableBody");
 
       try {
-        const response = await fetch(`${API_BASE}/api/reports?t=${Date.now()}`);
-
-        if (!response.ok) {
-          throw new Error("Unable to load reports");
+        let reports = [];
+        if (window.QuietSpaceStore) {
+          const res = await QuietSpaceStore.getReports();
+          reports = res.reports;
+        } else {
+          const response = await fetch(`${API_BASE}/api/reports?t=${Date.now()}`);
+          if (!response.ok) throw new Error("Unable to load reports");
+          reports = await response.json();
         }
-
-        const reports = await response.json();
 
         if (
           lastReportCount !== null &&
@@ -1377,7 +1390,7 @@
           const row = document.createElement("tr");
 
           row.innerHTML = `
-            <td>${report.room_name}</td>
+            <td>${escapeHtml(report.room_name)}</td>
             <td>${formatText(report.noise_type)}</td>
             <td>${buildSeverityBadge(report.severity)}</td>
             <td>${buildCommentCell(report.comments)}</td>
@@ -1503,15 +1516,19 @@
       const roomCards = document.getElementById("roomCards");
 
       try {
-        const response = await fetch(
-          `${API_BASE}/api/rooms?t=${Date.now()}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Unable to load rooms");
+        if (window.QuietSpaceStore) {
+          const res = await QuietSpaceStore.getRooms();
+          currentRooms = res.rooms;
+        } else {
+          const response = await fetch(
+            `${API_BASE}/api/rooms?t=${Date.now()}`
+          );
+          if (!response.ok) {
+            throw new Error("Unable to load rooms");
+          }
+          currentRooms = await response.json();
         }
 
-        currentRooms = await response.json();
         renderRoomCards();
       } catch (error) {
         console.error("Error loading rooms:", error);
@@ -1532,15 +1549,19 @@
         document.getElementById("incidentsTableBody");
 
       try {
-        const response = await fetch(
-          `${API_BASE}/api/incidents?t=${Date.now()}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Unable to load incidents");
+        let incidents = [];
+        if (window.QuietSpaceStore) {
+          const res = await QuietSpaceStore.getIncidents();
+          incidents = res.incidents;
+        } else {
+          const response = await fetch(
+            `${API_BASE}/api/incidents?t=${Date.now()}`
+          );
+          if (!response.ok) {
+            throw new Error("Unable to load incidents");
+          }
+          incidents = await response.json();
         }
-
-        const incidents = await response.json();
 
         const toast = document.getElementById("toast");
         const activeToastIncidentId =
@@ -1588,7 +1609,7 @@
             incident.escalation_count >= 3
           ) {
             showToast(
-              `${incident.room_name} remains excessively loud.\nImmediate staff attention recommended.`,
+              `${escapeHtml(incident.room_name)} remains excessively loud.\nImmediate staff attention recommended.`,
               incident.id
             );
           }
@@ -1608,13 +1629,13 @@
           );
 
           row.innerHTML = `
-            <td>${incident.room_name}</td>
+            <td>${escapeHtml(incident.room_name)}</td>
             <td>
               <span class="status ${statusClass}">
                 ${formatText(incident.status)}
               </span>
             </td>
-            <td class="incident-timer-cell" data-timer-started="${incident.timer_started_at || ''}" data-incident-status="${incident.status}">${incident.timer_remaining || "Completed"}</td>
+            <td class="incident-timer-cell" data-timer-started="${incident.timer_started_at || incident.started_at || ''}" data-incident-status="${incident.status}">${incident.timer_remaining || "Completed"}</td>
             <td>${formatTimeOnly(incident.started_at)}</td>
             <td class="priority ${priorityLabel.className}">
               ${priorityLabel.text}
@@ -1975,21 +1996,25 @@
         `status-select status-${newStatus}`;
 
       try {
-        const response = await fetch(
-          `${API_BASE}/api/reports/${reportId}/status`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              report_status: newStatus
-            })
-          }
-        );
+        if (window.QuietSpaceStore) {
+          await QuietSpaceStore.updateReportStatus(reportId, newStatus);
+        } else {
+          const response = await fetch(
+            `${API_BASE}/api/reports/${reportId}/status`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                report_status: newStatus
+              })
+            }
+          );
 
-        if (!response.ok) {
-          throw new Error("Status update failed");
+          if (!response.ok) {
+            throw new Error("Status update failed");
+          }
         }
 
         setTimeout(async () => {
@@ -2062,27 +2087,19 @@
      * and noise reports (< 50ms latency, zero polling load).
      */
     let sseSource = null;
+    let demoJitterInterval = null;
 
     function initSSE() {
-      if (!window.EventSource) {
-        console.warn("Server-Sent Events not supported by this browser.");
-        return;
-      }
-
-      if (sseSource) {
-        sseSource.close();
-      }
-
       const badge = document.getElementById("liveStatusBadge");
       const dot = document.getElementById("liveDot");
       const text = document.getElementById("liveStatusText");
 
-      function setLiveStatus(connected) {
+      function setLiveStatus(connected, label = "Live Feed") {
         if (!badge) return;
         if (connected) {
           badge.classList.remove("disconnected");
           if (dot) dot.classList.add("pulse");
-          if (text) text.textContent = "Live Feed";
+          if (text) text.textContent = label;
         } else {
           badge.classList.add("disconnected");
           if (dot) dot.classList.remove("pulse");
@@ -2090,16 +2107,51 @@
         }
       }
 
+      function startDemoSimulation() {
+        setLiveStatus(true, "Demo Mode (Active)");
+        if (demoJitterInterval) clearInterval(demoJitterInterval);
+        demoJitterInterval = setInterval(() => {
+          if (currentRooms && currentRooms.length > 0) {
+            currentRooms.forEach(room => {
+              if (room.is_active !== 0 && room.is_active !== false) {
+                const jitter = (Math.random() * 4 - 2);
+                const base = (room.room_name && room.room_name.includes("313")) ? 53 : 44;
+                room.level = Math.round(Math.max(34, Math.min(74, base + jitter)));
+                room.status_color = room.level >= 60 ? "red" : (room.level >= 50 ? "yellow" : "green");
+                room.recorded_at = new Date().toISOString();
+              }
+            });
+            renderRoomCards();
+          }
+        }, 4000);
+      }
+
+      // If in demo mode (GitHub Pages or no API), activate simulated live feed immediately
+      const api = window.QuietSpaceStore ? QuietSpaceStore.getApiBase() : API_BASE;
+      if (api === null || (window.QuietSpaceStore && QuietSpaceStore.isGitHubPages() && !QuietSpaceStore.getCustomApiUrl())) {
+        startDemoSimulation();
+        return;
+      }
+
+      if (!window.EventSource) {
+        startDemoSimulation();
+        return;
+      }
+
+      if (sseSource) {
+        sseSource.close();
+      }
+
       try {
-        sseSource = new EventSource(`${API_BASE}/api/events`);
+        sseSource = new EventSource(`${api}/api/events`);
 
         sseSource.onopen = () => {
           console.log("SSE connected: Real-time event stream active.");
-          setLiveStatus(true);
+          setLiveStatus(true, "Live Feed");
         };
 
         sseSource.addEventListener("connected", () => {
-          setLiveStatus(true);
+          setLiveStatus(true, "Live Feed");
         });
 
         // Instant update for room sound reading (0 DB query overhead)
@@ -2152,14 +2204,30 @@
         });
 
         sseSource.onerror = (err) => {
-          console.warn("SSE connection interrupted. EventSource will automatically retry...", err);
-          setLiveStatus(false);
+          console.warn("SSE connection interrupted. Falling back to client-side mode...", err);
+          startDemoSimulation();
         };
       } catch (err) {
         console.error("Failed to initialize SSE:", err);
-        setLiveStatus(false);
+        startDemoSimulation();
       }
     }
+
+    // Cross-tab synchronization via localStorage events
+    window.addEventListener("storage", (e) => {
+      if (
+        e.key === "quietspace_demo_reports" ||
+        e.key === "quietspace_demo_rooms" ||
+        e.key === "quietspace_demo_incidents" ||
+        e.key === "quietspace_sync_ping"
+      ) {
+        refreshDashboard();
+      }
+    });
+
+    window.addEventListener("quietspace:sync", () => {
+      refreshDashboard();
+    });
 
     /*
      * Initial dashboard bootstrap & real-time subscriptions.

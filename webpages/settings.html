@@ -870,22 +870,8 @@
       border-bottom: none;
     }
   </style>
+  <script src="demo-store.js"></script>
   <script>
-    /*
-     * Prototype Authentication Guard: Authorized personnel only
-     * Requires valid login session from login.html.
-     */
-    (function () {
-      const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
-      const expiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
-
-      if (!isLoggedIn || (expiresAt > 0 && Date.now() > expiresAt)) {
-        localStorage.removeItem("quietspaceLoggedIn");
-        localStorage.removeItem("quietspaceSessionExpiresAt");
-        window.location.replace("login.html?redirect=settings&restricted=1");
-      }
-    })();
-
     /*
      * Prototype Authentication Guard: Authorized personnel only
      * Requires valid login session from login.html.
@@ -1100,8 +1086,13 @@
         </div>
 
         <!-- Room Management Sub-Section -->
-        <div class="room-mgmt-header" style="margin-top: 26px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
-          <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--section-title);">Configured Study Rooms</h4>
+        <div class="room-mgmt-header" style="margin-top: 26px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--section-title);">Configured Study Rooms</h4>
+            <span id="backendBadge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--card-border); background: rgba(255, 255, 255, 0.05); color: var(--text-muted);">
+              Detecting environment...
+            </span>
+          </div>
           <span style="font-size: 0.84rem; color: var(--text-muted);" id="roomCountSummary">Loading rooms...</span>
         </div>
 
@@ -1155,6 +1146,43 @@
             </button>
           </div>
           <div id="addRoomError" class="error-text" style="display: none; margin-top: 8px;"></div>
+        </div>
+
+        <!-- Cloud Backend Settings (Optional for GitHub Pages) -->
+        <div style="margin-top: 14px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px 16px;">
+          <details style="cursor: pointer;">
+            <summary style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; outline: none; user-select: none;">
+              ⚙️ Cloud Backend Connection (Optional for GitHub Pages)
+            </summary>
+            <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+              <input
+                type="url"
+                class="input-box"
+                id="customApiUrlInput"
+                placeholder="https://your-quietspace-api.onrender.com"
+                style="flex: 1; min-width: 250px; padding: 8px 12px; font-size: 0.85rem;"
+              />
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="saveCustomApiUrl()"
+                style="padding: 8px 14px; font-size: 0.85rem;"
+              >
+                Save Server URL
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="resetApiUrl()"
+                style="padding: 8px 14px; font-size: 0.85rem;"
+              >
+                Reset to Auto
+              </button>
+            </div>
+            <p style="margin-top: 6px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+              QuietSpace operates in client-side Demo Mode with localStorage on GitHub Pages. If you have deployed the Node.js backend to a public HTTPS host (e.g. Render, Railway, Fly.io), enter the URL above to connect live.
+            </p>
+          </details>
         </div>
       </section>
 
@@ -1655,21 +1683,46 @@
     // ----------------------------------------------------
     // Dynamic Room Management (Add, Rename, Toggle Status)
     // ----------------------------------------------------
-    const API_BASE = (window.location.protocol === "http:" || window.location.protocol === "https:") && window.location.port === "3000"
-      ? ""
-      : "http://localhost:3000";
-
     let cachedRooms = [];
+
+    function updateBackendBadge(isLive) {
+      const badge = document.getElementById("backendBadge");
+      if (!badge) return;
+      if (isLive) {
+        badge.innerHTML = `<span style="color:#2ecc71;">●</span> Live Database (MySQL Connected)`;
+        badge.style.background = "rgba(46, 204, 113, 0.15)";
+        badge.style.borderColor = "#2ecc71";
+        badge.style.color = "#2ecc71";
+      } else {
+        badge.innerHTML = `<span style="color:#f39c12;">●</span> Demo Mode (Local Storage - GitHub Pages)`;
+        badge.style.background = "rgba(243, 156, 18, 0.15)";
+        badge.style.borderColor = "#f39c12";
+        badge.style.color = "#f39c12";
+      }
+    }
 
     async function loadRoomsList() {
       const tbody = document.getElementById("roomsTableBody");
       const summary = document.getElementById("roomCountSummary");
       const roomAmountInput = document.getElementById("room-amount");
+      const customUrlInput = document.getElementById("customApiUrlInput");
+
+      if (customUrlInput && window.QuietSpaceStore) {
+        customUrlInput.value = QuietSpaceStore.getCustomApiUrl();
+      }
 
       try {
-        const res = await fetch(`${API_BASE}/api/rooms?t=${Date.now()}`);
-        if (!res.ok) throw new Error("Failed to load rooms");
-        cachedRooms = await res.json();
+        let result = { rooms: [], source: 'demo' };
+        if (window.QuietSpaceStore) {
+          result = await QuietSpaceStore.getRooms();
+        } else {
+          const res = await fetch("http://localhost:3000/api/rooms");
+          result.rooms = await res.json();
+          result.source = "database";
+        }
+
+        cachedRooms = result.rooms;
+        updateBackendBadge(result.source === "database");
 
         if (roomAmountInput) {
           roomAmountInput.value = cachedRooms.length;
@@ -1684,7 +1737,7 @@
           tbody.innerHTML = `
             <tr>
               <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 22px;">
-                No rooms found in database. Add a room below.
+                No rooms found. Add a study room below.
               </td>
             </tr>
           `;
@@ -1743,11 +1796,12 @@
         }).join("");
       } catch (err) {
         console.error("Error loading rooms:", err);
+        updateBackendBadge(false);
         if (tbody) {
           tbody.innerHTML = `
             <tr>
               <td colspan="5" style="text-align: center; color: #dc3545; padding: 20px;">
-                Error connecting to database to load rooms.
+                Unable to load rooms.
               </td>
             </tr>
           `;
@@ -1784,26 +1838,27 @@
       }
 
       try {
-        const res = await fetch(`${API_BASE}/api/rooms`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ room_name: roomName, location })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.message || "Failed to create room");
+        let result;
+        if (window.QuietSpaceStore) {
+          result = await QuietSpaceStore.addRoom(roomName, location);
+        } else {
+          const res = await fetch("http://localhost:3000/api/rooms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ room_name: roomName, location })
+          });
+          result = await res.json();
         }
 
         nameInput.value = "";
         locInput.value = "";
-        showAlert(`Room "${roomName}" created successfully!`, "success");
+        const note = result && result.source === 'demo' ? ' (Saved to demo storage)' : '';
+        showAlert(`Room "${roomName}" created successfully!${note}`, "success");
         await loadRoomsList();
       } catch (err) {
-        errorDiv.textContent = err.message;
+        errorDiv.textContent = err.message || "Failed to add room";
         errorDiv.style.display = "block";
-        showAlert(err.message, "error");
+        showAlert(err.message || "Failed to add room", "error");
       }
     }
 
@@ -1874,42 +1929,82 @@
       }
 
       try {
-        const res = await fetch(`${API_BASE}/api/rooms/${roomId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        let result;
+        if (window.QuietSpaceStore) {
+          result = await QuietSpaceStore.updateRoom(roomId, {
             room_name: newName,
             location: newLoc
-          })
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.message || "Failed to update room");
+          });
+        } else {
+          const res = await fetch(`http://localhost:3000/api/rooms/${roomId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ room_name: newName, location: newLoc })
+          });
+          result = await res.json();
         }
 
-        showAlert(`Room updated to "${newName}"!`, "success");
+        const note = result && result.source === 'demo' ? ' (Demo storage)' : '';
+        showAlert(`Room updated to "${newName}"!${note}`, "success");
         await loadRoomsList();
       } catch (err) {
-        showAlert(err.message, "error");
+        showAlert(err.message || "Failed to update room", "error");
       }
     }
 
     async function toggleRoomStatus(roomId) {
       try {
-        const res = await fetch(`${API_BASE}/api/rooms/${roomId}/toggle`, {
-          method: "PATCH"
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.message || "Failed to toggle status");
+        let result;
+        if (window.QuietSpaceStore) {
+          result = await QuietSpaceStore.toggleRoomStatus(roomId);
+        } else {
+          const res = await fetch(`http://localhost:3000/api/rooms/${roomId}/toggle`, { method: "PATCH" });
+          result = await res.json();
         }
 
-        const isAct = data.room && (data.room.is_active === 1 || data.room.is_active === true);
+        const room = result.room || result;
+        const isAct = room && (room.is_active === 1 || room.is_active === true);
         showAlert(`Room status updated to ${isAct ? 'Active' : 'Inactive'}!`, "info");
         await loadRoomsList();
       } catch (err) {
+        showAlert(err.message || "Failed to toggle status", "error");
+      }
+    }
+
+    function saveCustomApiUrl() {
+      const input = document.getElementById("customApiUrlInput");
+      const val = input ? input.value.trim() : "";
+      if (window.QuietSpaceStore) {
+        QuietSpaceStore.setCustomApiUrl(val);
+        if (val) {
+          showAlert("Custom Cloud API saved! Testing connection...", "info");
+        } else {
+          showAlert("Reset to automatic backend detection.", "info");
+        }
+        loadRoomsList();
+      }
+    }
+
+    function resetApiUrl() {
+      const input = document.getElementById("customApiUrlInput");
+      if (input) input.value = "";
+      if (window.QuietSpaceStore) {
+        QuietSpaceStore.setCustomApiUrl("");
+        showAlert("Reset to automatic backend detection.", "info");
+        loadRoomsList();
+      }
+    }
+
+    // Cross-tab synchronization
+    window.addEventListener("storage", (e) => {
+      if (e.key === "quietspace_demo_rooms" || e.key === "quietspace_sync_ping") {
+        loadRoomsList();
+      }
+    });
+
+    window.addEventListener("quietspace:sync", () => {
+      loadRoomsList();
+    });
         showAlert(err.message, "error");
       }
     }

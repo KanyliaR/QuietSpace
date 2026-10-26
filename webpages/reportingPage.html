@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>QuietSpace - Submit a Noise Report</title>
+  <script src="demo-store.js"></script>
 
   <style>
     * {
@@ -911,17 +912,22 @@
     const room =
       getRoomFromURL();
 
-    // Async sync with database rooms
+    // Async sync with database rooms or local demo storage
     async function syncRoomsFromApi() {
       try {
-        const res = await fetch(`${API_BASE}/api/rooms`);
-        if (!res.ok) return;
-        const rooms = await res.json();
+        let rooms = [];
+        if (window.QuietSpaceStore) {
+          const res = await QuietSpaceStore.getRooms();
+          rooms = res.rooms;
+        } else {
+          const res = await fetch(`${API_BASE}/api/rooms`);
+          if (res.ok) rooms = await res.json();
+        }
         rooms.forEach((r) => {
           const cleanName = r.room_name.replace(/Room\s*/i, "").trim();
-          ROOM_IDS[cleanName] = r.id;
-          ROOM_IDS[r.room_name] = r.id;
-          ROOM_IDS[String(r.id)] = r.id;
+          ROOM_IDS[cleanName] = r.id || r.room_id;
+          ROOM_IDS[r.room_name] = r.id || r.room_id;
+          ROOM_IDS[String(r.id || r.room_id)] = r.id || r.room_id;
         });
 
         const params = new URLSearchParams(window.location.search);
@@ -930,11 +936,11 @@
           const clean = rParam.replace(/Room\s*/i, "").trim().toLowerCase();
           const found = rooms.find(
             (r) =>
-              String(r.id) === clean ||
-              r.room_name.toLowerCase().includes(clean)
+              String(r.id || r.room_id) === clean ||
+              (r.room_name && r.room_name.toLowerCase().includes(clean))
           );
           if (found) {
-            resolvedRoomId = found.id;
+            resolvedRoomId = found.id || found.room_id;
             roomDisplay.value = found.room_name.startsWith("Study Room")
               ? found.room_name
               : `Study Room ${found.room_name.replace(/Room\s*/i, "")}`;
@@ -1130,44 +1136,35 @@
         };
 
         try {
-
           /*
-            Send report to QuietSpace backend.
+            Send report to QuietSpace backend or local storage
           */
-
-          const response =
-            await fetch(
+          if (window.QuietSpaceStore) {
+            await QuietSpaceStore.addReport(reportData);
+          } else {
+            const response = await fetch(
               `${API_BASE}/api/reports`,
               {
                 method: "POST",
-
                 headers: {
-                  "Content-Type":
-                    "application/json"
+                  "Content-Type": "application/json"
                 },
-
-                body:
-                  JSON.stringify(
-                    reportData
-                  )
+                body: JSON.stringify(reportData)
               }
             );
 
-          if (!response.ok) {
-            throw new Error(
-              "Report submission failed"
-            );
+            if (!response.ok) {
+              throw new Error("Report submission failed");
+            }
           }
 
           /*
             Report successfully saved.
             Transform the existing card.
           */
-
           showConfirmation();
 
         } catch (error) {
-
           console.error(
             "Error submitting report:",
             error
@@ -1177,7 +1174,6 @@
             Keep the form available if the
             request fails.
           */
-
           errorMessage.style.display =
             "block";
 
