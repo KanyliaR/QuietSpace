@@ -481,6 +481,10 @@
       Reads room number or ID dynamically from the URL query parameter
       (e.g., ?room=312 or ?room_id=2), matching what reportingPage.html supports.
     */
+    const API_BASE = (window.location.protocol === "http:" || window.location.protocol === "https:") && window.location.port === "3000"
+      ? ""
+      : "http://localhost:3000";
+
     const DEFAULT_ROOM_IDS = {
       "311": 1,
       "312": 2,
@@ -554,7 +558,7 @@
 
     async function fetchRoomDetails() {
       try {
-        const res = await fetch("/api/rooms");
+        const res = await fetch(`${API_BASE}/api/rooms`);
         if (!res.ok) return;
         const rooms = await res.json();
         const params = new URLSearchParams(window.location.search);
@@ -831,7 +835,7 @@
       };
 
       try {
-        await fetch("/api/readings", {
+        await fetch(`${API_BASE}/api/readings`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -1185,7 +1189,7 @@
       try {
         const response =
           await fetch(
-            "/api/incidents/start",
+            `${API_BASE}/api/incidents/start`,
             {
               method: "POST",
               headers: {
@@ -1218,7 +1222,7 @@
     async function resolveIncident() {
       try {
         await fetch(
-          "/api/incidents/resolve",
+          `${API_BASE}/api/incidents/resolve`,
           {
             method: "POST",
             headers: {
@@ -1246,7 +1250,7 @@
     async function escalateIncident() {
       try {
         await fetch(
-          "/api/incidents/escalate",
+          `${API_BASE}/api/incidents/escalate`,
           {
             method: "POST",
             headers: {

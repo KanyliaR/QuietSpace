@@ -866,6 +866,10 @@
        Room Configuration
     ----------------------------- */
 
+    const API_BASE = (window.location.protocol === "http:" || window.location.protocol === "https:") && window.location.port === "3000"
+      ? ""
+      : "http://localhost:3000";
+
     const ROOM_IDS = {
       "311": 1,
       "312": 2,
@@ -910,7 +914,7 @@
     // Async sync with database rooms
     async function syncRoomsFromApi() {
       try {
-        const res = await fetch("/api/rooms");
+        const res = await fetch(`${API_BASE}/api/rooms`);
         if (!res.ok) return;
         const rooms = await res.json();
         rooms.forEach((r) => {
@@ -1133,7 +1137,7 @@
 
           const response =
             await fetch(
-              "/api/reports",
+              `${API_BASE}/api/reports`,
               {
                 method: "POST",
 
