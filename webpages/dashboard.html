@@ -1326,6 +1326,10 @@
       window.location.replace("login.html?redirect=dashboard&restricted=1");
     }
 
+    const API_BASE = (window.location.protocol === "http:" || window.location.protocol === "https:") && window.location.port === "3000"
+      ? ""
+      : "http://localhost:3000";
+
     let lastReportCount = null;
     let newReportNoticeTimeout = null;
     let pendingReportNoticeCount = 0;
@@ -1338,7 +1342,7 @@
       const tableBody = document.getElementById("reportsTableBody");
 
       try {
-        const response = await fetch(`/api/reports?t=${Date.now()}`);
+        const response = await fetch(`${API_BASE}/api/reports?t=${Date.now()}`);
 
         if (!response.ok) {
           throw new Error("Unable to load reports");
@@ -1500,7 +1504,7 @@
 
       try {
         const response = await fetch(
-          `/api/rooms?t=${Date.now()}`
+          `${API_BASE}/api/rooms?t=${Date.now()}`
         );
 
         if (!response.ok) {
@@ -1529,7 +1533,7 @@
 
       try {
         const response = await fetch(
-          `/api/incidents?t=${Date.now()}`
+          `${API_BASE}/api/incidents?t=${Date.now()}`
         );
 
         if (!response.ok) {
@@ -1972,7 +1976,7 @@
 
       try {
         const response = await fetch(
-          `/api/reports/${reportId}/status`,
+          `${API_BASE}/api/reports/${reportId}/status`,
           {
             method: "PUT",
             headers: {
@@ -2087,7 +2091,7 @@
       }
 
       try {
-        sseSource = new EventSource("/api/events");
+        sseSource = new EventSource(`${API_BASE}/api/events`);
 
         sseSource.onopen = () => {
           console.log("SSE connected: Real-time event stream active.");

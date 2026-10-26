@@ -1011,6 +1011,9 @@
 
   let selectedDate = null;
 
+  const API_BASE = (window.location.protocol === "http:" || window.location.protocol === "https:") && window.location.port === "3000"
+    ? ""
+    : "http://localhost:3000";
 
   async function loadQuietScoreReports() {
 
@@ -1020,7 +1023,7 @@
     try {
 
       const response =
-        await fetch(`/api/incidents?t=${Date.now()}`);
+        await fetch(`${API_BASE}/api/incidents?t=${Date.now()}`);
 
       if (!response.ok) {
         throw new Error("Unable to load incidents");
@@ -1630,7 +1633,7 @@
   // Real-time incident updates via Server-Sent Events (SSE)
   if (window.EventSource) {
     try {
-      const sseSource = new EventSource("/api/events");
+      const sseSource = new EventSource(`${API_BASE}/api/events`);
       const refreshEvents = [
         "incident_started",
         "incident_escalated",
