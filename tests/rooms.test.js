@@ -341,4 +341,127 @@ describe("Rooms API (/api/rooms)", () => {
       expect(res.body.room.is_active).toBe(1);
     });
   });
+
+  describe("PUT /api/rooms/:id/thresholds", () => {
+    test("returns 400 when yellow or red threshold is missing or invalid", async () => {
+      const res1 = await request(app)
+        .put("/api/rooms/1/thresholds")
+        .send({});
+      expect(res1.status).toBe(400);
+      expect(res1.body.message).toMatch(/yellow threshold must be a valid number/i);
+
+      const res2 = await request(app)
+        .put("/api/rooms/1/thresholds")
+        .send({ yellow_threshold: 60 });
+      expect(res2.status).toBe(400);
+      expect(res2.body.message).toMatch(/red threshold must be a valid number/i);
+
+      const res3 = await request(app)
+        .put("/api/rooms/1/thresholds")
+        .send({ yellow_threshold: -5, red_threshold: 70 });
+      expect(res3.status).toBe(400);
+    });
+
+    test("returns 400 when red threshold is not strictly higher than yellow", async () => {
+      const res1 = await request(app)
+        .put("/api/rooms/1/thresholds")
+        .send({ yellow_threshold: 75, red_threshold: 60 });
+      expect(res1.status).toBe(400);
+      expect(res1.body.message).toMatch(/must be strictly higher than yellow threshold/i);
+
+      const res2 = await request(app)
+        .put("/api/rooms/1/thresholds")
+        .send({ yellow_threshold: 70, red_threshold: 70 });
+      expect(res2.status).toBe(400);
+      expect(res2.body.message).toMatch(/must be strictly higher than yellow threshold/i);
+    });
+
+    test("returns 404 when target room is not found", async () => {
+      mockQuery.mockImplementation((sql, params, callback) => {
+        callback(null, { affectedRows: 0 });
+      });
+
+      const res = await request(app)
+        .put("/api/rooms/999/thresholds")
+        .send({ yellow_threshold: 55, red_threshold: 70 });
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toMatch(/room not found/i);
+    });
+
+    test("returns 500 when database update fails", async () => {
+      mockQuery.mockImplementation((sql, params, callback) => {
+        callback(new Error("Database failure"), null);
+      });
+
+      const res = await request(app)
+        .put("/api/rooms/1/thresholds")
+        .send({ yellow_threshold: 55, red_threshold: 70 });
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toMatch(/error updating room thresholds/i);
+    });
+
+    test("returns 200, updates thresholds, and broadcasts SSE event", async () => {
+      const mockClient = { write: jest.fn() };
+      sseClients.add(mockClient);
+
+      mockQuery.mockImplementation((sql, params, callback) => {
+        expect(sql).toContain("yellow_threshold = ?");
+        expect(sql).toContain("red_threshold = ?");
+        expect(params).toEqual([55, 72, "1"]);
+        callback(null, { affectedRows: 1 });
+      });
+
+      const res = await request(app)
+        .put("/api/rooms/1/thresholds")
+        .send({ yellow_threshold: 55, red_threshold: 72 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toMatch(/room thresholds updated successfully/i);
+      expect(res.body.room.id).toBe(1);
+      expect(res.body.room.yellow_threshold).toBe(55);
+      expect(res.body.room.red_threshold).toBe(72);
+
+      expect(mockClient.write).toHaveBeenCalled();
+      const ssePayloads = mockClient.write.mock.calls.map(c => c[0]).join("\n");
+      expect(ssePayloads).toContain("event: thresholds_updated");
+      expect(ssePayloads).toContain('"yellow_threshold":55');
+      expect(ssePayloads).toContain('"red_threshold":72');
+    });
+  });
+
+  describe("POST /api/rooms with custom thresholds", () => {
+    test("returns 400 when invalid thresholds are supplied", async () => {
+      const res = await request(app)
+        .post("/api/rooms")
+        .send({
+          room_name: "Room 320",
+          yellow_threshold: 80,
+          red_threshold: 60
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/strictly higher than yellow/i);
+    });
+
+    test("returns 201 with saved custom thresholds", async () => {
+      mockQuery.mockImplementation((sql, params, callback) => {
+        expect(params).toEqual(["Room 320", "Bluford Library", 1, 50, 68]);
+        callback(null, { insertId: 7, affectedRows: 1 });
+      });
+
+      const res = await request(app)
+        .post("/api/rooms")
+        .send({
+          room_name: "Room 320",
+          yellow_threshold: 50,
+          red_threshold: 68
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.room.yellow_threshold).toBe(50);
+      expect(res.body.room.red_threshold).toBe(68);
+    });
+  });
 });

@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     room_name VARCHAR(100) NOT NULL,
     location VARCHAR(255) NOT NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
+    yellow_threshold INT UNSIGNED NOT NULL DEFAULT 60,
+    red_threshold INT UNSIGNED NOT NULL DEFAULT 75,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id),
@@ -120,7 +122,16 @@ CREATE TABLE IF NOT EXISTS incidents (
 -- Starter Rooms
 -- -----------------------------------------------------
 
-INSERT IGNORE INTO rooms (id, room_name, location, is_active) VALUES
-    (1, 'Room 311', 'Bluford Library 3rd Floor', 1),
-    (2, 'Room 312', 'Bluford Library 3rd Floor', 1),
-    (3, 'Room 313', 'Bluford Library 3rd Floor', 1);
+INSERT IGNORE INTO rooms (id, room_name, location, is_active, yellow_threshold, red_threshold) VALUES
+    (1, 'Room 311', 'Bluford Library 3rd Floor', 1, 60, 75),
+    (2, 'Room 312', 'Bluford Library 3rd Floor', 1, 60, 75),
+    (3, 'Room 313', 'Bluford Library 3rd Floor', 1, 60, 75);
+
+
+-- -----------------------------------------------------
+-- Starter Staff User
+-- Default credentials: staff@quietspace.com / quiet123
+-- -----------------------------------------------------
+
+INSERT IGNORE INTO staff_users (id, name, email, password_hash) VALUES
+    (1, 'Library Staff', 'staff@quietspace.com', '$2b$10$1IZtB2cTkjXbdXZ98JnPju9EgVESKOrx..XBaRgzL8zNNAh3n7cyu');
