@@ -1650,6 +1650,17 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 
+        // Persist thresholds to database for active room
+        if (window.QuietSpaceStore && typeof QuietSpaceStore.updateRoomThresholds === "function") {
+          QuietSpaceStore.updateRoomThresholds(1, yellow, red).catch(() => {});
+        } else {
+          fetch("http://localhost:3000/api/rooms/1/thresholds", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ yellow_threshold: yellow, red_threshold: red })
+          }).catch(() => {});
+        }
+
         const date = new Date(updated.lastSaved);
         document.getElementById("lastSavedText").textContent =
           `Last saved: ${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;

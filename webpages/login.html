@@ -375,7 +375,7 @@
       messageBox.className = `message-box ${type}`;
     }
 
-    loginForm.addEventListener("submit", function (event) {
+    loginForm.addEventListener("submit", async function (event) {
       event.preventDefault();
 
       const email =
@@ -403,34 +403,89 @@
         }
       }
 
-      if (
-        email === "staff@quietspace.com" &&
-        password === "quiet123"
-      ) {
-        localStorage.removeItem("quietspaceFailedAttempts");
-        localStorage.removeItem("quietspaceLockoutUntil");
+      const submitBtn = loginForm.querySelector("button[type='submit']");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Signing In...";
+      }
 
-        const autoLoginHours = Number(settings.autoLoginHours) || 24;
-        const expiresAt = Date.now() + autoLoginHours * 60 * 60 * 1000;
+      try {
+        let authResult = null;
+        let isSuccess = false;
 
-        localStorage.setItem(
-          "quietspaceLoggedIn",
-          "true"
-        );
-        localStorage.setItem(
-          "quietspaceSessionExpiresAt",
-          String(expiresAt)
-        );
+        // Try real backend authentication POST /api/auth/login
+        try {
+          const apiBase = window.QuietSpaceStore && typeof QuietSpaceStore.getApiBase === "function"
+            ? QuietSpaceStore.getApiBase()
+            : "";
+          const loginUrl = apiBase ? `${apiBase}/api/auth/login` : "/api/auth/login";
 
-        const redirectParam = new URLSearchParams(window.location.search).get("redirect");
-        if (redirectParam === "settings") {
-          window.location.href = "settings.html";
-        } else if (redirectParam === "reports") {
-          window.location.href = "QuietScorePage.html";
-        } else {
-          window.location.href = "dashboard.html";
+          const response = await fetch(loginUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            authResult = data;
+            isSuccess = true;
+          } else {
+            throw new Error(data.message || "Invalid credentials");
+          }
+        } catch (fetchErr) {
+          // If network error occurred (e.g., static demo on GitHub Pages without live server)
+          const isNetworkError = fetchErr instanceof TypeError || (fetchErr.message && fetchErr.message.includes("Failed to fetch"));
+          const isStaticDemo = window.location.hostname.includes("github.io") || window.location.protocol === "file:";
+
+          if (isNetworkError && isStaticDemo) {
+            if (email === "staff@quietspace.com" && password === "quiet123") {
+              authResult = {
+                token: "demo_static_token",
+                user: { id: 1, name: "Library Staff", email: "staff@quietspace.com" }
+              };
+              isSuccess = true;
+            } else {
+              throw new Error("Invalid login. Please try again.");
+            }
+          } else {
+            throw fetchErr;
+          }
         }
-      } else {
+
+        if (isSuccess && authResult) {
+          localStorage.removeItem("quietspaceFailedAttempts");
+          localStorage.removeItem("quietspaceLockoutUntil");
+
+          const autoLoginHours = Number(settings.autoLoginHours) || 24;
+          const expiresAt = Date.now() + autoLoginHours * 60 * 60 * 1000;
+
+          localStorage.setItem("quietspaceLoggedIn", "true");
+          if (authResult.token) {
+            localStorage.setItem("quietspace_token", authResult.token);
+          }
+          if (authResult.user) {
+            localStorage.setItem("quietspace_user", JSON.stringify(authResult.user));
+          }
+          localStorage.setItem("quietspaceSessionExpiresAt", String(expiresAt));
+
+          showMessage("Login successful! Redirecting...", "success");
+
+          setTimeout(() => {
+            const redirectParam = new URLSearchParams(window.location.search).get("redirect");
+            if (redirectParam === "settings") {
+              window.location.href = "settings.html";
+            } else if (redirectParam === "reports") {
+              window.location.href = "QuietScorePage.html";
+            } else {
+              window.location.href = "dashboard.html";
+            }
+          }, 350);
+        }
+      } catch (err) {
         if (settings.lockoutTime) {
           const maxAttempts = Number(settings.maxLoginAttempts) || 5;
           let attempts = parseInt(localStorage.getItem("quietspaceFailedAttempts") || "0", 10) + 1;
@@ -444,14 +499,19 @@
             return;
           }
           showMessage(
-            `Invalid login. ${maxAttempts - attempts} attempt(s) remaining before account lockout.`,
+            `${err.message || "Invalid login"}. ${maxAttempts - attempts} attempt(s) remaining before account lockout.`,
             "error"
           );
         } else {
           showMessage(
-            "Invalid login. Please try again.",
+            err.message || "Invalid login. Please try again.",
             "error"
           );
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Sign In";
         }
       }
     });

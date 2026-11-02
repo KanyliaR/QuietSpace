@@ -4,9 +4,14 @@ const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
 const path = require("path");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { validateThresholds } = require("./utils/helpers");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || "quietspace_jwt_secret_key_change_in_production";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
 
 // -----------------------------
 // Middleware
@@ -109,6 +114,175 @@ app.get("/api/events", (req, res) => {
 
   req.on("close", () => {
     sseClients.delete(res);
+  });
+});
+
+// -----------------------------
+// Authentication Middleware & Routes
+// -----------------------------
+
+/**
+ * Reusable JWT authentication middleware
+ */
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : null;
+
+  if (!token) {
+    return res.status(401).json({
+      message: "Access token required"
+    });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({
+        message: "Invalid or expired token"
+      });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+// Staff user login: verifies credentials against staff_users table
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body || {};
+
+  if (!email || !password || typeof email !== "string" || typeof password !== "string" || !email.trim() || !password.trim()) {
+    return res.status(400).json({
+      message: "Email and password are required"
+    });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const sql = `
+    SELECT id, name, email, password_hash
+    FROM staff_users
+    WHERE email = ?
+  `;
+
+  db.query(sql, [normalizedEmail], async (err, results) => {
+    if (err) {
+      console.error("Database error during staff login:", err);
+      return res.status(500).json({
+        message: "Internal server error during authentication"
+      });
+    }
+
+    if (!results || results.length === 0) {
+      return res.status(401).json({
+        message: "Invalid email or password"
+      });
+    }
+
+    const user = results[0];
+
+    try {
+      const isMatch = await bcrypt.compare(password, user.password_hash);
+      if (!isMatch) {
+        return res.status(401).json({
+          message: "Invalid email or password"
+        });
+      }
+
+      const tokenPayload = {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      };
+
+      const token = jwt.sign(tokenPayload, JWT_SECRET, {
+        expiresIn: JWT_EXPIRES_IN
+      });
+
+      res.json({
+        message: "Login successful",
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        }
+      });
+    } catch (bcryptErr) {
+      console.error("Error comparing password hashes:", bcryptErr);
+      return res.status(500).json({
+        message: "Error verifying credentials"
+      });
+    }
+  });
+});
+
+// Register a new staff user
+app.post("/api/auth/register", async (req, res) => {
+  const { name, email, password } = req.body || {};
+
+  if (!name || !email || !password || typeof name !== "string" || typeof email !== "string" || typeof password !== "string" || !name.trim() || !email.trim()) {
+    return res.status(400).json({
+      message: "Name, email, and password are required"
+    });
+  }
+
+  const trimmedName = name.trim();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (password.length < 6) {
+    return res.status(400).json({
+      message: "Password must be at least 6 characters long"
+    });
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
+    const sql = `
+      INSERT INTO staff_users (name, email, password_hash)
+      VALUES (?, ?, ?)
+    `;
+
+    db.query(sql, [trimmedName, normalizedEmail, passwordHash], (err, result) => {
+      if (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(409).json({
+            message: "A staff account with this email already exists"
+          });
+        }
+        console.error("Error creating staff user:", err);
+        return res.status(500).json({
+          message: "Error creating staff user"
+        });
+      }
+
+      const user = {
+        id: result.insertId,
+        name: trimmedName,
+        email: normalizedEmail
+      };
+
+      const token = jwt.sign(user, JWT_SECRET, {
+        expiresIn: JWT_EXPIRES_IN
+      });
+
+      res.status(201).json({
+        message: "Staff user created successfully",
+        token,
+        user
+      });
+    });
+  } catch (hashErr) {
+    console.error("Error hashing password:", hashErr);
+    res.status(500).json({
+      message: "Error processing registration"
+    });
+  }
+});
+
+// Authenticated staff profile route
+app.get("/api/auth/me", authenticateToken, (req, res) => {
+  res.json({
+    user: req.user
   });
 });
 
@@ -709,6 +883,8 @@ app.get("/api/rooms", (req, res) => {
       r.room_name,
       r.location,
       COALESCE(r.is_active, 1) AS is_active,
+      COALESCE(r.yellow_threshold, 60) AS yellow_threshold,
+      COALESCE(r.red_threshold, 75) AS red_threshold,
       r.created_at,
       sr.level,
       sr.status_color,
@@ -736,7 +912,9 @@ app.get("/api/rooms", (req, res) => {
 
     const formatted = results.map((room) => ({
       ...room,
-      is_active: room.is_active === 0 || room.is_active === false ? 0 : 1
+      is_active: room.is_active === 0 || room.is_active === false ? 0 : 1,
+      yellow_threshold: Number(room.yellow_threshold != null ? room.yellow_threshold : 60),
+      red_threshold: Number(room.red_threshold != null ? room.red_threshold : 75)
     }));
 
     res.json(formatted);
@@ -754,6 +932,8 @@ app.get("/api/rooms/:id", (req, res) => {
       r.room_name,
       r.location,
       COALESCE(r.is_active, 1) AS is_active,
+      COALESCE(r.yellow_threshold, 60) AS yellow_threshold,
+      COALESCE(r.red_threshold, 75) AS red_threshold,
       r.created_at,
       sr.level,
       sr.status_color,
@@ -787,7 +967,9 @@ app.get("/api/rooms/:id", (req, res) => {
 
     const room = {
       ...results[0],
-      is_active: results[0].is_active === 0 || results[0].is_active === false ? 0 : 1
+      is_active: results[0].is_active === 0 || results[0].is_active === false ? 0 : 1,
+      yellow_threshold: Number(results[0].yellow_threshold != null ? results[0].yellow_threshold : 60),
+      red_threshold: Number(results[0].red_threshold != null ? results[0].red_threshold : 75)
     };
 
     res.json(room);
@@ -796,7 +978,7 @@ app.get("/api/rooms/:id", (req, res) => {
 
 // Add a new room
 app.post("/api/rooms", (req, res) => {
-  const { room_name, location, is_active } = req.body;
+  const { room_name, location, is_active, yellow_threshold, red_threshold } = req.body;
 
   if (!room_name || typeof room_name !== "string" || !room_name.trim()) {
     return res.status(400).json({
@@ -810,12 +992,34 @@ app.post("/api/rooms", (req, res) => {
     : "Bluford Library";
   const active = is_active === false || is_active === 0 ? 0 : 1;
 
-  const sql = `
-    INSERT INTO rooms (room_name, location, is_active)
-    VALUES (?, ?, ?)
-  `;
+  const hasThresholds = yellow_threshold !== undefined || red_threshold !== undefined;
+  const yThresh = yellow_threshold !== undefined ? Number(yellow_threshold) : 60;
+  const rThresh = red_threshold !== undefined ? Number(red_threshold) : 75;
 
-  db.query(sql, [trimmedName, loc, active], (err, result) => {
+  if (hasThresholds) {
+    const validation = validateThresholds(yThresh, rThresh);
+    if (!validation.valid) {
+      return res.status(400).json({
+        message: validation.error
+      });
+    }
+  }
+
+  const sql = hasThresholds
+    ? `
+      INSERT INTO rooms (room_name, location, is_active, yellow_threshold, red_threshold)
+      VALUES (?, ?, ?, ?, ?)
+    `
+    : `
+      INSERT INTO rooms (room_name, location, is_active)
+      VALUES (?, ?, ?)
+    `;
+
+  const params = hasThresholds
+    ? [trimmedName, loc, active, yThresh, rThresh]
+    : [trimmedName, loc, active];
+
+  db.query(sql, params, (err, result) => {
     if (err) {
       if (err.code === "ER_DUP_ENTRY") {
         return res.status(409).json({
@@ -834,7 +1038,9 @@ app.post("/api/rooms", (req, res) => {
       room_id: result.insertId,
       room_name: trimmedName,
       location: loc,
-      is_active: active
+      is_active: active,
+      yellow_threshold: yThresh,
+      red_threshold: rThresh
     };
 
     broadcastSSE("room_created", newRoom);
@@ -849,11 +1055,17 @@ app.post("/api/rooms", (req, res) => {
 // Rename or update an existing room
 app.put("/api/rooms/:id", (req, res) => {
   const roomId = req.params.id;
-  const { room_name, location, is_active } = req.body;
+  const { room_name, location, is_active, yellow_threshold, red_threshold } = req.body;
 
-  if (room_name === undefined && location === undefined && is_active === undefined) {
+  if (
+    room_name === undefined &&
+    location === undefined &&
+    is_active === undefined &&
+    yellow_threshold === undefined &&
+    red_threshold === undefined
+  ) {
     return res.status(400).json({
-      message: "At least one field (room_name, location, is_active) must be provided"
+      message: "At least one field (room_name, location, is_active, yellow_threshold, red_threshold) must be provided"
     });
   }
 
@@ -861,6 +1073,13 @@ app.put("/api/rooms/:id", (req, res) => {
     return res.status(400).json({
       message: "room_name cannot be empty"
     });
+  }
+
+  if (yellow_threshold !== undefined && red_threshold !== undefined) {
+    const val = validateThresholds(yellow_threshold, red_threshold);
+    if (!val.valid) {
+      return res.status(400).json({ message: val.error });
+    }
   }
 
   const fields = [];
@@ -879,6 +1098,16 @@ app.put("/api/rooms/:id", (req, res) => {
   if (is_active !== undefined) {
     fields.push("is_active = ?");
     values.push(is_active ? 1 : 0);
+  }
+
+  if (yellow_threshold !== undefined) {
+    fields.push("yellow_threshold = ?");
+    values.push(Number(yellow_threshold));
+  }
+
+  if (red_threshold !== undefined) {
+    fields.push("red_threshold = ?");
+    values.push(Number(red_threshold));
   }
 
   values.push(roomId);
@@ -914,7 +1143,9 @@ app.put("/api/rooms/:id", (req, res) => {
       room_id: Number(roomId),
       ...(room_name !== undefined && { room_name: room_name.trim() }),
       ...(location !== undefined && { location: location.trim() }),
-      ...(is_active !== undefined && { is_active: is_active ? 1 : 0 })
+      ...(is_active !== undefined && { is_active: is_active ? 1 : 0 }),
+      ...(yellow_threshold !== undefined && { yellow_threshold: Number(yellow_threshold) }),
+      ...(red_threshold !== undefined && { red_threshold: Number(red_threshold) })
     };
 
     broadcastSSE("room_updated", updatedRoom);
@@ -923,6 +1154,58 @@ app.put("/api/rooms/:id", (req, res) => {
       message: "Room updated successfully",
       room: updatedRoom,
       changed: result.affectedRows
+    });
+  });
+});
+
+// Update noise thresholds for a room
+app.put("/api/rooms/:id/thresholds", (req, res) => {
+  const roomId = req.params.id;
+  const { yellow_threshold, red_threshold } = req.body || {};
+
+  const validation = validateThresholds(yellow_threshold, red_threshold);
+  if (!validation.valid) {
+    return res.status(400).json({
+      message: validation.error
+    });
+  }
+
+  const yThresh = Number(yellow_threshold);
+  const rThresh = Number(red_threshold);
+
+  const sql = `
+    UPDATE rooms
+    SET yellow_threshold = ?, red_threshold = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [yThresh, rThresh, roomId], (err, result) => {
+    if (err) {
+      console.error("Error updating room thresholds:", err);
+      return res.status(500).json({
+        message: "Error updating room thresholds"
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Room not found"
+      });
+    }
+
+    const updatedPayload = {
+      id: Number(roomId),
+      room_id: Number(roomId),
+      yellow_threshold: yThresh,
+      red_threshold: rThresh
+    };
+
+    broadcastSSE("thresholds_updated", updatedPayload);
+    broadcastSSE("room_updated", updatedPayload);
+
+    res.json({
+      message: "Room thresholds updated successfully",
+      room: updatedPayload
     });
   });
 });
@@ -988,6 +1271,126 @@ app.patch("/api/rooms/:id/toggle", toggleRoomHandler);
 app.put("/api/rooms/:id/toggle", toggleRoomHandler);
 
 // -----------------------------
+// Analytics API
+// -----------------------------
+
+// Hourly noise levels and incident spikes
+app.get("/api/analytics/hourly-trends", (req, res) => {
+  const { room_id, date } = req.query;
+
+  const readingParams = [];
+  let readingWhere = "WHERE 1=1";
+  if (room_id) {
+    readingWhere += " AND room_id = ?";
+    readingParams.push(room_id);
+  }
+  if (date) {
+    readingWhere += " AND DATE(recorded_at) = ?";
+    readingParams.push(date);
+  }
+
+  const readingsSql = `
+    SELECT
+      HOUR(recorded_at) AS hour,
+      ROUND(AVG(level), 2) AS avg_noise_level,
+      ROUND(MAX(level), 2) AS max_noise_level,
+      ROUND(MIN(level), 2) AS min_noise_level,
+      COUNT(*) AS reading_count
+    FROM sound_readings
+    ${readingWhere}
+    GROUP BY HOUR(recorded_at)
+    ORDER BY hour
+  `;
+
+  const incidentParams = [];
+  let incidentWhere = "WHERE 1=1";
+  if (room_id) {
+    incidentWhere += " AND room_id = ?";
+    incidentParams.push(room_id);
+  }
+  if (date) {
+    incidentWhere += " AND DATE(started_at) = ?";
+    incidentParams.push(date);
+  }
+
+  const incidentsSql = `
+    SELECT
+      HOUR(started_at) AS hour,
+      COUNT(*) AS incident_spikes
+    FROM incidents
+    ${incidentWhere}
+    GROUP BY HOUR(started_at)
+    ORDER BY hour
+  `;
+
+  db.query(readingsSql, readingParams, (readingsErr, readingRows) => {
+    if (readingsErr) {
+      console.error("Error fetching hourly reading trends:", readingsErr);
+      return res.status(500).json({
+        message: "Error fetching hourly analytics trends"
+      });
+    }
+
+    db.query(incidentsSql, incidentParams, (incidentsErr, incidentRows) => {
+      if (incidentsErr) {
+        console.error("Error fetching hourly incident trends:", incidentsErr);
+        return res.status(500).json({
+          message: "Error fetching hourly analytics trends"
+        });
+      }
+
+      const safeReadings = readingRows || [];
+      const safeIncidents = incidentRows || [];
+
+      const trends = [];
+      for (let h = 0; h < 24; h++) {
+        const r = safeReadings.find((item) => Number(item.hour) === h);
+        const i = safeIncidents.find((item) => Number(item.hour) === h);
+
+        const avgDb = r ? Number(r.avg_noise_level) : 0;
+        const maxDb = r ? Number(r.max_noise_level) : 0;
+        const minDb = r ? Number(r.min_noise_level) : 0;
+        const rCount = r ? Number(r.reading_count) : 0;
+        const iCount = i ? Number(i.incident_spikes) : 0;
+
+        const hourLabel = h === 0
+          ? "12 AM"
+          : h < 12
+            ? `${h} AM`
+            : h === 12
+              ? "12 PM"
+              : `${h - 12} PM`;
+
+        trends.push({
+          hour: h,
+          hour_label: hourLabel,
+          avg_noise_level: avgDb,
+          avg_level: avgDb,
+          max_noise_level: maxDb,
+          min_noise_level: minDb,
+          incident_spikes: iCount,
+          incident_count: iCount,
+          reading_count: rCount
+        });
+      }
+
+      if (req.query.format === "object") {
+        return res.json({
+          room_id: room_id ? Number(room_id) : null,
+          date: date || null,
+          total_readings: trends.reduce((acc, t) => acc + t.reading_count, 0),
+          total_incidents: trends.reduce((acc, t) => acc + t.incident_spikes, 0),
+          hourly: trends,
+          trends
+        });
+      }
+
+      res.json(trends);
+    });
+  });
+});
+
+// -----------------------------
 // 404 Handler
 // -----------------------------
 
@@ -1013,6 +1416,36 @@ if (require.main === module) {
     }
   });
 
+  // Ensure rooms table has yellow_threshold and red_threshold columns
+  db.query("SHOW COLUMNS FROM rooms LIKE 'yellow_threshold'", (err, cols) => {
+    if (!err && cols && cols.length === 0) {
+      db.query("ALTER TABLE rooms ADD COLUMN yellow_threshold INT UNSIGNED NOT NULL DEFAULT 60", (aErr) => {
+        if (aErr) console.warn("yellow_threshold column check:", aErr.message);
+      });
+    }
+  });
+
+  db.query("SHOW COLUMNS FROM rooms LIKE 'red_threshold'", (err, cols) => {
+    if (!err && cols && cols.length === 0) {
+      db.query("ALTER TABLE rooms ADD COLUMN red_threshold INT UNSIGNED NOT NULL DEFAULT 75", (aErr) => {
+        if (aErr) console.warn("red_threshold column check:", aErr.message);
+      });
+    }
+  });
+
+  // Seed default staff user if staff_users table is empty
+  db.query("SELECT COUNT(*) AS count FROM staff_users", (err, rows) => {
+    if (!err && rows && rows[0] && rows[0].count === 0) {
+      const seedSql = `
+        INSERT IGNORE INTO staff_users (id, name, email, password_hash)
+        VALUES (1, 'Library Staff', 'staff@quietspace.com', '$2b$10$1IZtB2cTkjXbdXZ98JnPju9EgVESKOrx..XBaRgzL8zNNAh3n7cyu')
+      `;
+      db.query(seedSql, (sErr) => {
+        if (sErr) console.warn("Seed staff user check:", sErr.message);
+      });
+    }
+  });
+
   serverInstance = app.listen(PORT, () => {
     console.log(
       `QuietSpace server running on port ${PORT}`
@@ -1025,5 +1458,7 @@ module.exports = {
   db,
   server: serverInstance,
   broadcastSSE,
-  sseClients
+  sseClients,
+  authenticateToken,
+  JWT_SECRET
 };

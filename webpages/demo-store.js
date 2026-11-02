@@ -32,6 +32,8 @@
       room_name: 'Room 311',
       location: 'Bluford Library 3rd Floor',
       is_active: 1,
+      yellow_threshold: 60,
+      red_threshold: 75,
       level: 46,
       status_color: 'green',
       quiet_score: 95,
@@ -42,6 +44,8 @@
       room_name: 'Room 312',
       location: 'Bluford Library 3rd Floor',
       is_active: 1,
+      yellow_threshold: 60,
+      red_threshold: 75,
       level: 42,
       status_color: 'green',
       quiet_score: 98,
@@ -52,6 +56,8 @@
       room_name: 'Room 313',
       location: 'Bluford Library 3rd Floor',
       is_active: 1,
+      yellow_threshold: 60,
+      red_threshold: 75,
       level: 53,
       status_color: 'yellow',
       quiet_score: 81,
@@ -381,6 +387,85 @@
     return { success: true, room, source: 'demo' };
   }
 
+  async function updateRoomThresholds(roomId, yellowThreshold, redThreshold) {
+    ensureSeeds();
+    const api = getApiBase();
+    const id = Number(roomId);
+    const yellow = Number(yellowThreshold);
+    const red = Number(redThreshold);
+
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/rooms/${id}/thresholds`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ yellow_threshold: yellow, red_threshold: red })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          broadcastSync('thresholds_updated', data.room);
+          return { success: true, room: data.room, source: 'database' };
+        }
+        throw new Error(data.message || 'Failed to update thresholds');
+      } catch (err) {
+        if (err.message && !err.message.includes('fetch') && !err.message.includes('NetworkError')) {
+          throw err;
+        }
+        console.warn('Backend unreachable for thresholds update, updating demo store.');
+      }
+    }
+
+    // Local storage fallback
+    const rooms = readLocal(STORAGE_ROOMS, DEFAULT_ROOMS);
+    const room = rooms.find(r => (r.id || r.room_id) === id);
+    if (!room) throw new Error('Room not found');
+
+    room.yellow_threshold = yellow;
+    room.red_threshold = red;
+
+    writeLocal(STORAGE_ROOMS, rooms);
+    broadcastSync('thresholds_updated', room);
+    return { success: true, room, source: 'demo' };
+  }
+
+  async function getHourlyAnalyticsTrends(roomId, date) {
+    const api = getApiBase();
+    if (api !== null) {
+      try {
+        let url = `${api}/api/analytics/hourly-trends?`;
+        if (roomId) url += `room_id=${encodeURIComponent(roomId)}&`;
+        if (date) url += `date=${encodeURIComponent(date)}&`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const trends = await res.json();
+          return { trends, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend /api/analytics/hourly-trends unreachable, generating demo trends.');
+      }
+    }
+
+    // Demo fallback for analytics trends
+    const demoTrends = [];
+    for (let h = 0; h < 24; h++) {
+      const hourLabel = h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`;
+      // Realistic daytime curve peaking at 2 PM (14:00)
+      const isPeak = h >= 11 && h <= 17;
+      const avgDb = h < 7 ? 32 + (h % 3) : isPeak ? 58 + ((h * 7) % 16) : 44 + ((h * 5) % 10);
+      const spikes = isPeak ? (h % 4) : (h === 20 ? 1 : 0);
+      demoTrends.push({
+        hour: h,
+        hour_label: hourLabel,
+        avg_noise_level: avgDb,
+        avg_level: avgDb,
+        incident_spikes: spikes,
+        incident_count: spikes,
+        reading_count: isPeak ? 120 : 45
+      });
+    }
+    return { trends: demoTrends, source: 'demo' };
+  }
+
   // ----------------------------------------------------
   // Reports API & Demo Fallback
   // ----------------------------------------------------
@@ -516,11 +601,13 @@
     getRooms,
     addRoom,
     updateRoom,
+    updateRoomThresholds,
     toggleRoomStatus,
     getReports,
     addReport,
     updateReportStatus,
     getIncidents,
+    getHourlyAnalyticsTrends,
     broadcastSync
   };
 });
