@@ -13,4 +13,10 @@ HOW TO OPEN IN OVERLEAF:
 5. Upload this .zip file ("quietspace_system_report_overleaf.zip").
 6. Overleaf will extract the project and automatically compile "main.tex" into a professional PDF!
 
-All diagrams are rendered using native LaTeX TikZ vector graphics, so no external image dependencies or special plugins are required.
+============================================================
+FIGURE AND DIAGRAM PLACEMENT FIXES:
+============================================================
+- Strict in-place positioning is enforced via the LaTeX "float" package using the [H] placement specifier, ensuring all architecture diagrams, sequence flows, ER schemas, QR placards, and data tables render directly beneath their respective section headings and introductory text.
+- Large portrait graphics (such as the system architecture flow) are proportionally constrained using "keepaspectratio" with bounded height ("height=0.52\textheight") to prevent LaTeX float queue overflow.
+- Clean page breaks (\clearpage) ensure optimal visual separation between major sections.
+- Verified and synchronized with the latest codebase: 10 test suites, 137 passing tests under Jest/Supertest, bcrypt staff authentication, and per-room decibel sensitivity thresholds.

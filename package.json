@@ -5,7 +5,13 @@
   "main": "server.js",
   "scripts": {
     "test": "jest",
-    "start": "node server.js"
+    "test:hardware": "python -m unittest tests/test_hardware_simulator.py",
+    "test:all": "jest && python -m unittest tests/test_hardware_simulator.py",
+    "start": "node server.js",
+    "simulate:hardware": "python hardware_simulator.py",
+    "simulate:rooms": "python hardware_simulator.py --rooms 1,2,3 --scenario dynamic",
+    "simulate:escalation": "python hardware_simulator.py --rooms 1 --scenario escalation",
+    "simulate:fault": "python hardware_simulator.py --rooms 1 --scenario fault_zero_db"
   },
   "keywords": [],
   "author": "",

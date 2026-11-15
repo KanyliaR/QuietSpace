@@ -524,6 +524,8 @@ app.post("/api/readings", (req, res) => {
         recorded_at: new Date().toISOString()
       });
 
+      updateSensorReading(room_id, level, new Date());
+
       res.status(201).json({
         message: "Reading saved successfully",
         reading_id: result.insertId
@@ -1391,6 +1393,203 @@ app.get("/api/analytics/hourly-trends", (req, res) => {
 });
 
 // -----------------------------
+// Hardware Sensor Telemetry & Watchdog
+// -----------------------------
+
+const sensorRegistry = new Map();
+
+/**
+ * Update sensor telemetry upon reading receipt.
+ */
+function updateSensorReading(roomId, level, recordedAt = new Date()) {
+  const rid = Number(roomId);
+  const nowIso = recordedAt instanceof Date ? recordedAt.toISOString() : new Date(recordedAt).toISOString();
+  const numLevel = Number(level);
+
+  let sensor = sensorRegistry.get(rid);
+  if (!sensor) {
+    sensor = {
+      room_id: rid,
+      status: "online",
+      last_recorded_at: nowIso,
+      zero_db_streak: 0,
+      total_readings: 0,
+      last_level: numLevel,
+      fault_reason: null
+    };
+    sensorRegistry.set(rid, sensor);
+  }
+
+  sensor.total_readings += 1;
+  sensor.last_level = numLevel;
+  sensor.last_recorded_at = nowIso;
+
+  // Recovery from offline state
+  if (sensor.status === "offline") {
+    sensor.status = "online";
+    sensor.fault_reason = null;
+    broadcastSSE("sensor_status_changed", {
+      room_id: rid,
+      status: "online",
+      last_seen: nowIso
+    });
+  }
+
+  // Zero-dB stuck sensor fault detection
+  if (numLevel <= 0) {
+    sensor.zero_db_streak += 1;
+    if (sensor.zero_db_streak >= 3) {
+      sensor.status = "fault";
+      sensor.fault_reason = "Microphone Fault / Obstructed";
+      broadcastSSE("sensor_fault", {
+        room_id: rid,
+        status: "fault",
+        fault: "Microphone Fault / Obstructed",
+        zero_count: sensor.zero_db_streak,
+        last_seen: nowIso
+      });
+      broadcastSSE("sensor_status_changed", {
+        room_id: rid,
+        status: "fault",
+        reason: "Microphone Fault / Obstructed",
+        last_seen: nowIso
+      });
+    }
+  } else {
+    // If previously in zero-dB fault state, clear fault upon non-zero reading
+    if (sensor.status === "fault") {
+      sensor.status = "online";
+      sensor.fault_reason = null;
+      broadcastSSE("sensor_status_changed", {
+        room_id: rid,
+        status: "online",
+        last_seen: nowIso
+      });
+    }
+    sensor.zero_db_streak = 0;
+  }
+
+  return sensor;
+}
+
+/**
+ * Watchdog liveness check: flags sensors as offline if last_recorded_at > timeoutMs
+ */
+function checkHardwareWatchdog(now = Date.now(), timeoutMs = 30000) {
+  const offlineEvents = [];
+  const currentMs = typeof now === "number" ? now : new Date(now).getTime();
+
+  for (const [rid, sensor] of sensorRegistry.entries()) {
+    if (sensor.status === "online" && sensor.last_recorded_at) {
+      const lastMs = new Date(sensor.last_recorded_at).getTime();
+      if (currentMs - lastMs > timeoutMs) {
+        sensor.status = "offline";
+        sensor.fault_reason = "Sensor Disconnected / Timeout";
+        const payload = {
+          room_id: Number(rid),
+          status: "offline",
+          reason: "Sensor Disconnected / Timeout",
+          last_seen: sensor.last_recorded_at
+        };
+        offlineEvents.push(payload);
+        broadcastSSE("sensor_status_changed", payload);
+        broadcastSSE("room_sensor_offline", payload);
+      }
+    }
+  }
+
+  return offlineEvents;
+}
+
+function resetSensorRegistry() {
+  sensorRegistry.clear();
+}
+
+// Background watchdog interval checking every 10 seconds
+const watchdogInterval = setInterval(() => {
+  checkHardwareWatchdog();
+}, 10000);
+
+if (watchdogInterval.unref) {
+  watchdogInterval.unref();
+}
+
+// GET /api/hardware/status: Retrieve telemetry across all room sensors
+app.get("/api/hardware/status", (req, res) => {
+  const sensors = Array.from(sensorRegistry.values());
+  res.json({
+    sensors,
+    total_sensors: sensors.length,
+    online_count: sensors.filter(s => s.status === "online").length,
+    offline_count: sensors.filter(s => s.status === "offline").length,
+    fault_count: sensors.filter(s => s.status === "fault").length,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// POST /api/hardware/heartbeat: Lightweight heartbeat ping from edge nodes
+app.post("/api/hardware/heartbeat", (req, res) => {
+  const { room_id, status } = req.body || {};
+  if (room_id == null) {
+    return res.status(400).json({ message: "room_id is required" });
+  }
+
+  const rid = Number(room_id);
+  const nowIso = new Date().toISOString();
+  let sensor = sensorRegistry.get(rid);
+
+  if (!sensor) {
+    sensor = {
+      room_id: rid,
+      status: status === "disconnected" ? "offline" : "online",
+      last_recorded_at: nowIso,
+      zero_db_streak: 0,
+      total_readings: 0,
+      last_level: null,
+      fault_reason: status === "disconnected" ? "Sensor Reported Disconnected" : null
+    };
+    sensorRegistry.set(rid, sensor);
+  } else {
+    const wasOffline = sensor.status === "offline";
+    sensor.last_recorded_at = nowIso;
+    if (status === "disconnected") {
+      sensor.status = "offline";
+      sensor.fault_reason = "Sensor Reported Disconnected";
+      broadcastSSE("sensor_status_changed", {
+        room_id: rid,
+        status: "offline",
+        reason: "Sensor Reported Disconnected",
+        last_seen: nowIso
+      });
+    } else if (wasOffline) {
+      sensor.status = "online";
+      sensor.fault_reason = null;
+      broadcastSSE("sensor_status_changed", {
+        room_id: rid,
+        status: "online",
+        last_seen: nowIso
+      });
+    }
+  }
+
+  res.json({
+    message: "Heartbeat acknowledged",
+    sensor
+  });
+});
+
+// POST /api/hardware/watchdog/check: Manual watchdog evaluation trigger
+app.post("/api/hardware/watchdog/check", (req, res) => {
+  const { timeout_ms } = req.body || {};
+  const events = checkHardwareWatchdog(Date.now(), timeout_ms ? Number(timeout_ms) : 30000);
+  res.json({
+    checked_at: new Date().toISOString(),
+    offline_count: events.length,
+    events
+  });
+});
+
+// -----------------------------
 // 404 Handler
 // -----------------------------
 
@@ -1460,5 +1659,9 @@ module.exports = {
   broadcastSSE,
   sseClients,
   authenticateToken,
-  JWT_SECRET
+  JWT_SECRET,
+  sensorRegistry,
+  updateSensorReading,
+  checkHardwareWatchdog,
+  resetSensorRegistry
 };

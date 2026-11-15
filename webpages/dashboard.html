@@ -290,6 +290,41 @@
       color: #5d6678;
     }
 
+    .sensor-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      margin-top: 8px;
+      text-transform: none;
+      letter-spacing: 0.01em;
+    }
+
+    .sensor-badge.sensor-online {
+      background: rgba(46, 125, 50, 0.12);
+      color: #2e7d32;
+    }
+
+    .sensor-badge.sensor-offline {
+      background: rgba(198, 40, 40, 0.14);
+      color: #c62828;
+    }
+
+    .sensor-badge.sensor-fault {
+      background: rgba(230, 81, 0, 0.14);
+      color: #e65100;
+    }
+
+    .sensor-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
     /* -------------------- Dashboard Sections -------------------- */
 
     .section {
@@ -1458,6 +1493,18 @@
             ? formatTimeOnly(room.recorded_at)
             : "—";
 
+        let sensorBadgeHtml = "";
+        if (isActiveRoom) {
+          const sStat = room.sensor_status || (room.recorded_at ? "online" : null);
+          if (sStat === "offline") {
+            sensorBadgeHtml = `<div class="sensor-badge sensor-offline" title="Sensor Disconnected (>30s Watchdog)"><span class="sensor-dot"></span> SENSOR OFFLINE</div>`;
+          } else if (sStat === "fault") {
+            sensorBadgeHtml = `<div class="sensor-badge sensor-fault" title="Microphone Fault / Obstructed (0 dB)"><span class="sensor-dot"></span> MIC FAULT (0 dB)</div>`;
+          } else if (sStat === "online") {
+            sensorBadgeHtml = `<div class="sensor-badge sensor-online" title="Hardware Sensor Streaming Live"><span class="sensor-dot"></span> SENSOR ONLINE</div>`;
+          }
+        }
+
         const card = document.createElement("div");
 
         card.className = isActiveRoom
@@ -1468,13 +1515,16 @@
           <h3>${room.room_name}</h3>
           <p>Current Level: ${level}</p>
           <p>Last Updated: ${updated}</p>
-          <span class="status ${status}">
-            ${
-              isActiveRoom
-                ? formatText(status)
-                : "Not Active"
-            }
-          </span>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <span class="status ${status}">
+              ${
+                isActiveRoom
+                  ? formatText(status)
+                  : "Not Active"
+              }
+            </span>
+            ${sensorBadgeHtml}
+          </div>
         `;
 
         card.style.cursor = "pointer";
@@ -1503,6 +1553,7 @@
         room.status_color = reading.status_color;
         room.quiet_score = reading.quiet_score;
         room.recorded_at = reading.recorded_at;
+        room.sensor_status = "online";
         renderRoomCards();
       } else {
         loadLatestReadings();
@@ -1527,6 +1578,24 @@
             throw new Error("Unable to load rooms");
           }
           currentRooms = await response.json();
+
+          // Fetch hardware sensor telemetry if backend is active
+          try {
+            const hwRes = await fetch(`${API_BASE}/api/hardware/status?t=${Date.now()}`);
+            if (hwRes.ok) {
+              const hwData = await hwRes.json();
+              if (hwData && Array.isArray(hwData.sensors)) {
+                hwData.sensors.forEach(sensor => {
+                  const target = currentRooms.find(rm => (rm.id || rm.room_id) === sensor.room_id);
+                  if (target) {
+                    target.sensor_status = sensor.status;
+                  }
+                });
+              }
+            }
+          } catch (_) {
+            // Silently ignore if hardware telemetry endpoint is unavailable
+          }
         }
 
         renderRoomCards();
@@ -2201,6 +2270,46 @@
 
         sseSource.addEventListener("room_updated", () => {
           loadLatestReadings();
+        });
+
+        // Hardware sensor status changes (online / offline / fault)
+        sseSource.addEventListener("sensor_status_changed", (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const targetRoom = currentRooms.find(r => (r.room_id || r.id) === data.room_id);
+            if (targetRoom) {
+              targetRoom.sensor_status = data.status;
+              renderRoomCards();
+            }
+          } catch (e) {
+            console.error("Error parsing sensor_status_changed SSE:", e);
+          }
+        });
+
+        sseSource.addEventListener("sensor_fault", (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const targetRoom = currentRooms.find(r => (r.room_id || r.id) === data.room_id);
+            if (targetRoom) {
+              targetRoom.sensor_status = "fault";
+              renderRoomCards();
+            }
+          } catch (e) {
+            console.error("Error parsing sensor_fault SSE:", e);
+          }
+        });
+
+        sseSource.addEventListener("room_sensor_offline", (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const targetRoom = currentRooms.find(r => (r.room_id || r.id) === data.room_id);
+            if (targetRoom) {
+              targetRoom.sensor_status = "offline";
+              renderRoomCards();
+            }
+          } catch (e) {
+            console.error("Error parsing room_sensor_offline SSE:", e);
+          }
         });
 
         sseSource.onerror = (err) => {
