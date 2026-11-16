@@ -537,6 +537,7 @@
     const initialRoom = parseRoomFromURL();
     ROOM_ID = initialRoom.id;
     ROOM_NAME = initialRoom.name;
+    let roomThresholds = null;
 
     function updateRoomDisplay(name, id) {
       ROOM_ID = id;
@@ -585,6 +586,12 @@
 
         if (matched) {
           updateRoomDisplay(matched.room_name, matched.id || matched.room_id);
+          if (matched.yellow_threshold && matched.red_threshold) {
+            roomThresholds = {
+              yellow: Number(matched.yellow_threshold),
+              red: Number(matched.red_threshold)
+            };
+          }
         }
       } catch (err) {
         console.warn("Could not fetch rooms:", err);
@@ -764,6 +771,9 @@
       or fall back to the default relative thresholds.
     */
     function getActiveThresholds() {
+      if (roomThresholds && roomThresholds.yellow && roomThresholds.red) {
+        return roomThresholds;
+      }
       try {
         const saved = localStorage.getItem("quietspace_settings");
         if (saved) {
@@ -1033,11 +1043,18 @@
           sum / dataArray.length
         );
 
-      const rawLevel =
-        rms * 500;
+      const thresholds = getActiveThresholds();
+      const isCalibratedDba = thresholds.yellow >= 40;
 
-      const instantLevel =
-        Math.round(rawLevel);
+      let instantLevel;
+      if (isCalibratedDba) {
+        // Logarithmic decibel calculation calibrated to dBA SPL
+        const dba = rms > 1e-6 ? Math.round(20 * Math.log10(rms / 0.00008)) : 30;
+        instantLevel = Math.max(30, Math.min(100, dba));
+      } else {
+        // Legacy prototype relative scalar
+        instantLevel = Math.round(rms * 500);
+      }
 
       const now =
         Date.now();
@@ -1047,9 +1064,9 @@
         level: instantLevel
       });
 
-      soundLevelText.textContent =
-        "Current Sound Level: " +
-        instantLevel;
+      soundLevelText.textContent = isCalibratedDba
+        ? "Current Sound Level: " + instantLevel + " dB"
+        : "Current Sound Level: " + instantLevel;
 
       if (
         now - lastEvaluationAt >=
@@ -1632,9 +1649,46 @@
       }
     }
 
+    // Live Server-Sent Events subscription for instant threshold updates
+    function initIndexSSE() {
+      if (typeof EventSource === "undefined") return;
+      try {
+        const source = new EventSource(`${API_BASE}/api/events`);
+        source.addEventListener("room_thresholds_updated", (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (Number(data.room_id) === Number(ROOM_ID)) {
+              roomThresholds = {
+                yellow: Number(data.yellow_threshold),
+                red: Number(data.red_threshold)
+              };
+              console.log(`[SSE] Real-time thresholds updated for Room ${ROOM_ID}:`, roomThresholds);
+            }
+          } catch (_) {}
+        });
+        source.addEventListener("room_updated", (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (Number(data.room_id || data.id) === Number(ROOM_ID)) {
+              if (data.room_name) updateRoomDisplay(data.room_name, ROOM_ID);
+              if (data.yellow_threshold && data.red_threshold) {
+                roomThresholds = {
+                  yellow: Number(data.yellow_threshold),
+                  red: Number(data.red_threshold)
+                };
+              }
+            }
+          } catch (_) {}
+        });
+      } catch (err) {
+        console.warn("Could not connect to SSE in in-room display:", err);
+      }
+    }
+
     // Initialize dynamic room display on page load
     updateRoomDisplay(ROOM_NAME, ROOM_ID);
     fetchRoomDetails();
+    initIndexSSE();
   </script>
 </body>
 </html>

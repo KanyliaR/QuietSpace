@@ -11,7 +11,11 @@
     "simulate:hardware": "python hardware_simulator.py",
     "simulate:rooms": "python hardware_simulator.py --rooms 1,2,3 --scenario dynamic",
     "simulate:escalation": "python hardware_simulator.py --rooms 1 --scenario escalation",
-    "simulate:fault": "python hardware_simulator.py --rooms 1 --scenario fault_zero_db"
+    "simulate:fault": "python hardware_simulator.py --rooms 1 --scenario fault_zero_db",
+    "export:csv": "python export_report.py --all",
+    "export:incidents": "python export_report.py --type incidents",
+    "export:reports": "python export_report.py --type reports",
+    "export:hourly": "python export_report.py --type hourly"
   },
   "keywords": [],
   "author": "",

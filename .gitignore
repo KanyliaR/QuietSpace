@@ -21,6 +21,9 @@ __pycache__/
 *.log
 npm-debug.log*
 
+# Exported CSV reports
+exports/*.csv
+
 # Goals
 goals
 .goals

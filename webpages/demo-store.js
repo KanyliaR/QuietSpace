@@ -583,6 +583,139 @@
     return { incidents: local, source: 'demo' };
   }
 
+  // ----------------------------------------------------
+  // CSV Export & Offline Report Generator
+  // ----------------------------------------------------
+  function escapeCsvField(val) {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (/[",\n\r]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  function formatCsv(headers, rows) {
+    const headerLine = headers.map(escapeCsvField).join(',');
+    const dataLines = rows.map(r => r.map(escapeCsvField).join(','));
+    return [headerLine, ...dataLines].join('\r\n');
+  }
+
+  function triggerDownload(content, filename, mimeType = 'text/csv;charset=utf-8;') {
+    if (typeof window !== 'undefined' && window.document && window.Blob && window.URL && window.URL.createObjectURL) {
+      const blob = new Blob([content], { type: mimeType });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(link.href);
+      return true;
+    }
+    return false;
+  }
+
+  async function exportCsv(type = 'incidents', options = {}) {
+    ensureSeeds();
+    const api = getApiBase();
+    const month = options.month;
+    const date = options.date;
+    const roomId = options.roomId || options.room_id;
+    const monthTag = month || (date ? date.slice(0, 7) : new Date().toISOString().slice(0, 7));
+    const tag = type === 'hourly' && date ? date : monthTag;
+    const filename = options.filename || `quietspace-${type}-${tag}.csv`;
+
+    if (api !== null) {
+      try {
+        let url = `${api}/api/reports/export/csv?type=${encodeURIComponent(type)}&`;
+        if (month) url += `month=${encodeURIComponent(month)}&`;
+        if (date) url += `date=${encodeURIComponent(date)}&`;
+        if (roomId) url += `room_id=${encodeURIComponent(roomId)}&`;
+
+        const res = await fetch(url);
+        if (res.ok) {
+          const csvText = await res.text();
+          triggerDownload(csvText, filename);
+          return { csv: csvText, filename, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend CSV export unreachable, generating demo CSV client-side.');
+      }
+    }
+
+    // Demo fallback generation
+    let csv = '';
+    if (type === 'reports') {
+      const res = await getReports();
+      let list = Array.isArray(res) ? res : (res.reports || []);
+      if (month) {
+        list = list.filter(r => (r.submitted_at || '').startsWith(month));
+      }
+      if (date) {
+        list = list.filter(r => (r.submitted_at || '').startsWith(date));
+      }
+      if (roomId) {
+        list = list.filter(r => String(r.room_id) === String(roomId) || r.room_name === roomId);
+      }
+
+      const headers = ['Report ID', 'Room Name', 'Noise Type', 'Severity', 'Comments', 'Report Status', 'Submitted At'];
+      const rows = list.map(r => [
+        r.id,
+        r.room_name || `Room ${r.room_id}`,
+        r.noise_type,
+        r.severity,
+        r.comments || '',
+        r.report_status,
+        r.submitted_at || ''
+      ]);
+      csv = formatCsv(headers, rows);
+    } else if (type === 'hourly') {
+      const res = await getHourlyAnalyticsTrends(roomId, date);
+      const trends = res.trends || [];
+      const headers = ['Hour', 'Hour Label', 'Average Noise Level (dB)', 'Max Noise Level (dB)', 'Min Noise Level (dB)', 'Reading Count', 'Incident Spikes'];
+      const rows = trends.map(t => [
+        t.hour,
+        t.hour_label,
+        t.avg_noise_level || t.avg_level || 0,
+        t.max_noise_level || 0,
+        t.min_noise_level || 0,
+        t.reading_count || 0,
+        t.incident_spikes || t.incident_count || 0
+      ]);
+      csv = formatCsv(headers, rows);
+    } else {
+      // Default: incidents
+      const res = await getIncidents();
+      let list = res.incidents || [];
+      if (month) {
+        list = list.filter(i => (i.started_at || '').startsWith(month));
+      }
+      if (date) {
+        list = list.filter(i => (i.started_at || '').startsWith(date));
+      }
+      if (roomId) {
+        list = list.filter(i => String(i.room_id) === String(roomId) || i.room_name === roomId);
+      }
+
+      const headers = ['Incident ID', 'Room Name', 'Status', 'Escalation Count', 'Trigger Level', 'Started At', 'Resolved At', 'Duration (Seconds)'];
+      const rows = list.map(i => [
+        i.id,
+        i.room_name,
+        i.status,
+        i.escalation_count || 0,
+        i.trigger_level || 'red',
+        i.started_at || '',
+        i.resolved_at || '',
+        i.resolved_at && i.started_at ? Math.round((new Date(i.resolved_at) - new Date(i.started_at)) / 1000) : ''
+      ]);
+      csv = formatCsv(headers, rows);
+    }
+
+    triggerDownload(csv, filename);
+    return { csv, filename, source: 'demo' };
+  }
+
   // Check if current page is in demo mode
   function getMode() {
     const api = getApiBase();
@@ -608,6 +741,9 @@
     updateReportStatus,
     getIncidents,
     getHourlyAnalyticsTrends,
+    escapeCsvField,
+    formatCsv,
+    exportCsv,
     broadcastSync
   };
 });

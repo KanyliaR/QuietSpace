@@ -128,4 +128,37 @@ describe('QuietSpaceStore Client-Side Demo Layer', () => {
     expect(res.incidents.length).toBeGreaterThanOrEqual(2);
     expect(res.incidents.some(i => i.room_name === 'Room 313')).toBe(true);
   });
+
+  test('formatCsv correctly formats rows and quotes special characters', () => {
+    const headers = ['ID', 'Room', 'Notes'];
+    const rows = [
+      [1, 'Room 311', 'Normal noise'],
+      [2, 'Room 312', 'Loud "laughter", yelling\nnext room']
+    ];
+    const csv = QuietSpaceStore.formatCsv(headers, rows);
+    expect(csv).toContain('ID,Room,Notes');
+    expect(csv).toContain('1,Room 311,Normal noise');
+    expect(csv).toContain('2,Room 312,"Loud ""laughter"", yelling\nnext room"');
+  });
+
+  test('exportCsv generates incidents CSV in demo mode', async () => {
+    const result = await QuietSpaceStore.exportCsv('incidents', { month: '2026-11' });
+    expect(result.source).toBe('demo');
+    expect(result.filename).toContain('quietspace-incidents-2026-11.csv');
+    expect(result.csv).toContain('Incident ID,Room Name,Status,Escalation Count,Trigger Level,Started At,Resolved At,Duration (Seconds)');
+  });
+
+  test('exportCsv generates reports CSV in demo mode', async () => {
+    const result = await QuietSpaceStore.exportCsv('reports');
+    expect(result.source).toBe('demo');
+    expect(result.filename).toContain('quietspace-reports-');
+    expect(result.csv).toContain('Report ID,Room Name,Noise Type,Severity,Comments,Report Status,Submitted At');
+  });
+
+  test('exportCsv generates hourly trends CSV in demo mode', async () => {
+    const result = await QuietSpaceStore.exportCsv('hourly', { date: '2026-11-15' });
+    expect(result.source).toBe('demo');
+    expect(result.filename).toContain('quietspace-hourly-2026-11-15.csv');
+    expect(result.csv).toContain('Hour,Hour Label,Average Noise Level (dB),Max Noise Level (dB),Min Noise Level (dB),Reading Count,Incident Spikes');
+  });
 });

@@ -216,6 +216,36 @@
       font-size: 0.85rem;
     }
 
+    .export-report-btn {
+      border: 1px solid #1f3b73;
+      border-radius: 10px;
+      padding: 9px 14px;
+      cursor: pointer;
+      background: #1f3b73;
+      color: white;
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .export-report-btn:hover {
+      background: #162b55;
+      transform: translateY(-1px);
+    }
+
+    body:not(.light-theme) .export-report-btn {
+      background: #3b82f6 !important;
+      border-color: #3b82f6 !important;
+      color: white !important;
+    }
+
+    body:not(.light-theme) .export-report-btn:hover {
+      background: #2563eb !important;
+    }
+
     .month-label {
       min-width: 150px;
       text-align: center;
@@ -815,7 +845,7 @@
     </a>
 
     <a class="nav-item" href="dashboard.html#studentReportsSection">Student Reports</a>
-    <span class="nav-item disabled">Analytics</span>
+    <a class="nav-item" href="dashboard.html#analyticsSection">Analytics</a>
 
     <a class="nav-item" href="settings.html">Settings</a>
 
@@ -877,6 +907,15 @@
 
           <button class="today-btn" onclick="goToCurrentMonth()">
             This Month
+          </button>
+
+          <button class="export-report-btn" onclick="downloadCurrentMonthCsv()" title="Download CSV report for this month">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export CSV
           </button>
         </div>
 
@@ -1522,6 +1561,45 @@
 
 
     renderPage();
+  }
+
+  async function downloadCurrentMonthCsv() {
+    const y = displayedMonth.getFullYear();
+    const m = String(displayedMonth.getMonth() + 1).padStart(2, "0");
+    const monthStr = `${y}-${m}`;
+    const btn = document.querySelector(".export-report-btn");
+    const originalText = btn ? btn.innerHTML : "";
+    if (btn) btn.textContent = "Exporting...";
+
+    try {
+      if (window.QuietSpaceStore && window.QuietSpaceStore.exportCsv) {
+        await QuietSpaceStore.exportCsv("incidents", { month: monthStr });
+      } else {
+        const res = await fetch(`${API_BASE}/api/reports/export/csv?type=incidents&month=${monthStr}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `quietspace-incidents-${monthStr}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } else {
+          throw new Error("Export failed");
+        }
+      }
+    } catch (err) {
+      console.warn("Export error, attempting fallback:", err);
+      if (window.QuietSpaceStore && window.QuietSpaceStore.exportCsv) {
+        await QuietSpaceStore.exportCsv("incidents", { month: monthStr });
+      } else {
+        alert("Failed to export monthly report.");
+      }
+    } finally {
+      if (btn) btn.innerHTML = originalText;
+    }
   }
 
 

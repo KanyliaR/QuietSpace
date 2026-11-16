@@ -231,6 +231,39 @@ POST /api/incidents/resolve
 POST /api/incidents/escalate
 ```
 
+### Staff Authentication
+
+```text
+POST /api/auth/login
+POST /api/auth/register
+GET  /api/auth/me
+```
+
+### Multi-Room Management
+
+```text
+GET  /api/rooms
+GET  /api/rooms/:id
+POST /api/rooms
+PUT  /api/rooms/:id
+PUT  /api/rooms/:id/thresholds
+PUT  /api/rooms/:id/toggle
+```
+
+### Analytics & Administrative Export
+
+```text
+GET  /api/analytics/hourly-trends
+GET  /api/reports/export/csv
+GET  /api/analytics/export/csv
+```
+
+### Real-Time Push Events (SSE)
+
+```text
+GET  /api/events
+```
+
 ## Hardware Monitoring & Simulation
 
 QuietSpace supports both physical Raspberry Pi microphone edge nodes and a dedicated multi-room hardware simulator.
@@ -352,14 +385,15 @@ QuietSpace is currently under active development as a senior design project.
 
 The current implementation includes:
 
-- Real-time browser microphone monitoring
-- Green, yellow, and red QuietScore states
-- Student QR noise reporting
-- Automatic QuietScore incidents
-- Incident escalation and resolution
-- Staff dashboard
-- Student report management
-- QuietScore incident history
-- MySQL data storage
-
-Additional multi-room functionality, hardware integration, analytics, and deployment work are ongoing.
+- Real-time in-room display with physical dBA SPL logarithmic calibration and live SSE threshold sync
+- Green, yellow, and red QuietScore states with asymmetric hysteresis and anti-jitter debouncing
+- Student QR noise reporting with categorized feedback and severity levels
+- Automatic QuietScore incidents with sub-50ms push updates (Server-Sent Events)
+- Staff authentication with bcrypt salted password hashing and signed JWT bearer tokens
+- Multi-room management REST API with dynamic room creation, threshold sensitivity, and routing
+- Multi-room hardware edge node client (`sound.py`) and simulator (`hardware_simulator.py`) with 8 noise scenarios
+- Hardware watchdog monitoring with 30-second disconnect detection and zero-dB stuck microphone diagnosis
+- 24-hour hourly noise level and incident trend analytics with interactive HTML5 Canvas visualization
+- Automated CSV report generation and administrative download for incidents, reports, and hourly trends
+- Offline client-side demo fallback (`demo-store.js`) for static or staging presentations
+- 179 automated tests across 12 Jest suites and Python unit tests with 100% pass rate

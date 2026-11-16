@@ -1393,6 +1393,287 @@ app.get("/api/analytics/hourly-trends", (req, res) => {
 });
 
 // -----------------------------
+// CSV Export API (Incidents, Reports & Hourly Trends)
+// -----------------------------
+
+function escapeCsvField(val) {
+  if (val === null || val === undefined) return "";
+  const str = String(val);
+  if (/[",\n\r]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function buildCsvString(headers, rows) {
+  const headerLine = headers.map(escapeCsvField).join(",");
+  const dataLines = rows.map((row) => row.map(escapeCsvField).join(","));
+  return [headerLine, ...dataLines].join("\r\n");
+}
+
+app.get(["/api/reports/export/csv", "/api/analytics/export/csv"], (req, res) => {
+  const { type = "incidents", month, date, room_id, start_date, end_date } = req.query;
+
+  const monthTag = month || (date ? date.slice(0, 7) : new Date().toISOString().slice(0, 7));
+
+  if (type === "reports") {
+    let whereClause = "WHERE 1=1";
+    const params = [];
+
+    if (room_id) {
+      whereClause += " AND noise_reports.room_id = ?";
+      params.push(room_id);
+    }
+    if (month) {
+      whereClause += " AND DATE_FORMAT(noise_reports.submitted_at, '%Y-%m') = ?";
+      params.push(month);
+    } else if (date) {
+      whereClause += " AND DATE(noise_reports.submitted_at) = ?";
+      params.push(date);
+    }
+    if (start_date) {
+      whereClause += " AND DATE(noise_reports.submitted_at) >= ?";
+      params.push(start_date);
+    }
+    if (end_date) {
+      whereClause += " AND DATE(noise_reports.submitted_at) <= ?";
+      params.push(end_date);
+    }
+
+    const sql = `
+      SELECT
+        noise_reports.id,
+        rooms.room_name,
+        noise_reports.noise_type,
+        noise_reports.severity,
+        noise_reports.comments,
+        noise_reports.report_status,
+        noise_reports.submitted_at
+      FROM noise_reports
+      JOIN rooms ON noise_reports.room_id = rooms.id
+      ${whereClause}
+      ORDER BY noise_reports.submitted_at DESC
+    `;
+
+    db.query(sql, params, (err, rows) => {
+      if (err) {
+        console.error("Error exporting reports CSV:", err);
+        return res.status(500).json({ message: "Error exporting CSV report" });
+      }
+
+      const headers = [
+        "Report ID",
+        "Room Name",
+        "Noise Type",
+        "Severity",
+        "Comments",
+        "Report Status",
+        "Submitted At"
+      ];
+
+      const csvRows = (rows || []).map((r) => [
+        r.id,
+        r.room_name,
+        r.noise_type,
+        r.severity,
+        r.comments || "",
+        r.report_status,
+        r.submitted_at ? new Date(r.submitted_at).toISOString() : ""
+      ]);
+
+      const csv = buildCsvString(headers, csvRows);
+      const filename = `quietspace-reports-${monthTag}.csv`;
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      return res.status(200).send(csv);
+    });
+  } else if (type === "hourly") {
+    const readingParams = [];
+    let readingWhere = "WHERE 1=1";
+    if (room_id) {
+      readingWhere += " AND room_id = ?";
+      readingParams.push(room_id);
+    }
+    if (date) {
+      readingWhere += " AND DATE(recorded_at) = ?";
+      readingParams.push(date);
+    } else if (month) {
+      readingWhere += " AND DATE_FORMAT(recorded_at, '%Y-%m') = ?";
+      readingParams.push(month);
+    }
+
+    const readingsSql = `
+      SELECT
+        HOUR(recorded_at) AS hour,
+        ROUND(AVG(level), 2) AS avg_noise_level,
+        ROUND(MAX(level), 2) AS max_noise_level,
+        ROUND(MIN(level), 2) AS min_noise_level,
+        COUNT(*) AS reading_count
+      FROM sound_readings
+      ${readingWhere}
+      GROUP BY HOUR(recorded_at)
+      ORDER BY hour
+    `;
+
+    const incidentParams = [];
+    let incidentWhere = "WHERE 1=1";
+    if (room_id) {
+      incidentWhere += " AND room_id = ?";
+      incidentParams.push(room_id);
+    }
+    if (date) {
+      incidentWhere += " AND DATE(started_at) = ?";
+      incidentParams.push(date);
+    } else if (month) {
+      incidentWhere += " AND DATE_FORMAT(started_at, '%Y-%m') = ?";
+      incidentParams.push(month);
+    }
+
+    const incidentsSql = `
+      SELECT
+        HOUR(started_at) AS hour,
+        COUNT(*) AS incident_spikes
+      FROM incidents
+      ${incidentWhere}
+      GROUP BY HOUR(started_at)
+      ORDER BY hour
+    `;
+
+    db.query(readingsSql, readingParams, (readingsErr, readingRows) => {
+      if (readingsErr) {
+        console.error("Error exporting hourly trends CSV (readings):", readingsErr);
+        return res.status(500).json({ message: "Error exporting CSV report" });
+      }
+
+      db.query(incidentsSql, incidentParams, (incidentsErr, incidentRows) => {
+        if (incidentsErr) {
+          console.error("Error exporting hourly trends CSV (incidents):", incidentsErr);
+          return res.status(500).json({ message: "Error exporting CSV report" });
+        }
+
+        const safeReadings = readingRows || [];
+        const safeIncidents = incidentRows || [];
+
+        const headers = [
+          "Hour",
+          "Hour Label",
+          "Average Noise Level (dB)",
+          "Max Noise Level (dB)",
+          "Min Noise Level (dB)",
+          "Reading Count",
+          "Incident Spikes"
+        ];
+
+        const csvRows = [];
+        for (let h = 0; h < 24; h++) {
+          const r = safeReadings.find((item) => Number(item.hour) === h);
+          const i = safeIncidents.find((item) => Number(item.hour) === h);
+
+          const avgDb = r ? Number(r.avg_noise_level) : 0;
+          const maxDb = r ? Number(r.max_noise_level) : 0;
+          const minDb = r ? Number(r.min_noise_level) : 0;
+          const rCount = r ? Number(r.reading_count) : 0;
+          const iCount = i ? Number(i.incident_spikes) : 0;
+
+          const hourLabel = h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`;
+
+          csvRows.push([
+            h,
+            hourLabel,
+            avgDb,
+            maxDb,
+            minDb,
+            rCount,
+            iCount
+          ]);
+        }
+
+        const csv = buildCsvString(headers, csvRows);
+        const filename = `quietspace-hourly-trends-${date || monthTag}.csv`;
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        return res.status(200).send(csv);
+      });
+    });
+  } else {
+    // Default: type === "incidents"
+    let whereClause = "WHERE 1=1";
+    const params = [];
+
+    if (room_id) {
+      whereClause += " AND incidents.room_id = ?";
+      params.push(room_id);
+    }
+    if (month) {
+      whereClause += " AND DATE_FORMAT(incidents.started_at, '%Y-%m') = ?";
+      params.push(month);
+    } else if (date) {
+      whereClause += " AND DATE(incidents.started_at) = ?";
+      params.push(date);
+    }
+    if (start_date) {
+      whereClause += " AND DATE(incidents.started_at) >= ?";
+      params.push(start_date);
+    }
+    if (end_date) {
+      whereClause += " AND DATE(incidents.started_at) <= ?";
+      params.push(end_date);
+    }
+
+    const sql = `
+      SELECT
+        incidents.id,
+        rooms.room_name,
+        incidents.status,
+        incidents.escalation_count,
+        incidents.trigger_level,
+        incidents.started_at,
+        incidents.resolved_at,
+        TIMESTAMPDIFF(SECOND, incidents.started_at, COALESCE(incidents.resolved_at, NOW())) AS duration_seconds
+      FROM incidents
+      JOIN rooms ON incidents.room_id = rooms.id
+      ${whereClause}
+      ORDER BY incidents.started_at DESC
+    `;
+
+    db.query(sql, params, (err, rows) => {
+      if (err) {
+        console.error("Error exporting incidents CSV:", err);
+        return res.status(500).json({ message: "Error exporting CSV report" });
+      }
+
+      const headers = [
+        "Incident ID",
+        "Room Name",
+        "Status",
+        "Escalation Count",
+        "Trigger Level",
+        "Started At",
+        "Resolved At",
+        "Duration (Seconds)"
+      ];
+
+      const csvRows = (rows || []).map((r) => [
+        r.id,
+        r.room_name,
+        r.status,
+        r.escalation_count,
+        r.trigger_level || "red",
+        r.started_at ? new Date(r.started_at).toISOString() : "",
+        r.resolved_at ? new Date(r.resolved_at).toISOString() : "",
+        r.duration_seconds !== null ? r.duration_seconds : ""
+      ]);
+
+      const csv = buildCsvString(headers, csvRows);
+      const filename = `quietspace-incidents-${monthTag}.csv`;
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      return res.status(200).send(csv);
+    });
+  }
+});
+
+// -----------------------------
 // Hardware Sensor Telemetry & Watchdog
 // -----------------------------
 
@@ -1663,5 +1944,7 @@ module.exports = {
   sensorRegistry,
   updateSensorReading,
   checkHardwareWatchdog,
-  resetSensorRegistry
+  resetSensorRegistry,
+  escapeCsvField,
+  buildCsvString
 };

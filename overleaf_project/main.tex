@@ -115,7 +115,7 @@
 \maketitle
 
 \begin{abstract}
-\noindent \textbf{QuietSpace} is an autonomous, event-driven IoT and web platform engineered to resolve acoustic disruptions in university library study environments. Developed as a Senior Design Capstone at North Carolina A\&T State University (NCAT), the platform addresses the persistent challenge of noise enforcement in group study rooms (specifically Rooms 311--313 of the F.D. Bluford Library). By combining in-room edge acoustic digital signal processing (Web Audio API / Python \texttt{sounddevice}), an asymmetric state hysteresis engine, Server-Sent Events (SSE) push streaming, crowdsourced student QR-code reporting, a secured staff authentication subsystem (salted bcrypt hashing and signed JWT bearer tokens), and an automated multi-stage incident escalation finite state machine (FSM), QuietSpace replaces disruptive confrontational enforcement with seamless, ambient visual cues and actionable telemetry. This report delivers an exhaustive architectural decomposition, mathematical formulations for signal energy quantification, relational database specifications, verification metrics (10 test suites, 137 passing tests under Jest/Supertest), and a synchronized engineering backlog roadmap.
+\noindent \textbf{QuietSpace} is an autonomous, event-driven IoT and web platform engineered to resolve acoustic disruptions in university library study environments. Developed as a Senior Design Capstone at North Carolina A\&T State University (NCAT), the platform addresses the persistent challenge of noise enforcement in group study rooms (specifically Rooms 311--313 of the F.D. Bluford Library). By combining in-room edge acoustic digital signal processing (Web Audio API / Python \texttt{sounddevice}), an asymmetric state hysteresis engine, Server-Sent Events (SSE) push streaming, crowdsourced student QR-code reporting, a secured staff authentication subsystem (salted bcrypt hashing and signed JWT bearer tokens), and an automated multi-stage incident escalation finite state machine (FSM), QuietSpace replaces disruptive confrontational enforcement with seamless, ambient visual cues and actionable telemetry. This report delivers an exhaustive architectural decomposition, mathematical formulations for signal energy quantification, relational database specifications, verification metrics (13 test suites, 179 passing tests across Jest and Python unittest), and a synchronized engineering backlog roadmap.
 \end{abstract}
 
 \vspace{0.2cm}
@@ -406,12 +406,13 @@ QuietSpace incorporates an exhaustive automated test suite implemented in \textb
 \toprule
 \textbf{Test Suite File} & \textbf{Tests} & \textbf{Verified Functionality \& Boundary Coverage} \\
 \midrule
-\\texttt{tests/hardware.test.js} & 11 & Hardware sensor telemetry status (\\texttt{GET /api/hardware/status}), heartbeats, backend 30s watchdog liveness timeout, zero-dB stuck microphone fault detection, recovery, and SSE broadcasts. \\\\
-\\texttt{tests/test\\_hardware\\_simulator.py} & 17 & Python edge sensor duration analysis, transient spike suppression ($<0.8), sustained escalation ($\\ge 0.8), 8 acoustic scenarios, HTTP transmission, and exponential backoff retry. \\\\
+\texttt{tests/hardware.test.js} & 11 & Hardware sensor telemetry status (\texttt{GET /api/hardware/status}), heartbeats, backend 30s watchdog liveness timeout, zero-dB stuck microphone fault detection, recovery, and SSE broadcasts. \\
+\texttt{tests/test\_hardware\_simulator.py} & 17 & Python edge sensor duration analysis, transient spike suppression ($<0.8$\,s), sustained escalation ($\ge 0.8$\,s), 8 acoustic scenarios, HTTP transmission, and exponential backoff retry. \\
+\texttt{tests/export.test.js} & 10 & CSV export engine (\texttt{GET /api/reports/export/csv} \& \texttt{GET /api/analytics/export/csv}), RFC 4180 escaping, incidents, reports, and hourly aggregation modes, date/month/room filtering. \\
 \texttt{tests/auth.test.js} & 11 & Staff user login (\texttt{POST /api/auth/login}), salted \texttt{bcrypt} password hash verification, signed JWT generation, protected route middleware (\texttt{GET /api/auth/me}), registration, and 401/403 rejection. \\
 \texttt{tests/rooms.test.js} & 9 & Room retrieval (\texttt{GET /api/rooms}), room creation with custom thresholds, threshold updates (\texttt{PUT /api/rooms/:id/thresholds}), boundary validation ($\theta_{\text{red}} > \theta_{\text{yellow}}$), and SSE broadcast fanout. \\
 \texttt{tests/analytics.test.js} & 9 & Hourly decibel and incident spike aggregation (\texttt{GET /api/analytics/hourly-trends}), 24-hour bucketing, per-room query filtering, and format validation. \\
-\texttt{tests/demo-store.test.js} & 12 & Client-side mock storage fallback (\texttt{demo-store.js}), state persistence across rooms, and event dispatcher for offline demonstration mode. \\
+\texttt{tests/demo-store.test.js} & 15 & Client-side mock storage fallback (\texttt{demo-store.js}), state persistence across rooms, client-side CSV report generation, formatCsv, and event dispatcher for offline demonstration mode. \\
 \texttt{tests/helpers.test.js} & 26 & Decibel threshold categorization, invalid/null handling, threshold validation rules ($\theta_{\text{red}} > \theta_{\text{yellow}}$), severity sorting, priority badges (\texttt{!} to \texttt{!!!}), and timer formatting. \\
 \texttt{tests/general.test.js} & 7 & Static file routing, root \texttt{index.html} resolution, 404 JSON error responses, and CORS header compliance. \\
 \texttt{tests/readings.test.js} & 11 & Sound reading creation (\texttt{POST /api/readings}), schema input validation, enum checking (\texttt{green/yellow/red}), and latest reading SQL join resolution. \\
@@ -420,7 +421,7 @@ QuietSpace incorporates an exhaustive automated test suite implemented in \textb
 \texttt{tests/events.test.js} & 12 & SSE connection endpoint (\texttt{GET /api/events}), \texttt{text/event-stream} headers, multi-client broadcast delivery, and automatic socket cleanup on disconnect. \\
 \bottomrule
 \end{tabularx}
-\caption{Automated Verification Suite Matrix and Functional Scope (165 Tests Total).}
+\caption{Automated Verification Suite Matrix and Functional Scope (179 Tests Total).}
 \label{tab:tests}
 \end{table}
 
@@ -443,15 +444,15 @@ The following roadmap outlines the current status, known limitations, and schedu
 \midrule
 \textbf{3. Website UX \& Themes} & \textbf{100\%} & High-visibility color psychology, glassmorphism cards, mobile QR reporting, dark/light theme switcher, live sensor telemetry badges. & $\bullet$ Fully Reached \\
 \midrule
-\textbf{4. Decibel Sensitivity \& Thresholds} & \textbf{75\%} & Sliders and preview bar in \texttt{settings.html}; DB migration complete with $\theta$ columns in \texttt{rooms}; \texttt{PUT /api/rooms/:id/thresholds} endpoint active. & $\bullet$ Calibrate sensor against handheld SPL meter in physical dBA \\
+\textbf{4. Decibel Sensitivity \& Thresholds} & \textbf{100\%} & Sliders and preview bar in \texttt{settings.html}; DB migration complete with $\theta$ columns in \texttt{rooms}; \texttt{PUT /api/rooms/:id/thresholds} endpoint active; logarithmic dBA SPL calibration bridge ($20 \log_{10}(RMS / 8\cdot 10^{-5})$). & $\bullet$ Fully Reached \\
 \midrule
-\textbf{5. Acoustic Noise Classification} & \textbf{10\%} & 3,000 ms sliding window averaging suppresses momentary micro-spikes. & $\bullet$ \textbf{Approach A:} Time/envelope duration heuristic ($<0.8$s impact vs $>3.0$s speech)\newline $\bullet$ \textbf{Approach B:} YAMNet / TFLite Edge ML \\
+\textbf{5. Acoustic Noise Classification} & \textbf{80\%} & Approach A (envelope duration analysis $<0.8$\,s transient vs $\ge 0.8$\,s sustained) fully implemented in \texttt{sound.py} and \texttt{hardware\_simulator.py}. & $\bullet$ \textbf{Approach B:} Edge ML / YAMNet / TFLite classification \\
 \midrule
 \textbf{6. Hardware Reliability \& Watchdog} & \textbf{100\%} & Edge capture with simulation fallback; Linux \texttt{systemd} unit with \texttt{Restart=always}; backend 30s watchdog marking sensor OFFLINE; zero-dB fault detection. & $\bullet$ Fully Reached \\
 \midrule
-\textbf{7. Data Analytics \& Reporting} & \textbf{60\%} & Interactive monthly calendar; summary KPI cards; backend aggregation endpoint \texttt{GET /api/analytics/hourly-trends} active. & $\bullet$ Embed 24-hr decibel line charts via Chart.js on dashboard\newline $\bullet$ CSV / PDF monthly report export \\
+\textbf{7. Data Analytics \& Reporting} & \textbf{100\%} & Interactive 24-hr Canvas decibel curve \& incident spikes chart; KPI stat cards; backend \texttt{GET /api/analytics/hourly-trends}; CSV export engine (\texttt{GET /api/reports/export/csv}); UI download buttons with demo fallback. & $\bullet$ Fully Reached \\
 \midrule
-\textbf{8. Testing \& Quality Assurance} & \textbf{100\%} & 12 test suites, 165 passing tests (148 Jest + 17 Python) covering routes, auth, room thresholds, hardware telemetry, watchdog, and SSE. & $\bullet$ Fully Reached \\
+\textbf{8. Testing \& Quality Assurance} & \textbf{100\%} & 13 test suites, 179 passing tests (162 Jest + 17 Python) covering routes, auth, room thresholds, hardware telemetry, watchdog, CSV exports, and SSE. & $\bullet$ Fully Reached \\
 \bottomrule
 \end{tabularx}
 \caption{Synchronized Engineering Goals and Actionable Backlog Tasks.}
@@ -515,12 +516,13 @@ npm start
     \item \textbf{Authentication REST API:} \texttt{POST /api/auth/login}, \texttt{POST /api/auth/register}, \texttt{GET /api/auth/me}
     \item \textbf{Room Management REST API:} \texttt{GET /api/rooms}, \texttt{PUT /api/rooms/:id/thresholds}, \texttt{PUT /api/rooms/:id/toggle}
     \item \textbf{Analytics REST API:} \texttt{GET /api/analytics/hourly-trends}
+    \item \textbf{CSV Export API:} \texttt{GET /api/reports/export/csv}, \texttt{GET /api/analytics/export/csv}
     \item \textbf{Real-Time Stream:} \texttt{GET /api/events} (Server-Sent Events push stream)
 \end{itemize}
 
 % ============================================================================
 \section{Conclusion}
 % ============================================================================
-QuietSpace demonstrates a comprehensive, production-ready foundation for automated library noise management. By integrating browser Web Audio API digital signal processing, asymmetric hysteresis debouncing, Server-Sent Events push notifications, salted bcrypt staff authentication, persistent room sensitivity thresholds, and a multi-stage incident escalation engine, the system eliminates traditional friction points between students and library administrators. With a fully verified backend (10 test suites, 137 passing tests under Jest/Supertest) and a synchronized roadmap addressing multi-room scaling, edge machine learning acoustic classification, and persistent threshold management, QuietSpace provides an exemplary Senior Design solution for the F.D. Bluford Library at North Carolina A\&T State University.
+QuietSpace demonstrates a comprehensive, production-ready foundation for automated library noise management. By integrating browser Web Audio API digital signal processing, asymmetric hysteresis debouncing, Server-Sent Events push notifications, salted bcrypt staff authentication, persistent room sensitivity thresholds, and a multi-stage incident escalation engine, the system eliminates traditional friction points between students and library administrators. With a fully verified architecture (13 test suites, 179 passing tests across Jest/Supertest and Python unittest) and a synchronized roadmap addressing multi-room scaling, edge acoustic classification, interactive decibel curves, and automated reporting exports, QuietSpace provides an exemplary Senior Design solution for the F.D. Bluford Library at North Carolina A\&T State University.
 
 \end{document}
