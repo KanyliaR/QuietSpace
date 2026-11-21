@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QuietSpace QuietScore Reports</title>
 
   <style>
@@ -12,369 +13,372 @@
       padding: 0;
     }
 
+    :root {
+      --bg: #eef5fb;
+      --surface: #ffffff;
+      --surface-alt: #f8fbff;
+      --text: #1f2a44;
+      --muted: #60708a;
+      --navy: #1f3b73;
+      --border: #d7e4f2;
+      --shadow: 0 12px 28px rgba(31, 60, 115, 0.10);
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background: #eef5fb;
-      color: #1f2a44;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
-      overflow: hidden;
     }
 
+    body.dark-theme {
+      --bg: #0f1d3a;
+      --surface: #1d3267;
+      --surface-alt: #162b58;
+      --text: #ffffff;
+      --muted: #dbe7ff;
+      --border: #49618f;
+      --navy: #91b5ff;
+      --shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+    }
+
+    /* White headings in dark mode */
+body.dark-theme .top-header h2,
+body.dark-theme .section-header h3,
+body.dark-theme .summary-value,
+body.dark-theme .selected-date-title,
+body.dark-theme .month-label {
+  color: #ffffff;
+}
+
+    button, select {
+      font-family: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    /* -------------------- Sidebar (matches Overview) -------------------- */
     .sidebar {
+      position: relative;
       width: 240px;
+      height: 100vh;
+      min-height: 100vh;
+      flex-shrink: 0;
+      overflow: hidden;
+      padding: 28px 20px;
       background: #1f3b73;
       color: white;
-      padding: 28px 20px;
-      height: 100vh;
-      overflow: hidden;
-      flex-shrink: 0;
       transition: width 0.25s ease, padding 0.25s ease;
-      position: relative;
     }
 
-    .sidebar h1 {
-      font-size: 1.6rem;
-      margin-bottom: 8px;
-    }
-
-    .sidebar p {
-      font-size: 0.9rem;
-      color: #c9d7ff;
-      margin-bottom: 30px;
-    }
+    body.dark-theme .sidebar { background: #10275a; }
+    .sidebar h1 { margin-bottom: 8px; font-size: 1.6rem; }
+    .sidebar p { margin-bottom: 30px; color: #c9d7ff; font-size: 0.9rem; }
 
     .nav-item {
       display: block;
+      margin-bottom: 10px;
       padding: 12px 14px;
       border-radius: 12px;
-      margin-bottom: 10px;
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255,255,255,0.12);
       color: white;
       text-decoration: none;
       cursor: pointer;
     }
-
-    .nav-item.active {
-      background: rgba(255, 255, 255, 0.28);
-      font-weight: 800;
-    }
-
-    .nav-item:hover {
-      background: rgba(255,255,255,0.22);
-      transform: translateX(4px);
-      transition: 0.2s ease;
-    }
-
-    .nav-item.disabled {
-      opacity: 0.55;
-      cursor: default;
-    }
-
-    .nav-item.disabled:hover {
-      background: rgba(255, 255, 255, 0.12);
-      transform: none;
-    }
-
-    .logout-wrapper {
-      position: absolute;
-      bottom: 24px;
-      left: 20px;
-      right: 20px;
-    }
-
-    .logout-btn {
-      width: 100%;
-      text-align: left;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.12);
-      color: white;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-    }
-
-    .logout-btn:hover {
-      background: rgba(255,255,255,0.24);
-    }
+    .nav-item.active { background: rgba(255,255,255,0.28); font-weight: 800; }
+    .nav-item.disabled { cursor: default; opacity: 0.55; }
+    .nav-item.disabled:hover { background: rgba(255,255,255,0.12); transform: none; }
 
     .sidebar-toggle {
       position: fixed;
+      top: 20px;
+      left: calc(240px - 50px);
       z-index: 300;
       width: 42px;
       height: 42px;
       border: none;
       border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.25s ease;
       background: rgba(255,255,255,0.82);
       color: #1f3b73;
+      cursor: pointer;
       backdrop-filter: blur(8px);
       box-shadow: 0 8px 18px rgba(0,0,0,0.15);
-    }
-
-    .sidebar-toggle img {
-      width: 22px;
-      height: 22px;
-      object-fit: contain;
-      display: block;
-      margin: auto;
-    }
-
-    body:not(.sidebar-collapsed) .sidebar-toggle {
-      top: 20px;
-      left: calc(240px - 50px);
-    }
-
-    body.sidebar-collapsed .sidebar-toggle {
-      top: 20px;
-      left: 18px;
-      background: rgba(31,59,115,0.92);
-      color: white;
-    }
-
-    body.sidebar-collapsed .sidebar {
-      width: 0;
-      padding: 0;
-    }
-
-    body.sidebar-collapsed .sidebar * {
-      display: none;
-    }
-
-    .main {
-      flex: 1;
-      height: 100vh;
-      overflow-y: auto;
-      padding: 24px 32px 32px 32px;
       transition: all 0.25s ease;
     }
+    .sidebar-toggle img { display: block; width: 22px; height: 22px; margin: auto; object-fit: contain; }
+    body.sidebar-collapsed .sidebar-toggle { top: 20px; left: 18px; background: rgba(31,59,115,0.92); color: white; }
+    body.dark-theme .sidebar-toggle,
+    body.dark-theme.sidebar-collapsed .sidebar-toggle,
+    body.dark-theme:not(.sidebar-collapsed) .sidebar-toggle {
+      background: rgba(255,255,255,0.92) !important;
+      color: #1f3b73 !important;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+    }
+    body.sidebar-collapsed .sidebar { width: 0; padding: 0; }
+    body.sidebar-collapsed .sidebar * { display: none; }
+
+    .logout-wrapper {
+      position: absolute;
+      right: 20px;
+      bottom: 24px;
+      left: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .settings-btn, .logout-btn {
+      width: auto;
+      margin: 0;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .settings-btn:hover, .logout-btn:hover { background: rgba(255,255,255,0.24); }
+
+
+    .main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 32px;
+  background: var(--bg);
+}
 
     .top-header {
-      position: relative;
-      margin-bottom: 24px;
-      padding-left: 58px;
-    }
+  position: relative;
+  padding-left: 58px;
+  margin-bottom: 28px;
+}
 
     .top-header h2 {
-      font-size: 2rem;
-      color: #1f3b73;
-      margin-bottom: 6px;
-    }
+  font-size: 2rem;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+
+body.dark-theme .top-header h2 {
+  color: #ffffff;
+}
 
     .top-header p {
-      color: #60708a;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .overview-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card, .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-card {
+      padding: 20px;
+    }
+
+    .summary-card h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .summary-value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--navy);
     }
 
     .section {
-      background: white;
-      border-radius: 18px;
       padding: 24px;
-      box-shadow: 0 12px 28px rgba(31, 60, 115, 0.10);
-      border: 1px solid #d7e4f2;
       margin-bottom: 24px;
     }
 
     .section-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      gap: 18px;
-      margin-bottom: 18px;
+      align-items: center;
       flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
     }
 
     .section-header h3 {
-      color: #1f3b73;
       font-size: 1.4rem;
+      color: var(--navy);
+      margin-bottom: 5px;
     }
 
     .section-subtitle {
-      color: #60708a;
-      font-size: 0.92rem;
-      margin-top: 5px;
+      font-size: 0.9rem;
+      color: var(--muted);
     }
 
-    .month-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .month-btn,
-    .today-btn {
-      border: none;
+    .btn {
+      border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 9px 13px;
-      cursor: pointer;
-      background: #1f3b73;
-      color: white;
-      font-weight: 800;
-      font-size: 0.85rem;
+      padding: 10px 14px;
+      background: var(--surface-alt);
+      color: var(--text);
+      font-weight: bold;
     }
 
-    .month-label {
-      min-width: 150px;
-      text-align: center;
-      font-weight: 800;
-      color: #1f3b73;
-      font-size: 1rem;
-    }
-
-    .overview-cards {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(150px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .summary-card {
-      background: white;
-      border-radius: 18px;
-      padding: 20px;
-      border: 1px solid #d7e4f2;
-      box-shadow: 0 12px 28px rgba(31, 60, 115, 0.10);
-    }
-
-    .summary-card h4 {
-      color: #60708a;
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 8px;
-    }
-
-    .summary-value {
-      color: #1f3b73;
-      font-size: 1.7rem;
-      font-weight: 900;
-    }
-
-    .content-grid {
-      display: grid;
-      grid-template-columns: minmax(320px, 0.85fr) minmax(480px, 1.5fr);
-      gap: 24px;
-      align-items: start;
-    }
-
-    .calendar {
-      width: 100%;
-    }
-
-    .calendar-weekdays,
-    .calendar-days {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 7px;
-    }
-
-    .calendar-weekdays div {
-      text-align: center;
-      font-size: 0.73rem;
-      font-weight: 800;
-      color: #60708a;
-      padding-bottom: 5px;
-      text-transform: uppercase;
-    }
-
-    .calendar-day {
-      position: relative;
-      min-height: 52px;
-      border: 1px solid #d7e4f2;
-      background: #f8fbff;
-      border-radius: 11px;
-      padding: 7px;
-      text-align: left;
-      cursor: pointer;
-      color: #1f2a44;
-      transition: 0.18s ease;
-    }
-
-    .calendar-day:hover {
-      transform: translateY(-1px);
-      border-color: #9bb6dd;
-      box-shadow: 0 5px 14px rgba(31, 60, 115, 0.10);
-    }
-
-    .calendar-day.blank {
-      border: none;
-      background: transparent;
-      cursor: default;
-      box-shadow: none;
-    }
-
-    .calendar-day.selected {
+    .btn.primary {
       background: #1f3b73;
       color: white;
       border-color: #1f3b73;
     }
 
+    .btn.active {
+      background: #3f7cff;
+      border-color: #3f7cff;
+      color: white;
+    }
+
+    .btn:hover {
+      opacity: 0.85;
+    }
+
+    .view-controls, .month-controls,
+    .filters {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .month-controls {
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .month-label {
+      font-weight: bold;
+      color: var(--navy);
+    }
+
+    .content-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(0, 1.4fr);
+  gap: 24px;
+  align-items: start;
+}
+
+    .calendar-panel {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .calendar-weekdays, .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .calendar-weekdays {
+      margin-bottom: 8px;
+    }
+
+    .calendar-weekdays div {
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: bold;
+      color: var(--muted);
+    }
+
+    .calendar-day {
+  position: relative;
+  min-height: 64px;
+  padding: 7px 3px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: bold;
+}
+
+    .calendar-day:hover {
+      border-color: #3f7cff;
+    }
+
+    .calendar-day.selected {
+      background: #3f7cff;
+      border-color: #3f7cff;
+      color: white;
+    }
+
     .calendar-day.has-reports::after {
       content: "";
       position: absolute;
-      right: 7px;
-      bottom: 7px;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
+      width: 6px;
+      height: 6px;
       background: #3f7cff;
+      border-radius: 50%;
+      bottom: 4px;
+      left: calc(50% - 3px);
     }
 
     .calendar-day.selected.has-reports::after {
       background: white;
     }
 
-    .report-count {
-      display: block;
-      margin-top: 5px;
-      font-size: 0.65rem;
-      color: #60708a;
-      font-weight: 700;
-    }
-
-    .calendar-day.selected .report-count {
-      color: #dbe7ff;
-    }
-
     .calendar-help {
-      color: #60708a;
-      font-size: 0.8rem;
       margin-top: 12px;
-      line-height: 1.4;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .filters {
+      margin-bottom: 15px;
+    }
+
+    .filter-select {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      color: var(--text);
+      min-width: 125px;
     }
 
     .selected-date-bar {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
+      align-items: center;
       flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
     }
 
     .selected-date-title {
-      color: #1f3b73;
       font-weight: 900;
-      font-size: 1rem;
-    }
-
-    .clear-date-btn {
-      border: 1px solid #c6d5e8;
-      background: #f7faff;
-      color: #1f3b73;
-      border-radius: 9px;
-      padding: 7px 10px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 0.78rem;
+      color: var(--navy);
     }
 
     .table-scroll {
-      overflow-x: auto;
-      overflow-y: auto;
+      overflow: auto;
       max-height: 560px;
+      border: 1px solid var(--border);
       border-radius: 12px;
     }
 
@@ -384,71 +388,124 @@
       min-width: 650px;
     }
 
-    th,
-    td {
-      text-align: left;
+    th, td {
       padding: 12px 10px;
-      border-bottom: 1px solid #e1e9f3;
-      font-size: 0.86rem;
-      vertical-align: top;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
     }
 
     th {
-      color: #4c5d7a;
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      background: white;
       position: sticky;
       top: 0;
       z-index: 2;
+      background: var(--surface);
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 0.74rem;
     }
 
     .status {
       display: inline-block;
       padding: 6px 10px;
-      border-radius: 999px;
-      font-weight: 800;
-      font-size: 0.75rem;
+      border-radius: 20px;
+      font-size: 0.73rem;
+      font-weight: bold;
     }
 
     .incident-open {
-      background: #fde8e8;
-      color: #8a1f1f;
+      background: #fde8b5;
+      color: #805200;
     }
 
     .incident-resolved {
-      background: #e8f5e9;
-      color: #1b5e20;
+      background: #d8f5df;
+      color: #17612b;
     }
 
     .incident-attention {
-      background: #fff3cd;
-      color: #8a5a00;
-    }
-
-    .priority {
-      font-weight: 800;
-    }
-
-    .priority-low,
-    .priority-medium {
-      color: #8a6d00;
-    }
-
-    .priority-high {
+      background: #fbd6d6;
       color: #8a1f1f;
+    }
+
+    .details-btn {
+      border: none;
+      background: transparent;
+      color: #3f7cff;
+      font-weight: bold;
+      text-decoration: underline;
     }
 
     .empty {
       text-align: center;
-      color: #60708a;
-      padding: 28px;
+      color: var(--muted);
+      padding: 30px;
     }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.65);
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h3 {
+      color: var(--navy);
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .detail-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 5px;
+    }
+
+    .detail-value {
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+
+    .sidebar-backdrop {
+      display: none;
+    }
+
+
 
     @media (max-width: 1050px) {
       .overview-cards {
-        grid-template-columns: repeat(2, minmax(150px, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .content-grid {
@@ -457,350 +514,738 @@
     }
 
     @media (max-width: 700px) {
-      body {
-        overflow: hidden;
-      }
-
-      .main {
-        width: 100%;
-        padding: 12px 14px 100px 14px;
-      }
-
       .sidebar {
         position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        bottom: 0 !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
         width: 50% !important;
         max-width: 50vw;
-        height: 100vh !important;
-        z-index: 500 !important;
-        padding: 20px 16px 24px 18px;
-        box-shadow: 6px 0 24px rgba(0, 0, 0, 0.45);
-        transition: transform 0.25s ease, opacity 0.25s ease !important;
-        overflow-y: auto !important;
+        height: 100vh;
+        z-index: 500;
+        padding: 20px 16px 24px;
+        overflow-y: auto;
+        box-shadow: 6px 0 24px rgba(0,0,0,0.45);
+        transition: transform 0.25s ease, opacity 0.25s ease;
       }
-
       body.sidebar-collapsed .sidebar {
-        transform: translateX(-100%) !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        display: block !important;
+        display: block;
         width: 50% !important;
+        transform: translateX(-100%);
+        opacity: 0;
+        pointer-events: none;
       }
+      body.sidebar-collapsed .sidebar * { display: revert; }
+      body:not(.sidebar-collapsed) .sidebar { transform: translateX(0); opacity: 1; }
+      .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 450;
+        background: rgba(0,0,0,0);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
 
-      body:not(.sidebar-collapsed) .sidebar {
-        transform: translateX(0) !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        display: block !important;
-        width: 50% !important;
       }
+      body:not(.sidebar-collapsed) .sidebar-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
 
-      body.sidebar-collapsed .sidebar * {
-        display: block !important;
-      }
-
-      body:not(.sidebar-collapsed) .sidebar * {
-        display: block !important;
-      }
-
+body.sidebar-collapsed .sidebar-backdrop {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden;
+}
       body:not(.sidebar-collapsed) .sidebar-toggle {
-        top: 15px !important;
-        left: calc(50% - 48px) !important;
-        z-index: 600 !important;
-        left: calc(50% - 48px) !important;
-        z-index: 600 !important;
-      }
+  top: 15px;
+  left: calc(50% - 48px);
+  z-index: 600;
+}
 
-      body.sidebar-collapsed .sidebar-toggle {
-        top: 10px !important;
-        left: 18px !important;
-        z-index: 600 !important;
-      }
-
-      .sidebar-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(2px);
-        z-index: 450;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.25s ease;
-      }
-
-      body:not(.sidebar-collapsed) .sidebar-backdrop {
-        opacity: 1;
-        pointer-events: auto;
-        z-index: 600 !important;
-      }
-
-      .sidebar-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(2px);
-        z-index: 450;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.25s ease;
-      }
-
-      body:not(.sidebar-collapsed) .sidebar-backdrop {
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      .top-header {
-        padding-left: 58px;
-        margin-bottom: 20px;
+body.sidebar-collapsed .sidebar-toggle {
+  top: 10px;
+  left: 18px;
+  z-index: 600;
+}
+      .logout-wrapper { bottom: 110px; left: 18px; right: 18px; }
+      .main {
+        padding: 18px 14px;
       }
 
       .top-header h2 {
-        font-size: 1.45rem;
+        font-size: 1.5rem;
       }
 
-      .top-header p {
-        font-size: 0.88rem;
-        line-height: 1.35;
-      }
-
-      .overview-cards {
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
+      .section {
+        padding: 16px 12px;
       }
 
       .summary-card {
-        padding: 15px;
+        padding: 14px;
       }
 
       .summary-value {
         font-size: 1.4rem;
       }
 
-      .section {
-        padding: 16px 12px;
-        border-radius: 16px;
-      }
-
       .calendar-day {
-        min-height: 46px;
-        padding: 5px;
-        font-size: 0.78rem;
+        min-height: 42px;
       }
 
-      .report-count {
+      .top-header p {
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+    }
+    @media (min-width: 701px) {
+      .nav-item:not(.disabled):hover {
+        background: rgba(255,255,255,0.22);
+        transform: translateX(4px);
+        transition: 0.2s ease;
+      }
+      .nav-item:not(.disabled):active {
+        background: rgba(255,255,255,0.3);
+        transform: scale(0.98);
+      }
+    }
+
+    @media (max-width: 700px) {
+
+  .overview-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .top-header {
+    padding-left: 58px;
+  }
+
+  .top-header h2 {
+    font-size: 1.5rem;
+    overflow-wrap: anywhere;
+  }
+
+  .content-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .calendar-panel {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  .calendar-day {
+    min-height: 44px;
+    padding: 5px 2px;
+    font-size: 0.8rem;
+  }
+
+  .section-header {
+    align-items: stretch;
+  }
+
+  .view-controls {
+    width: 100%;
+  }
+
+  .view-controls .btn {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    font-size: 0.75rem;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .table-scroll {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+    /* -------------------- Overview-aligned shell and date -------------------- */
+
+    body {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .main {
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      padding-left: 0;
+    }
+
+    body.sidebar-collapsed .top-header {
+      padding-left: 58px;
+    }
+
+    .header-copy {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .overview-date {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      flex-shrink: 0;
+      gap: 5px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .time-text {
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+      color: var(--navy);
+    }
+
+    body.dark-theme .time-text {
+      color: #ffffff;
+    }
+
+    .date-text {
+      font-size: 0.95rem;
+    }
+
+    .summary-note {
+      margin-top: 10px;
+      font-size: 0.77rem;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .summary-card {
+      min-width: 0;
+    }
+
+    /* Keep the entire five-column table visible without horizontal scrolling. */
+
+    .content-grid {
+      grid-template-columns: minmax(270px, 0.9fr) minmax(0, 1.5fr);
+    }
+
+    .content-grid > * {
+      min-width: 0;
+    }
+
+    .table-scroll {
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    table {
+      min-width: 0;
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 12px 7px;
+      font-size: 0.79rem;
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+    }
+
+    th {
+      font-size: 0.67rem;
+    }
+
+    th:nth-child(1) { width: 17%; }
+    th:nth-child(2) { width: 29%; }
+    th:nth-child(3) { width: 19%; }
+    th:nth-child(4) { width: 23%; }
+    th:nth-child(5) { width: 12%; }
+
+    .details-btn {
+      cursor: pointer;
+    }
+
+    .settings-btn, .logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .settings-icon {
+      flex: 0 0 16px;
+    }
+
+    /* Real incident activity only; no synthetic restart timestamps. */
+
+    .incident-activity {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .incident-activity h4 {
+      margin-bottom: 16px;
+      color: var(--navy);
+    }
+
+    body.dark-theme .incident-activity h4 {
+      color: #ffffff;
+    }
+
+    .activity-list {
+      list-style: none;
+      padding-left: 8px;
+    }
+
+    .activity-item {
+      position: relative;
+      margin-left: 5px;
+      padding: 0 0 17px 20px;
+      border-left: 2px solid var(--border);
+    }
+
+    .activity-item:last-child {
+      border-left-color: transparent;
+      padding-bottom: 0;
+    }
+
+    .activity-item::before {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: -6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #3f7cff;
+    }
+
+    .activity-item strong,
+    .activity-item span {
+      display: block;
+    }
+
+    .activity-item strong {
+      margin-bottom: 5px;
+      font-size: 0.88rem;
+    }
+
+    .activity-item span,
+    .activity-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .activity-note {
+      margin-top: 16px;
+    }
+
+    .modal {
+      max-width: 590px;
+    }
+
+    @media (max-width: 1200px) {
+      .content-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .calendar-panel {
+        max-width: 560px;
+      }
+    }
+
+    /* Match Overview's mobile sidebar, footer, and centered date. */
+
+    @media (max-width: 900px) {
+      body, .main {
+        height: 100dvh;
+      }
+
+      .main {
+        padding: 20px 14px 36px;
+      }
+
+      .sidebar,
+      body.sidebar-collapsed .sidebar,
+      body:not(.sidebar-collapsed) .sidebar {
+        position: fixed !important;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: clamp(204px, 55vw, 235px) !important;
+        max-width: none;
+        height: 100dvh;
+        min-height: 0;
+        z-index: 500;
+        padding: 22px 13px 20px !important;
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+        transition: transform 0.25s ease, opacity 0.25s ease;
+      }
+
+      body.sidebar-collapsed .sidebar {
+        transform: translateX(-100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      body.sidebar-collapsed .sidebar *,
+      body:not(.sidebar-collapsed) .sidebar * {
+        display: revert;
+      }
+
+      .sidebar .logout-wrapper {
+        position: static;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        width: 100%;
+        margin-top: auto;
+      }
+
+      .sidebar .settings-btn,
+      .sidebar .logout-btn {
+        display: flex !important;
+        width: 100%;
+        min-height: 42px;
+        padding: 8px 3px;
+        font-size: 0.7rem;
+      }
+
+      .sidebar .settings-icon {
+        display: block !important;
+      }
+
+      .sidebar-toggle,
+      body.sidebar-collapsed .sidebar-toggle {
+        top: 20px;
+        left: 14px;
+        z-index: 600;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        top: 20px;
+        left: calc(clamp(204px, 55vw, 235px) - 48px);
+      }
+
+      .sidebar-backdrop {
+        display: block;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(3px);
+      }
+
+      .top-header,
+      body.sidebar-collapsed .top-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding-left: 0;
+        text-align: center;
+      }
+
+      .header-copy {
+        width: 100%;
+      }
+
+      .top-header h2 {
+        padding-inline: clamp(48px, 13vw, 68px);
+        font-size: clamp(1.2rem, 4.8vw, 1.65rem);
+      }
+
+      .overview-date {
+        align-items: center;
+        text-align: center;
+        white-space: normal;
+      }
+
+      .time-text {
+        font-size: 1.25rem;
+      }
+
+      .date-text {
+        font-size: 0.82rem;
+      }
+
+      .overview-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .content-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .calendar-panel {
+        max-width: none;
+      }
+
+      .filters {
+        display: flex;
+      }
+
+      .filter-select {
+        width: min(220px, 100%);
+      }
+
+      /* Mobile records become readable cards, not a sideways table. */
+      .table-scroll {
+        border: none;
+      }
+
+      table, tbody {
+        display: block;
+        width: 100%;
+      }
+
+      thead {
         display: none;
       }
 
-      .logout-wrapper {
-        bottom: 110px !important;
-        left: 18px;
-        right: 18px;
+      #reportsTableBody tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface-alt);
+      }
+
+      #reportsTableBody td {
+        display: block;
+        min-width: 0;
+        padding: 0;
+        border: none;
+        font-size: 0.85rem;
+      }
+
+      #reportsTableBody td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 5px;
+        color: var(--muted);
+        font-size: 0.7rem;
+        font-weight: bold;
+      }
+
+      #reportsTableBody td:nth-child(5) {
+        grid-column: 1 / -1;
+        padding-top: 9px;
+        border-top: 1px solid var(--border);
+      }
+
+      #reportsTableBody tr:has(.empty) {
+        display: block;
+      }
+
+      #reportsTableBody .empty::before {
+        display: none;
       }
     }
 
-    /* -------------------- Dark Mode Theme Classes -------------------- */
 
-    body.dark-theme,
-    body.dark-theme .main {
-      background: #0f1d3a;
-      color: #ffffff;
+    .mobile-action-label { display: none; }
+
+    @media (max-width: 900px) {
+      .desktop-action-label { display: none; }
+      .mobile-action-label { display: inline; }
     }
 
-    body.dark-theme .sidebar {
-      background: #10275a;
+    /* -------------------- Final Overview sidebar alignment -------------------- */
+
+    .logout-wrapper {
+      gap: 12px;
     }
 
-    body.dark-theme .top-header h2,
-    body.dark-theme .section-header h3,
-    body.dark-theme .month-label,
-    body.dark-theme .selected-date-title,
-    body.dark-theme .summary-value {
-      color: #ffffff;
+    .settings-btn,
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+
+    .settings-icon {
+      flex: 0 0 16px;
     }
 
-    body.dark-theme .top-header p,
-    body.dark-theme .section-subtitle,
-    body.dark-theme .calendar-help,
-    body.dark-theme .report-count {
-      color: #dbe7ff;
+    /* Keep the two-word column label compact without renaming it. */
+    th:nth-child(4) span {
+      display: block;
     }
 
-    body.dark-theme .section,
-    body.dark-theme .summary-card {
-      background: linear-gradient(
-        to bottom,
-        #243b75 0%,
-        #1d3267 45%,
-        #142650 100%
-      );
-      border: 1px solid rgba(141, 170, 220, 0.35);
-      color: #ffffff;
+    @media (max-width: 900px) {
+      /* Match Overview's mobile sidebar, toggle, and footer behavior. */
+      .sidebar,
+      body.sidebar-collapsed .sidebar,
+      body:not(.sidebar-collapsed) .sidebar {
+        display: flex !important;
+        flex-direction: column;
+        padding: 22px 13px 20px !important;
+        overflow: hidden;
+      }
+
+      body.sidebar-collapsed .sidebar *,
+      body:not(.sidebar-collapsed) .sidebar * {
+        display: block !important;
+      }
+
+      body:not(.sidebar-collapsed) .sidebar {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      body.sidebar-collapsed .sidebar {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+
+      .sidebar-toggle,
+      body.sidebar-collapsed .sidebar-toggle {
+        top: 20px !important;
+        left: 14px !important;
+        z-index: 600;
+      }
+
+      .sidebar-backdrop {
+        display: block;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(3px);
+      }
+
+      /* A narrower sidebar with a cap, but room for full navigation labels. */
+      .sidebar,
+      body.sidebar-collapsed .sidebar,
+      body:not(.sidebar-collapsed) .sidebar {
+        width: clamp(204px, 55vw, 235px) !important;
+      }
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        left: calc(clamp(204px, 55vw, 235px) - 48px) !important;
+      }
+      /* Override the old universal display:block !important sidebar rule. */
+      body:not(.sidebar-collapsed) .sidebar .logout-wrapper,
+      body.sidebar-collapsed .sidebar .logout-wrapper {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: stretch;
+        gap: 10px;
+        width: 100%;
+        margin-top: auto;
+      }
+      body:not(.sidebar-collapsed) .sidebar .logout-wrapper > .settings-btn,
+      body:not(.sidebar-collapsed) .sidebar .logout-wrapper > .logout-btn,
+      body.sidebar-collapsed .sidebar .logout-wrapper > .settings-btn,
+      body.sidebar-collapsed .sidebar .logout-wrapper > .logout-btn {
+        display: flex !important;
+        width: 100% !important;
+        height: 42px;
+        min-height: 42px;
+        min-width: 0;
+        padding: 8px 3px;
+        margin: 0;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-size: 0.7rem;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      body:not(.sidebar-collapsed) .sidebar .logout-wrapper .settings-icon,
+      body.sidebar-collapsed .sidebar .logout-wrapper .settings-icon {
+        display: block !important;
+        width: 14px;
+        height: 14px;
+        flex: 0 0 14px;
+      }
+
+      .sidebar .logout-wrapper {
+        position: static;
+      }
+
+      .top-header,
+      body.sidebar-collapsed .top-header {
+        padding-left: 0;
+        text-align: center;
+      }
+
+      .header-copy h2 {
+        padding-inline: clamp(48px, 13vw, 68px);
+        text-wrap: balance;
+      }
+
+      /* The mobile card has a single centered, larger action link. */
+      #reportsTableBody td:nth-child(5) {
+        text-align: center;
+        padding: 12px 0 2px;
+      }
+
+      #reportsTableBody td:nth-child(5)::before {
+        display: none;
+      }
+
+      #reportsTableBody td:nth-child(5) .details-btn {
+        display: inline-block;
+        padding: 12px 16px;
+        min-height: 44px;
+        font-size: 0.88rem;
+        line-height: 1.35;
+      }
+
     }
 
-    body.dark-theme .summary-card h4 {
-      color: #dbe7ff;
-    }
-
-    body.dark-theme .calendar-day {
-      background: #162b58;
-      border-color: rgba(141, 170, 220, 0.35);
-      color: white;
-    }
-
-    body.dark-theme .calendar-day.selected {
-      background: #4f7ee8;
-      border-color: #4f7ee8;
-    }
-
-    body.dark-theme .clear-date-btn {
-      background: #1d3267;
-      border-color: #49618f;
-      color: white;
-    }
-
-    body.dark-theme th {
-      background: #243b75;
-      color: #dbe7ff;
-    }
-
-    body.dark-theme td {
-      color: #ffffff;
-      border-bottom: 1px solid rgba(219, 231, 255, 0.18);
-    }
-
-    body.dark-theme body.sidebar-collapsed .sidebar-toggle,
-    body.dark-theme body:not(.sidebar-collapsed) .sidebar-toggle,
-    body.dark-theme .sidebar-toggle {
-      background: rgba(255, 255, 255, 0.92) !important;
-      color: #1f3b73 !important;
-    }
-
-    body.dark-theme .incident-open {
-      background: #fca5a5 !important;
-      color: #7f1d1d !important;
-    }
-
-    body.dark-theme .incident-resolved {
-      background: #6ee7b7 !important;
-      color: #064e3b !important;
-    }
-
-    body.dark-theme .incident-attention {
-      background: #fcd34d !important;
-      color: #78350f !important;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      body:not(.light-theme),
-      body:not(.light-theme) .main {
-        background: #0f1d3a;
-        color: #ffffff;
-      }
-
-      body:not(.light-theme) .sidebar {
-        background: #10275a;
-      }
-
-      body:not(.light-theme) .top-header h2,
-      body:not(.light-theme) .section-header h3,
-      body:not(.light-theme) .month-label,
-      body:not(.light-theme) .selected-date-title,
-      body:not(.light-theme) .summary-value {
-        color: #ffffff;
-      }
-
-      body:not(.light-theme) .top-header p,
-      body:not(.light-theme) .section-subtitle,
-      body:not(.light-theme) .calendar-help,
-      body:not(.light-theme) .report-count {
-        color: #dbe7ff;
-      }
-
-      body:not(.light-theme) .section,
-      body:not(.light-theme) .summary-card {
-        background: linear-gradient(
-          to bottom,
-          #243b75 0%,
-          #1d3267 45%,
-          #142650 100%
-        );
-        border: 1px solid rgba(141, 170, 220, 0.35);
-        color: #ffffff;
-      }
-
-      body:not(.light-theme) .summary-card h4 {
-        color: #dbe7ff;
-      }
-
-      body:not(.light-theme) .calendar-day {
-        background: #162b58;
-        border-color: rgba(141, 170, 220, 0.35);
-        color: white;
-      }
-
-      body:not(.light-theme) .calendar-day.selected {
-        background: #4f7ee8;
-        border-color: #4f7ee8;
-      }
-
-      body:not(.light-theme) .clear-date-btn {
-        background: #1d3267;
-        border-color: #49618f;
-        color: white;
-      }
-
-      body:not(.light-theme) th {
-        background: #243b75;
-        color: #dbe7ff;
-      }
-
-      body:not(.light-theme) td {
-        color: #ffffff;
-      }
-
-      body:not(.light-theme) th,
-      body:not(.light-theme) td {
-        border-bottom: 1px solid rgba(219, 231, 255, 0.18);
-      }
-
-      body:not(.light-theme) body.sidebar-collapsed .sidebar-toggle,
-      body:not(.light-theme) body:not(.sidebar-collapsed) .sidebar-toggle,
-      body:not(.light-theme) .sidebar-toggle {
-        background: rgba(255, 255, 255, 0.92) !important;
-        color: #1f3b73 !important;
-      }
-
-      body:not(.light-theme) .incident-open {
-        background: #fca5a5 !important;
-        color: #7f1d1d !important;
-      }
-
-      body:not(.light-theme) .incident-resolved {
-        background: #6ee7b7 !important;
-        color: #064e3b !important;
-      }
-
-      body:not(.light-theme) .incident-attention {
-        background: #fcd34d !important;
-        color: #78350f !important;
-      }
-    }
   </style>
-</head>
+<link rel="stylesheet" href="quietscore-refinements.css"></head>
 
 <body>
 
-  <!-- Mobile Overlay Backdrop -->
-  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+  <div
+    class="sidebar-backdrop"
+    id="sidebarBackdrop"
+    onclick="toggleSidebar()">
+  </div>
 
-  <!-- Mobile Overlay Backdrop -->
-  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
-
-  <button class="sidebar-toggle" onclick="toggleSidebar()">
-    <img src="../images/cloudicon.png" alt="Menu">
+  <button
+    class="sidebar-toggle"
+    onclick="toggleSidebar()"
+    aria-label="Toggle sidebar">
+    <img src="../images/cloudicon.png" alt="" />
   </button>
 
   <aside class="sidebar">
@@ -808,121 +1253,187 @@
     <p>Staff Dashboard</p>
 
     <a class="nav-item" href="dashboard.html">Overview</a>
+    <a class="nav-item active" href="QuietScorePage.html">QuietScore Reports</a>
+    <a class="nav-item" href="StudentReportsPage.html">Student Reports</a>
+    <a class="nav-item" href="analytics.html">Analytics</a>
 
-    <a class="nav-item active" href="QuietScorePage.html">
-      QuietScore Reports
-    </a>
+   <div class="logout-wrapper">
 
-    <a class="nav-item" href="dashboard.html#studentReportsSection">Student Reports</a>
-    <span class="nav-item disabled">Analytics</span>
+  <a class="settings-btn" href="settings.html">
+    <svg class="settings-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.9 1.9-.06-.06A1.7 1.7 0 0 0 16 18.44a1.7 1.7 0 0 0-1 .96V20h-2v-.6a1.7 1.7 0 0 0-1-.96 1.7 1.7 0 0 0-1.88.34l-.06.06-1.9-1.9.06-.06A1.7 1.7 0 0 0 8.56 15a1.7 1.7 0 0 0-.96-1H7v-2h.6a1.7 1.7 0 0 0 .96-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.9-1.9.06.06A1.7 1.7 0 0 0 12 7.56a1.7 1.7 0 0 0 1-.96V6h2v.6a1.7 1.7 0 0 0 1 .96 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.9 1.9-.06.06A1.7 1.7 0 0 0 19.44 11a1.7 1.7 0 0 0 .96 1h.6v2h-.6a1.7 1.7 0 0 0-1 .96Z" transform="translate(-2 -1)"/></svg> <span>Settings</span>
+  </a>
 
-    <a class="nav-item" href="settings.html">Settings</a>
+  <button class="logout-btn" onclick="logout()">
+    Log Out
+  </button>
 
-    <div class="logout-wrapper">
-      <button class="logout-btn" onclick="logout()">Log Out</button>
-    </div>
+</div>
   </aside>
 
   <main class="main">
 
     <div class="top-header">
-      <h2>QuietScore Report History</h2>
-      <p>
-        Review system-generated noise incidents by month or select a specific day.
-      </p>
+      <div class="header-copy">
+        <h2>QuietScore Reports</h2>
+        <p>
+          View historical noise incidents
+          generated by QuietSpace.
+        </p>
+      </div>
+
+      <div class="overview-date" id="overviewDate" aria-live="off">
+        <span class="time-text">
+          <span aria-hidden="true">◷</span>
+          <span id="overviewTimeText"></span>
+        </span>
+        <span class="date-text" id="overviewDateText"></span>
+      </div>
     </div>
 
-    <div class="overview-cards">
+    <!-- SUMMARY CARDS -->
 
-      <div class="summary-card">
-        <h4>Total Reports</h4>
-        <div class="summary-value" id="totalReports">0</div>
-      </div>
+<div class="overview-cards">
 
-      <div class="summary-card">
-        <h4>Resolved</h4>
-        <div class="summary-value" id="resolvedReports">0</div>
-      </div>
+  <div class="summary-card">
+    <h4>Total Incidents</h4>
+    <div class="summary-value" id="totalReports">0</div>
+  </div>
 
-      <div class="summary-card">
-        <h4>Needs Attention</h4>
-        <div class="summary-value" id="attentionReports">0</div>
-      </div>
+  <div class="summary-card">
+    <h4>Repeated Countdown Cycles</h4>
+    <div class="summary-value" id="repeatedReports">0</div>
+    <p class="summary-note">Incidents with one or more countdown restarts</p>
+  </div>
 
-      <div class="summary-card">
-        <h4>Busiest Room</h4>
-        <div class="summary-value" id="busiestRoom">—</div>
-      </div>
+  <div class="summary-card">
+    <h4>Triggered Staff Alerts</h4>
+    <div class="summary-value" id="alertReports">—</div>
+    <p class="summary-note" id="alertNote">
+      Confirmed alert events are not available from the current API.
+    </p>
+  </div>
 
-    </div>
+</div>
 
-    <section class="section">
+    <!-- REPORT HISTORY -->
+
+    <section class="section incident-records-section">
 
       <div class="section-header">
 
         <div>
-          <h3>Report History</h3>
+          <h3>Incident Records</h3>
           <p class="section-subtitle">
-            Use the calendar to narrow the report list to one day.
+            Browse all incidents or select a date from the calendar.
           </p>
         </div>
 
-        <div class="month-controls">
-          <button class="month-btn" onclick="changeMonth(-1)">←</button>
+        <div class="view-controls">
 
-          <div class="month-label" id="monthLabel"></div>
-
-          <button class="month-btn" onclick="changeMonth(1)">→</button>
-
-          <button class="today-btn" onclick="goToCurrentMonth()">
-            This Month
+          <button
+            class="btn active"
+            id="allIncidentsBtn"
+            onclick="showAllIncidents()">
+            All Incidents
           </button>
-        </div>
 
+          <button
+            class="btn"
+            id="monthIncidentsBtn"
+            onclick="showMonthIncidents()">
+            Selected Month
+          </button>
+
+          <button
+            class="btn primary"
+            onclick="loadQuietScoreReports()">
+            Refresh
+          </button>
+
+        </div>
       </div>
 
       <div class="content-grid">
 
-        <div>
+        <!-- CALENDAR -->
 
-          <div class="calendar">
+        <div class="calendar-panel">
 
-            <div class="calendar-weekdays">
-              <div>Sun</div>
-              <div>Mon</div>
-              <div>Tue</div>
-              <div>Wed</div>
-              <div>Thu</div>
-              <div>Fri</div>
-              <div>Sat</div>
-            </div>
+          <div class="month-controls">
 
-            <div class="calendar-days" id="calendarDays"></div>
+            <button
+              class="btn"
+              onclick="changeMonth(-1)">
+              ←
+            </button>
+
+            <span class="month-label" id="monthLabel"></span>
+
+            <button
+              class="btn"
+              onclick="changeMonth(1)">
+              →
+            </button>
 
           </div>
 
+          <div class="calendar-weekdays">
+            <div>Sun</div>
+            <div>Mon</div>
+            <div>Tue</div>
+            <div>Wed</div>
+            <div>Thu</div>
+            <div>Fri</div>
+            <div>Sat</div>
+          </div>
+
+          <div class="calendar-days" id="calendarDays"></div>
+
           <p class="calendar-help">
-            Dates with a blue dot contain QuietScore reports.
-            Click a date to view only that day's incidents.
+            Blue dots indicate days with recorded incidents.
+            Select a date to filter the incident list.
           </p>
+
+          <button
+            class="btn"
+            style="width:100%; margin-top:15px;"
+            onclick="goToCurrentMonth()">
+            This Month
+          </button>
 
         </div>
 
-        <div>
+        <!-- INCIDENT TABLE -->
+
+        <div class="incident-history">
+
+          <div class="filters">
+
+            <select
+              class="filter-select"
+              id="roomFilter"
+              aria-label="Filter by room"
+              onchange="renderPage()">
+              <option value="all">All Rooms</option>
+            </select>
+
+
+          </div>
 
           <div class="selected-date-bar">
 
-            <div class="selected-date-title" id="selectedDateTitle">
-              All reports this month
-            </div>
+            <span
+              class="selected-date-title"
+              id="selectedDateTitle">
+              All Incidents
+            </span>
 
             <button
-              class="clear-date-btn"
+              class="btn"
               id="clearDateBtn"
-              onclick="clearSelectedDate()"
-              style="display:none;"
-            >
-              Show Full Month
+              onclick="showAllIncidents()"
+              style="display:none;">
+              Clear Date
             </button>
 
           </div>
@@ -934,21 +1445,19 @@
               <thead>
                 <tr>
                   <th>Room</th>
-                  <th>Status</th>
-                  <th>Opened</th>
-                  <th>Escalation</th>
-                  <th>Timer</th>
+                  <th>Started</th>
+                  <th>Duration</th>
+                  <th><span>Countdown</span><span>Cycles</span></th>
+                  <th>Incident Logs</th>
                 </tr>
               </thead>
 
               <tbody id="reportsTableBody">
-
                 <tr>
                   <td colspan="5" class="empty">
-                    Loading QuietScore reports...
+                    Loading incidents...
                   </td>
                 </tr>
-
               </tbody>
 
             </table>
@@ -963,671 +1472,1055 @@
 
   </main>
 
-<script>
-  /*
-   * Prototype Authentication Guard: Authorized personnel only
-   * Requires valid login session from login.html.
-   */
-  (function () {
-    const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
-    const expiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
+  <!-- INCIDENT DETAILS MODAL -->
 
-    if (!isLoggedIn || (expiresAt > 0 && Date.now() > expiresAt)) {
-      localStorage.removeItem("quietspaceLoggedIn");
-      localStorage.removeItem("quietspaceSessionExpiresAt");
-      window.location.replace("login.html?redirect=reports&restricted=1");
-    }
-  })();
+  <div
+    class="modal-backdrop"
+    id="detailsModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="detailsTitle"
+    onclick="closeModalOnBackdrop(event)">
 
-  /*
-   * Global Theme Support (Default: Dark Mode)
-   */
-  function applyGlobalTheme() {
-    const theme = localStorage.getItem("quietspace_theme");
-    if (theme === "light") {
-      document.body.classList.add("light-theme");
-      document.body.classList.remove("dark-theme");
-    } else {
-      document.body.classList.add("dark-theme");
-      document.body.classList.remove("light-theme");
-    }
-  }
-  applyGlobalTheme();
-  window.addEventListener("storage", (e) => {
-    if (e.key === "quietspace_theme") {
-      applyGlobalTheme();
-    }
-  });
+    <div class="modal">
 
-  let allIncidents = [];
+      <div class="modal-header">
+        <h3 id="detailsTitle">Incident Logs</h3>
 
-  let displayedMonth = new Date();
+        <button
+          class="btn"
+          onclick="closeIncidentDetails()">
+          ✕
+        </button>
+      </div>
 
-  displayedMonth = new Date(
-    displayedMonth.getFullYear(),
-    displayedMonth.getMonth(),
-    1
-  );
+      <div class="details-grid" id="detailsContent"></div>
 
-  let selectedDate = null;
+      <div class="incident-activity">
+        <h4>Incident Activity</h4>
+        <ol class="activity-list" id="incidentActivity"></ol>
+        <p class="activity-note" id="activityNote"></p>
+      </div>
 
+    </div>
 
-  async function loadQuietScoreReports() {
+  </div>
 
-    const tableBody =
-      document.getElementById("reportsTableBody");
+  <script>
 
-    try {
+    // --------------------------------------------------
+    // AUTHENTICATION GUARD
+    // Prototype only. Server-side authorization is also
+    // required before deploying to library staff.
+    // --------------------------------------------------
 
-      const response =
-        await fetch(`/api/incidents?t=${Date.now()}`);
+    (function () {
 
-      if (!response.ok) {
-        throw new Error("Unable to load incidents");
+      const isLoggedIn =
+        Boolean(window.quietspaceUser);
+
+      const expiresAt = parseInt(
+        "0" || "0",
+        10
+      );
+
+      if (!isLoggedIn ||
+          (expiresAt > 0 && Date.now() > expiresAt)) {
+
+        localStorage.removeItem("quietspaceLoggedIn");
+        localStorage.removeItem("quietspaceSessionExpiresAt");
+
+        window.location.replace(
+          "login.html?redirect=reports&restricted=1"
+        );
+
       }
 
-      allIncidents = await response.json();
+    })();
+
+
+    // --------------------------------------------------
+    // GLOBAL THEME
+    // --------------------------------------------------
+
+    function applyGlobalTheme() {
+
+      const theme = localStorage.getItem("quietspace_theme");
+
+      // Match Overview: dark unless light mode is explicitly saved.
+      const useDark = theme !== "light";
+
+      document.body.classList.toggle(
+        "dark-theme",
+        useDark
+      );
+
+    }
+
+    applyGlobalTheme();
+
+    window.addEventListener("storage", event => {
+      if (event.key === "quietspace_theme") {
+        applyGlobalTheme();
+      }
+    });
+
+
+    // --------------------------------------------------
+    // LIVE DATE AND TIME (MATCHES OVERVIEW)
+    // --------------------------------------------------
+
+    function updateOverviewDate() {
+      window.quietspaceUpdateHeaderClock?.();
+    }
+
+    updateOverviewDate();
+    setInterval(updateOverviewDate, 1000);
+
+
+    // --------------------------------------------------
+    // APPLICATION STATE
+    // --------------------------------------------------
+
+    let allIncidents = [];
+
+    let displayedMonth = new Date();
+
+    displayedMonth = new Date(
+      displayedMonth.getFullYear(),
+      displayedMonth.getMonth(),
+      1
+    );
+
+    let selectedDate = null;
+
+    // "all", "month", or "day"
+    let viewMode = "all";
+
+    let requestInProgress = false;
+
+
+    // --------------------------------------------------
+    // FETCH INCIDENTS
+    // --------------------------------------------------
+
+    async function loadQuietScoreReports() {
+
+      if (requestInProgress) return;
+
+      requestInProgress = true;
+
+      try {
+
+        const response = await fetch(
+          `/api/incidents?t=${Date.now()}`,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load incidents");
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error("Unexpected incidents response");
+        }
+
+        allIncidents = data;
+
+        populateRoomFilter();
+
+        renderPage();
+
+      } catch (error) {
+
+        console.error(
+          "Error loading QuietScore reports:",
+          error
+        );
+
+        const tableBody =
+          document.getElementById("reportsTableBody");
+
+        if (allIncidents.length === 0) {
+
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="5" class="empty">
+                Unable to load QuietScore incidents.
+              </td>
+            </tr>
+          `;
+
+        }
+
+      } finally {
+        requestInProgress = false;
+      }
+
+    }
+
+
+    // --------------------------------------------------
+    // ROOM FILTER
+    // --------------------------------------------------
+
+    function populateRoomFilter() {
+
+      const select = document.getElementById("roomFilter");
+
+      const previousValue = select.value;
+
+      const rooms = [
+        ...new Set(
+          allIncidents
+            .map(incident => incident.room_name)
+            .filter(Boolean)
+        )
+      ].sort();
+
+      select.replaceChildren();
+
+      const allOption = document.createElement("option");
+      allOption.value = "all";
+      allOption.textContent = "All Rooms";
+      select.appendChild(allOption);
+
+      rooms.forEach(room => {
+
+        const option = document.createElement("option");
+
+        option.value = room;
+        option.textContent = room;
+
+        select.appendChild(option);
+
+      });
+
+      if (rooms.includes(previousValue)) {
+        select.value = previousValue;
+      }
+
+    }
+
+
+    // --------------------------------------------------
+    // VIEW CONTROLS
+    // --------------------------------------------------
+
+    function showAllIncidents() {
+
+      viewMode = "all";
+      selectedDate = null;
 
       renderPage();
 
-    } catch (error) {
+    }
 
-      console.error(
-        "Error loading QuietScore reports:",
-        error
+    function showMonthIncidents() {
+
+      viewMode = "month";
+      selectedDate = null;
+
+      renderPage();
+
+    }
+
+    function selectDate(day) {
+
+      selectedDate = new Date(
+        displayedMonth.getFullYear(),
+        displayedMonth.getMonth(),
+        day
       );
 
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="5" class="empty">
-            Unable to load QuietScore reports.
-          </td>
-        </tr>
-      `;
+      viewMode = "day";
+
+      renderPage();
+
     }
-  }
+
+    function changeMonth(offset) {
+
+      displayedMonth = new Date(
+        displayedMonth.getFullYear(),
+        displayedMonth.getMonth() + offset,
+        1
+      );
+
+      selectedDate = null;
+      viewMode = "month";
+
+      renderPage();
+
+    }
+
+    function goToCurrentMonth() {
+
+      const now = new Date();
+
+      displayedMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+      );
+
+      selectedDate = null;
+      viewMode = "month";
+
+      renderPage();
+
+    }
 
 
-  function renderPage() {
+    // --------------------------------------------------
+    // DATE HELPERS
+    // --------------------------------------------------
 
-    document.getElementById("monthLabel").textContent =
-      displayedMonth.toLocaleDateString([], {
-        month: "long",
-        year: "numeric"
-      });
+    function getIncidentDate(incident) {
 
-    const monthIncidents = getMonthIncidents();
+      if (!incident.started_at) return null;
 
-    updateSummaryCards(monthIncidents);
+      const date = new Date(incident.started_at);
 
-    renderCalendar(monthIncidents);
+      return Number.isNaN(date.getTime())
+        ? null
+        : date;
 
-    renderTable(monthIncidents);
-  }
+    }
 
-
-  function getMonthIncidents() {
-
-    const year = displayedMonth.getFullYear();
-
-    const month = displayedMonth.getMonth();
-
-    return allIncidents.filter(incident => {
-
-      if (!incident.started_at) return false;
-
-      const incidentDate =
-        new Date(incident.started_at);
+    function isSameMonth(date, monthDate) {
 
       return (
-        incidentDate.getFullYear() === year &&
-        incidentDate.getMonth() === month
+        date.getFullYear() === monthDate.getFullYear() &&
+        date.getMonth() === monthDate.getMonth()
       );
-    });
-  }
 
+    }
 
-  function renderCalendar(monthIncidents) {
+    function isSameDay(dateA, dateB) {
 
-    const calendarDays =
-      document.getElementById("calendarDays");
+      return (
+        dateA.getFullYear() === dateB.getFullYear() &&
+        dateA.getMonth() === dateB.getMonth() &&
+        dateA.getDate() === dateB.getDate()
+      );
 
-    calendarDays.innerHTML = "";
-
-    const year =
-      displayedMonth.getFullYear();
-
-    const month =
-      displayedMonth.getMonth();
-
-    const firstDay =
-      new Date(year, month, 1).getDay();
-
-    const daysInMonth =
-      new Date(year, month + 1, 0).getDate();
-
-    const countByDay = {};
-
-
-    monthIncidents.forEach(incident => {
-
-      const day =
-        new Date(incident.started_at).getDate();
-
-      countByDay[day] =
-        (countByDay[day] || 0) + 1;
-    });
-
-
-    for (let i = 0; i < firstDay; i++) {
-
-      const blank =
-        document.createElement("div");
-
-      blank.className =
-        "calendar-day blank";
-
-      calendarDays.appendChild(blank);
     }
 
 
-    for (
-      let day = 1;
-      day <= daysInMonth;
-      day++
-    ) {
+    // --------------------------------------------------
+    // INCIDENT STATUS
+    // --------------------------------------------------
 
-      const button =
-        document.createElement("button");
+    function getIncidentStatus(incident) {
 
-      button.className =
-        "calendar-day";
-
-      button.type = "button";
-
-      const reportCount =
-        countByDay[day] || 0;
-
-
-      if (reportCount > 0) {
-        button.classList.add("has-reports");
+      if (incident.status === "resolved") {
+        return "resolved";
       }
-
 
       if (
-        selectedDate &&
-        selectedDate.getFullYear() === year &&
-        selectedDate.getMonth() === month &&
-        selectedDate.getDate() === day
+        incident.status === "needs_staff_attention" ||
+        (
+          incident.status === "open" &&
+          Number(incident.escalation_count) >= 3
+        )
       ) {
-        button.classList.add("selected");
+        return "needs_staff_attention";
       }
 
+      return incident.status || "open";
 
-      button.innerHTML = `
-        <strong>${day}</strong>
+    }
 
-        ${
-          reportCount > 0
-            ? `
-              <span class="report-count">
-                ${reportCount}
-                report${reportCount === 1 ? "" : "s"}
-              </span>
-            `
-            : ""
+    function formatStatus(status) {
+
+      if (status === "open") return "Active";
+
+      if (status === "resolved") return "Resolved";
+
+      if (status === "needs_staff_attention") {
+        return "Needs Attention";
+      }
+
+      return String(status)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, char => char.toUpperCase());
+
+    }
+
+    function getStatusClass(status) {
+
+      if (status === "resolved") {
+        return "incident-resolved";
+      }
+
+      if (status === "needs_staff_attention") {
+        return "incident-attention";
+      }
+
+      return "incident-open";
+
+    }
+
+
+    // --------------------------------------------------
+    // FILTER INCIDENTS
+    // --------------------------------------------------
+
+    function getFilteredIncidents() {
+
+      const roomFilter =
+        document.getElementById("roomFilter").value;
+
+      return allIncidents.filter(incident => {
+
+        const incidentDate = getIncidentDate(incident);
+
+        if (!incidentDate) return false;
+
+        if (
+          viewMode === "month" &&
+          !isSameMonth(incidentDate, displayedMonth)
+        ) {
+          return false;
         }
-      `;
 
+        if (
+          viewMode === "day" &&
+          selectedDate &&
+          !isSameDay(incidentDate, selectedDate)
+        ) {
+          return false;
+        }
 
-      button.onclick =
-        () => selectDate(day);
+        if (
+          roomFilter !== "all" &&
+          incident.room_name !== roomFilter
+        ) {
+          return false;
+        }
 
+        return true;
 
-      calendarDays.appendChild(button);
-    }
-  }
+      }).sort((a, b) => {
 
-
-  function renderTable(monthIncidents) {
-
-    const tableBody =
-      document.getElementById("reportsTableBody");
-
-    let incidentsToShow =
-      monthIncidents;
-
-
-    if (selectedDate) {
-
-      incidentsToShow =
-        monthIncidents.filter(incident => {
-
-          const incidentDate =
-            new Date(incident.started_at);
-
-          return (
-            incidentDate.getFullYear() ===
-              selectedDate.getFullYear() &&
-
-            incidentDate.getMonth() ===
-              selectedDate.getMonth() &&
-
-            incidentDate.getDate() ===
-              selectedDate.getDate()
-          );
-        });
-    }
-
-
-    incidentsToShow.sort(
-      (a, b) =>
-        new Date(b.started_at) -
-        new Date(a.started_at)
-    );
-
-
-    tableBody.innerHTML = "";
-
-
-    if (incidentsToShow.length === 0) {
-
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="5" class="empty">
-
-            ${
-              selectedDate
-                ? "No QuietScore reports were created on this date."
-                : "No QuietScore reports were created this month."
-            }
-
-          </td>
-        </tr>
-      `;
-
-      return;
-    }
-
-
-    incidentsToShow.forEach(incident => {
-
-      const row =
-        document.createElement("tr");
-
-
-      const statusClass =
-
-        incident.status === "resolved"
-
-          ? "incident-resolved"
-
-          : incident.status ===
-            "needs_staff_attention"
-
-          ? "incident-attention"
-
-          : "incident-open";
-
-
-      const priorityLabel =
-        getPriorityLabel(
-          incident.escalation_count,
-          incident.status
+        return (
+          new Date(b.started_at) -
+          new Date(a.started_at)
         );
 
+      });
 
-      row.innerHTML = `
-
-        <td>
-          ${incident.room_name || "—"}
-        </td>
-
-        <td>
-
-          <span
-            class="status ${statusClass}"
-          >
-            ${formatText(incident.status)}
-          </span>
-
-        </td>
-
-        <td>
-          ${formatDateTime(incident.started_at)}
-        </td>
-
-        <td
-          class="
-            priority
-            ${priorityLabel.className}
-          "
-        >
-          ${priorityLabel.text}
-        </td>
-
-        <td>
-          ${incident.timer_remaining || "Completed"}
-        </td>
-
-      `;
+    }
 
 
-      tableBody.appendChild(row);
-    });
-  }
+    // --------------------------------------------------
+    // RENDER PAGE
+    // --------------------------------------------------
+
+    function renderPage() {
+
+      renderViewControls();
+
+      renderCalendar();
+
+      const incidents = getFilteredIncidents();
+
+      updateSummaryCards(incidents);
+
+      renderTable(incidents);
+
+    }
+
+    function renderViewControls() {
+
+      document.getElementById("allIncidentsBtn")
+        .classList.toggle("active", viewMode === "all");
+
+      document.getElementById("monthIncidentsBtn")
+        .classList.toggle("active", viewMode === "month");
+
+      const title =
+        document.getElementById("selectedDateTitle");
+
+      const clearButton =
+        document.getElementById("clearDateBtn");
+
+      if (viewMode === "all") {
+
+        title.textContent = "All Incidents";
+        clearButton.style.display = "none";
+
+      } else if (viewMode === "month") {
+
+        title.textContent =
+          displayedMonth.toLocaleDateString([], {
+            month: "long",
+            year: "numeric"
+          }) + " Incidents";
+
+        clearButton.style.display = "inline-block";
+
+      } else if (selectedDate) {
+
+        title.textContent =
+          selectedDate.toLocaleDateString([], {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric"
+          });
+
+        clearButton.style.display = "inline-block";
+
+      }
+
+    }
 
 
-  function updateSummaryCards(monthIncidents) {
+    // --------------------------------------------------
+    // CALENDAR
+    // --------------------------------------------------
 
-    const total =
-      monthIncidents.length;
+    function renderCalendar() {
 
+      const calendarDays =
+        document.getElementById("calendarDays");
 
-    const resolved =
-      monthIncidents.filter(
-        incident =>
-          incident.status === "resolved"
-      ).length;
+      calendarDays.replaceChildren();
 
+      const year = displayedMonth.getFullYear();
+      const month = displayedMonth.getMonth();
 
-    const attention =
-      monthIncidents.filter(
-        incident =>
-          incident.status ===
-            "needs_staff_attention" ||
-          Number(
-            incident.escalation_count
-          ) >= 3
-      ).length;
+      document.getElementById("monthLabel").textContent =
+        displayedMonth.toLocaleDateString([], {
+          month: "long",
+          year: "numeric"
+        });
 
+      const firstDay =
+        new Date(year, month, 1).getDay();
 
-    const roomCounts = {};
+      const daysInMonth =
+        new Date(year, month + 1, 0).getDate();
 
+      const countByDay = {};
 
-    monthIncidents.forEach(incident => {
+      allIncidents.forEach(incident => {
 
-      const room =
-        incident.room_name || "Unknown";
+        const date = getIncidentDate(incident);
 
-      roomCounts[room] =
-        (roomCounts[room] || 0) + 1;
-    });
-
-
-    let busiestRoom = "—";
-
-    let highestCount = 0;
-
-
-    Object.entries(roomCounts)
-      .forEach(([room, count]) => {
-
-        if (count > highestCount) {
-
-          busiestRoom = room;
-
-          highestCount = count;
+        if (!date || !isSameMonth(date, displayedMonth)) {
+          return;
         }
 
+        const day = date.getDate();
+
+        countByDay[day] = (countByDay[day] || 0) + 1;
+
       });
 
+      for (let i = 0; i < firstDay; i++) {
 
-    document.getElementById(
-      "totalReports"
-    ).textContent = total;
+        const blank = document.createElement("div");
+
+        calendarDays.appendChild(blank);
+
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = "calendar-day";
+        button.textContent = day;
+
+        const count = countByDay[day] || 0;
+
+        if (count > 0) {
+          button.classList.add("has-reports");
+        }
+
+        const isSelected =
+          viewMode === "day" &&
+          selectedDate &&
+          selectedDate.getFullYear() === year &&
+          selectedDate.getMonth() === month &&
+          selectedDate.getDate() === day;
+
+        if (isSelected) {
+          button.classList.add("selected");
+        }
+
+        button.setAttribute(
+          "aria-label",
+          `${day}: ${count} incident${count === 1 ? "" : "s"}`
+        );
+
+        button.onclick = () => selectDate(day);
+
+        calendarDays.appendChild(button);
+
+      }
+
+    }
 
 
-    document.getElementById(
-      "resolvedReports"
-    ).textContent = resolved;
+    // --------------------------------------------------
+    // SUMMARY CARDS
+    // --------------------------------------------------
+
+    function updateSummaryCards(incidents) {
+
+      const total = incidents.length;
+
+      const repeated = incidents.filter(incident => {
+        return (getCountdownRestarts(incident) || 0) >= 1;
+      }).length;
+
+      const recorded = incidents.filter(incident => confirmedAlert(incident) === true || incident.staff_alert_displayed === true).length;
+      const inferred = incidents.filter(incident => incident.legacy_staff_alert_inferred === true).length;
+      const unknown = incidents.filter(incident => confirmedAlert(incident) === null && !incident.legacy_staff_alert_inferred && incident.staff_alert_displayed !== true).length;
+
+      document.getElementById("totalReports").textContent = total;
+      document.getElementById("repeatedReports").textContent = repeated;
+      document.getElementById("alertReports").textContent = recorded + inferred;
+      document.getElementById("alertNote").textContent = `${recorded} recorded · ${inferred} inferred from historical cycle counts${unknown ? ` · ${unknown} unknown` : ""}`;
+
+    }
 
 
-    document.getElementById(
-      "attentionReports"
-    ).textContent = attention;
+    // --------------------------------------------------
+    // FORMAT HELPERS
+    // --------------------------------------------------
 
+    // Compact date for the table; the incident popup retains the full timestamp.
+    function formatShortDateTime(value) {
 
-    document.getElementById(
-      "busiestRoom"
-    ).textContent = busiestRoom;
-  }
+      if (!value) return "—";
 
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "—";
 
-  function selectDate(day) {
-
-    selectedDate = new Date(
-      displayedMonth.getFullYear(),
-      displayedMonth.getMonth(),
-      day
-    );
-
-
-    document.getElementById(
-      "selectedDateTitle"
-    ).textContent =
-
-      selectedDate.toLocaleDateString([], {
-        weekday: "long",
-        month: "long",
+      return date.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
         day: "numeric",
-        year: "numeric"
+        hour: "numeric",
+        minute: "2-digit"
       });
 
+    }
 
-    document.getElementById(
-      "clearDateBtn"
-    ).style.display = "inline-block";
+    function formatDateTime(value) {
 
+      if (!value) return "—";
 
-    renderCalendar(
-      getMonthIncidents()
-    );
+      const date = new Date(value);
 
+      if (Number.isNaN(date.getTime())) return "—";
 
-    renderTable(
-      getMonthIncidents()
-    );
-  }
+      return date.toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      });
 
+    }
 
-  function clearSelectedDate() {
+    function formatTimer(incident) {
 
-    selectedDate = null;
+      const status = getIncidentStatus(incident);
 
+      if (status === "resolved") {
+        return "Completed";
+      }
 
-    document.getElementById(
-      "selectedDateTitle"
-    ).textContent =
-      "All reports this month";
+      if (status === "needs_staff_attention") {
+        return "Staff Attention";
+      }
 
+      return incident.timer_remaining || "Active";
 
-    document.getElementById(
-      "clearDateBtn"
-    ).style.display = "none";
+    }
 
+    function getCountdownCycles(incident) {
 
-    renderCalendar(
-      getMonthIncidents()
-    );
+      const count = Number(incident.escalation_count);
 
+      if (!Number.isFinite(count)) return null;
 
-    renderTable(
-      getMonthIncidents()
-    );
-  }
+      return Math.max(0, Math.trunc(count));
 
+    }
 
-  function changeMonth(offset) {
+    function getCountdownRestarts(incident) {
 
-    displayedMonth = new Date(
+      const cycles = getCountdownCycles(incident);
 
-      displayedMonth.getFullYear(),
+      return cycles === null ? null : Math.max(0, cycles - 1);
 
-      displayedMonth.getMonth() + offset,
+    }
 
-      1
-    );
+    function formatDuration(incident) {
 
+      const started = getIncidentDate(incident);
+      const resolved = incident.resolved_at
+        ? new Date(incident.resolved_at)
+        : null;
 
-    selectedDate = null;
+      if (!started) return "—";
 
-    document.getElementById(
-      "selectedDateTitle"
-    ).textContent =
-      "All reports this month";
+      if (!resolved || Number.isNaN(resolved.getTime())) {
+        return incident.status === "resolved" ? "—" : "Ongoing";
+      }
 
-    document.getElementById(
-      "clearDateBtn"
-    ).style.display = "none";
+      const seconds = Math.max(0, Math.floor((resolved - started) / 1000));
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainder = seconds % 60;
 
+      if (hours) return `${hours}h ${minutes}m ${remainder}s`;
+      if (minutes) return `${minutes}m ${remainder}s`;
 
-    renderPage();
-  }
+      return `${remainder}s`;
 
+    }
 
-  function goToCurrentMonth() {
+    function confirmedAlert(incident) {
 
-    const now = new Date();
+      // Only an explicit recorded alert flag confirms generation; legacy history may be unknown.
+      // Do not infer delivery from countdown cycle counts.
+      if (incident.staff_alert_triggered === true ||
+          incident.alert_triggered === true) return true;
 
+      if (incident.staff_alert_triggered === false ||
+          incident.alert_triggered === false) return false;
 
-    displayedMonth = new Date(
+      return null;
 
-      now.getFullYear(),
-
-      now.getMonth(),
-
-      1
-    );
-
-
-    selectedDate = null;
-
-    document.getElementById(
-      "selectedDateTitle"
-    ).textContent =
-      "All reports this month";
-
-    document.getElementById(
-      "clearDateBtn"
-    ).style.display = "none";
-
-
-    renderPage();
-  }
-
-
-  function getPriorityLabel(
-    escalationCount,
-    status
-  ) {
-
-    const count =
-      Number(escalationCount) || 0;
-
-
-    if (count < 1) {
-
-      return {
-        text: "—",
-        className: "priority-low"
-      };
     }
 
 
-    const marks =
-      "!".repeat(count);
+    // --------------------------------------------------
+    // INCIDENT TABLE
+    // --------------------------------------------------
 
+    function renderTable(incidents) {
 
-    if (
-      status === "open" &&
-      count >= 3
-    ) {
+      const tableBody =
+        document.getElementById("reportsTableBody");
 
-      return {
-        text: "NEEDS ATTENTION",
-        className: "priority-high"
-      };
+      tableBody.replaceChildren();
+
+      if (incidents.length === 0) {
+
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+
+        cell.colSpan = 5;
+        cell.className = "empty";
+        cell.textContent =
+          "No QuietScore incidents match the selected date or room.";
+
+        row.appendChild(cell);
+        tableBody.appendChild(row);
+
+        return;
+
+      }
+
+      incidents.forEach(incident => {
+
+        const row = document.createElement("tr");
+        row.dataset.incidentId = incident.id;
+
+        function addCell(label, value) {
+
+          const cell = document.createElement("td");
+          cell.dataset.label = label;
+          cell.textContent = value;
+
+          row.appendChild(cell);
+
+          return cell;
+
+        }
+
+        addCell("Room", incident.room_name || "—");
+        addCell("Started", formatShortDateTime(incident.started_at));
+        addCell("Duration", formatDuration(incident));
+
+        const cycles = getCountdownCycles(incident);
+        addCell("Countdown Cycles", cycles === null ? "—" : cycles);
+
+        const detailsCell = document.createElement("td");
+        detailsCell.dataset.label = "";
+
+        const detailsButton = document.createElement("button");
+        detailsButton.className = "details-btn";
+        const desktopLabel = document.createElement("span");
+        desktopLabel.className = "desktop-action-label";
+        desktopLabel.textContent = "View Incident Logs";
+
+        const mobileLabel = document.createElement("span");
+        mobileLabel.className = "mobile-action-label";
+        mobileLabel.textContent = "View Incident Logs";
+
+        detailsButton.appendChild(desktopLabel);
+        detailsButton.appendChild(mobileLabel);
+
+        detailsButton.onclick = () => openIncidentDetails(incident);
+
+        detailsCell.appendChild(detailsButton);
+        row.appendChild(detailsCell);
+        tableBody.appendChild(row);
+
+      });
+
     }
 
 
-    if (count >= 2) {
+    // --------------------------------------------------
+    // INCIDENT DETAILS
+    // --------------------------------------------------
 
-      return {
-        text: marks,
-        className: "priority-high"
+    let incidentDetailVersion = 0;
+    async function openIncidentDetails(incident) {
+      const version = ++incidentDetailVersion;
+      let historyError = false;
+      try {
+        const response = await fetch(`/api/incidents/${incident.id}/activity`, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+        if (!response.ok) throw Error("History unavailable");
+        const history = await response.json();
+        incident = { ...incident, ...history };
+      } catch (error) { historyError = true; }
+
+
+      if (version !== incidentDetailVersion) return;
+      const modal = document.getElementById("detailsModal");
+      window.QuietSpaceDetailNavigation(modal, { items: getFilteredIncidents, current: () => incident.id, open: openIncidentDetails, isOpen: () => modal.classList.contains("open") });
+      const content = document.getElementById("detailsContent");
+
+      content.replaceChildren();
+
+      const cycles = getCountdownCycles(incident);
+      const restarts = getCountdownRestarts(incident);
+
+      const fields = [
+        ["Incident ID", incident.id ?? incident.incident_id ?? "—"],
+        ["Room", incident.room_name || "—"],
+        ["Status", formatStatus(getIncidentStatus(incident))],
+        ["Started", formatDateTime(incident.started_at)],
+        ["Resolved", incident.resolved_at
+          ? formatDateTime(incident.resolved_at)
+          : "Not yet resolved"],
+        ["Duration", formatDuration(incident)],
+        ["Countdown Cycles", cycles === null ? "—" : cycles],
+        ["Countdown Repeats", restarts === null ? "—" : restarts],
+        ["Staff Alert", confirmedAlert(incident) === true ? "Triggered — recorded"
+          : incident.legacy_staff_alert_inferred ? "Threshold met — inferred from historical cycle counts"
+          : incident.staff_alert_displayed === true ? "Display recorded; generation time unavailable"
+          : confirmedAlert(incident) === null ? "Not recorded" : "Not triggered"],
+        ["Alert Display", incident.staff_alert_displayed === true ? "Displayed — browser-reported"
+          : incident.staff_alert_display_inferred ? "Displayed — inferred from historical cycle counts" : "No display receipt recorded"]
+      ];
+
+      if (incident.resolution_method) {
+        fields.push(["Resolution Method", incident.resolution_method]);
+      }
+
+      fields.forEach(([label, value]) => {
+
+        const wrapper = document.createElement("div");
+
+        const labelElement = document.createElement("div");
+        labelElement.className = "detail-label";
+        labelElement.textContent = label;
+
+        const valueElement = document.createElement("div");
+        valueElement.className = "detail-value";
+        valueElement.textContent = String(value);
+
+        wrapper.appendChild(labelElement);
+        wrapper.appendChild(valueElement);
+        content.appendChild(wrapper);
+
+      });
+
+      // Only use timestamps that are genuinely recorded by the API.
+      const activity = [];
+
+      if (getIncidentDate(incident) && !(incident.events || []).some(event => event.event_type === "incident_started")) {
+        activity.push({
+          time: incident.started_at,
+          title: "Incident started",
+          detail: "Noise incident recorded"
+        });
+      }
+
+      // Supports future event data without inventing historical events.
+      const events = Array.isArray(incident.events) ? incident.events : [];
+      const eventNames = {
+        incident_started: "Incident started",
+        incident_resolved: "Incident resolved",
+        staff_attention_threshold: "Staff attention threshold reached",
+        staff_attention_observed: "Existing staff threshold observed",
+        yellow_warning: "Yellow warning",
+        countdown_started: "Countdown started",
+        countdown_restarted: "Countdown restarted",
+        staff_alert_triggered: "Staff alert triggered",
+        staff_alert_delivered: "Staff alert displayed",
+        status_green: "Room returned to green",
+        status_yellow: "Room entered yellow",
+        status_red: "Room entered red"
       };
+
+      events.forEach(event => {
+
+        const timestamp =
+          event.occurred_at || event.timestamp || event.created_at;
+        const type = String(event.event_type || event.type || "").toLowerCase();
+
+        if (!timestamp || !eventNames[type] ||
+            Number.isNaN(new Date(timestamp).getTime())) return;
+
+        activity.push({
+          time: timestamp,
+          title: eventNames[type],
+          detail: (typeof event.description === "string" ? event.description : "Recorded system event") +
+            (event.actor_name ? ` · ${event.actor_name}` : "")
+        });
+
+      });
+
+      if (incident.resolved_at && !(incident.events || []).some(event => event.event_type === "incident_resolved") &&
+          !Number.isNaN(new Date(incident.resolved_at).getTime())) {
+        activity.push({
+          time: incident.resolved_at,
+          title: "Incident resolved",
+          detail: "Resolution recorded by QuietSpace"
+        });
+      }
+
+      activity.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+      const activityList = document.getElementById("incidentActivity");
+      activityList.replaceChildren();
+
+      activity.forEach(event => {
+
+        const item = document.createElement("li");
+        item.className = "activity-item";
+
+        const title = document.createElement("strong");
+        title.textContent = event.title;
+
+        const description = document.createElement("span");
+        description.textContent =
+          `${new Date(event.time).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit" })} · ${event.detail}`;
+
+        item.appendChild(title);
+        item.appendChild(description);
+        activityList.appendChild(item);
+
+      });
+
+      if (incident.legacy_alert_inference) {
+        const item = document.createElement('li'); item.className = 'activity-item'; item.dataset.inferred = 'true';
+        const heading = document.createElement('strong'); heading.textContent = 'Historical inference';
+        const detail = document.createElement('span'); detail.textContent = incident.legacy_alert_inference.description + ' No exact timestamp is available.';
+        item.append(heading, detail); activityList.append(item);
+      }
+
+      document.getElementById("activityNote").textContent = historyError
+        ? "Activity could not be loaded. Only available incident timestamps are shown."
+        : incident.tracking_complete ? "Recorded incident events are shown in chronological order."
+          : "This incident predates full event tracking. Historical assessments are labeled separately from recorded, timestamped events.";
+
+      modal.classList.add("open");
+
     }
 
+    function closeIncidentDetails() {
+      ++incidentDetailVersion;
+      document.getElementById("detailsModal")._detailNavigationCleanup?.();
 
-    return {
-      text: marks,
-      className: "priority-medium"
-    };
-  }
+      document.getElementById("detailsModal")
+        .classList.remove("open");
 
+    }
 
-  function formatText(text) {
+    function closeModalOnBackdrop(event) {
 
-    if (!text) return "—";
+      if (event.target.id === "detailsModal") {
+        closeIncidentDetails();
+      }
 
-    return text
-      .replace(/_/g, " ")
-      .replace(
-        /\b\w/g,
-        char => char.toUpperCase()
-      );
-  }
+    }
 
+    document.addEventListener("keydown", event => {
 
-  function formatDateTime(dateString) {
+      if (event.key === "Escape") {
+        closeIncidentDetails();
+      }
 
-    if (!dateString) return "—";
-
-    const date =
-      new Date(dateString);
-
-
-    return date.toLocaleString([], {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit"
     });
-  }
 
 
-  function toggleSidebar() {
 
-    document.body.classList.toggle(
-      "sidebar-collapsed"
-    );
-  }
+    // --------------------------------------------------
+    // SIDEBAR
+    // --------------------------------------------------
 
-  if (window.innerWidth <= 700) {
-    document.body.classList.add("sidebar-collapsed");
-  }
+function toggleSidebar() {
+  document.body.classList.toggle("sidebar-collapsed");
+}
 
-
-  function logout() {
-
-    localStorage.removeItem(
-      "quietspaceLoggedIn"
-    );
-
-    sessionStorage.removeItem(
-      "quietspaceLoggedIn"
-    );
+// Automatically collapse sidebar on mobile
+if (window.innerWidth <= 900) {
+  document.body.classList.add("sidebar-collapsed");
+}
 
 
-    window.location.href =
-      "login.html?logout=1";
-  }
+// --------------------------------------------------
+    // LOGOUT
+    // --------------------------------------------------
+
+    function logout() {
+
+      localStorage.removeItem("quietspaceLoggedIn");
+
+      localStorage.removeItem(
+        "quietspaceSessionExpiresAt"
+      );
+
+      sessionStorage.removeItem("quietspaceLoggedIn");
+
+      window.location.href =
+        "login.html?logout=1";
+
+    }
 
 
-  loadQuietScoreReports();
+    // --------------------------------------------------
+    // INITIALIZE
+    // --------------------------------------------------
 
-</script>
+    loadQuietScoreReports();
+
+    // Refresh backend incident data every 15 seconds.
+    // This updates the timer value returned by the API,
+    // rather than calculating a live countdown locally.
+
+    setInterval(loadQuietScoreReports, 15000);
+
+  </script>
 
 </body>
 </html>

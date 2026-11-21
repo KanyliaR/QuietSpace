@@ -1,0 +1,31 @@
+/* Admin security controls retain the shared accordion and input styles. */
+#securitySection .security-policy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:16px 0 24px}
+#securitySection .setting-row{min-width:0}#securitySection .setting-label{min-height:2.8em;line-height:1.4;display:block;font-size:.9rem}
+#securitySection .policy-unit-input{display:flex;align-items:center;gap:8px}#securitySection .policy-unit-input input{min-width:0;width:100%}#securitySection .policy-unit-input span{font-size:.8rem;white-space:nowrap;color:inherit}
+#securitySection .input-box{width:100%;font-size:16px}#securitySection .checkbox-item{display:flex;align-items:center;gap:12px}#securitySection .checkbox-item input{flex:0 0 auto}
+#microphoneCalibrationSection a{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+@media(max-width:560px){#securitySection .security-policy-grid{grid-template-columns:1fr}#securitySection .setting-label{min-height:0;margin-bottom:8px}}
+
+/* Scoped final admin accordion refinements. */
+#securitySection .checkbox-item{align-items:flex-start}
+#securitySection .checkbox-item input{margin-top:3px}
+#securitySection .policy-description{display:block;font-size:.8rem;font-weight:400;line-height:1.5;color:var(--text-muted,#bac9e8);margin-top:4px}
+#securitySection .settings-save-scope{font-size:.8rem;line-height:1.5;color:var(--text-muted,#bac9e8);margin-top:20px}
+#securitySection .button-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:16px}
+#securitySection .last-saved-tag{font-size:.75rem;line-height:1.5;white-space:normal;color:var(--text-muted,#bac9e8)}
+#systemMonitoringControl .system-kill-heading{display:flex;align-items:center;gap:10px;font-size:1.2rem;margin:0 0 12px}
+#systemMonitoringControl .system-power-icon{color:#ff7c86;font-size:1.6rem}
+#systemMonitoringControl .system-control-description{line-height:1.5;margin:0 0 18px}
+#globalMonitoringState{display:flex;align-items:center;gap:10px;font-weight:600;margin:0 0 18px}
+#globalMonitoringState::before{content:"";width:10px;height:10px;border-radius:50%;background:#95a0b5;flex-shrink:0}
+#globalMonitoringState[data-enabled="true"]::before{background:#55dfad}
+#globalMonitoringState[data-enabled="false"]::before{background:#ff7c86}
+#toggleSystemMonitoring{width:100%;white-space:normal}
+#toggleSystemMonitoring.system-monitoring-disable{background:#a5283d;border:1px solid #ed7385;color:white}
+#toggleSystemMonitoring.system-monitoring-disable:hover{background:#bd3048}
+#toggleSystemMonitoring.system-monitoring-enable{background:#245ba5;border:1px solid #83aff1;color:white}
+#systemMonitoringControl .system-monitoring-warning{font-size:.8rem;line-height:1.5;color:#ff9aa6;margin:12px 0 0}
+#systemMonitoringControl .system-monitoring-warning[hidden]{display:none}
+#microphoneCalibrationSection a{width:100%;box-sizing:border-box;background:transparent;border:1px solid #7ca8ec;color:inherit;white-space:normal;text-align:center;margin-top:12px}
+#microphoneCalibrationSection a:hover{background:rgba(95,151,235,.12)}
+@media(max-width:560px){#securitySection .button-row .btn{width:100%}#securitySection .last-saved-tag{flex-basis:100%}}

@@ -1,0 +1,5 @@
+{
+  "url": "https://YOUR_PERMANENT_QUIETSPACE_HOST/webpages/index.html?room_id=ACTUAL_INTERNAL_ROOM_ID",
+  "origin": "https://YOUR_PERMANENT_QUIETSPACE_HOST",
+  "browser": "chromium"
+}

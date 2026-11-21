@@ -4,8 +4,14 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "node --test tests/*.test.js",
+    "start": "node server.js",
+    "test:integration": "node --test tests/mysql.integration.js",
+    "migrate": "node scripts/migrate.js",
+    "seed:demo": "node scripts/seed-demo.js",
+    "device:register": "node scripts/register-device.js",
+    "staff:create": "node scripts/create-staff.js",
+    "test:browser": "RUN_BROWSER_TESTS=1 node --test tests/mysql.integration.js"
   },
   "keywords": [],
   "author": "",

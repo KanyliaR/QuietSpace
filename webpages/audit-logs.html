@@ -1,0 +1,11 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Audit Logs | QuietSpace</title><link rel="stylesheet" href="staff-accounts.css"></head><body>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div><button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><img src="../images/cloudicon.png" alt=""></button><aside class="sidebar"></aside>
+<main class="main"><div class="top-header"><div class="header-copy"><h2>Audit Logs</h2><p>Review staff actions, administrative changes, and system activity.</p></div></div>
+<section class="sm-card"><form id="auditFilters" class="sm-filters">
+<label>Search<input name="search" type="search" maxlength="255" placeholder="Search logs…"></label>
+<label>Role<select name="role"><option value="">All Roles</option><option value="admin">Library Admin</option><option value="library_monitor">Library Monitor</option><option value="security">Security</option><option value="automated">Automated</option></select></label>
+<label>Activity Type<select name="category"><option value="">All Activity</option><option value="account">Account Management</option><option value="monitoring">Monitoring Controls</option><option value="reports">Reports</option><option value="escalations">Security Escalations</option><option value="devices">Device Management</option><option value="thresholds">Calibration/Threshold Changes</option><option value="system">System Activity</option></select></label>
+<label>Room<select name="room" id="auditRoom"><option value="">All Rooms</option></select></label><label>From<input name="from" type="date"></label><label>Through<input name="to" type="date"></label>
+<button class="sm-button" type="submit">Apply filters</button><button class="sm-button" type="reset">Clear filters</button></form>
+<p id="auditFeedback" role="status"></p><div class="sm-table-wrap"><table><thead><tr><th>Date &amp; Time</th><th>Staff Member</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditRows"></tbody></table></div>
+<div class="sm-actions"><button class="sm-button" id="auditPrevious" type="button">Previous</button><span id="auditPage" role="status"></span><button class="sm-button" id="auditNext" type="button">Next</button></div></section></main></body></html>

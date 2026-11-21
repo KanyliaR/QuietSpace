@@ -1,0 +1,1878 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Reports | QuietSpace</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #eef5fb;
+  color: #1f2a44;
+}
+
+button, input, select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+    /* -------------------- Sidebar (matches Overview) -------------------- */
+    .sidebar {
+      position: relative;
+      width: 240px;
+      height: 100vh;
+      min-height: 100vh;
+      flex-shrink: 0;
+      overflow: hidden;
+      padding: 28px 20px;
+      background: #1f3b73;
+      color: white;
+      transition: width 0.25s ease, padding 0.25s ease;
+    }
+
+    body.dark-theme .sidebar { background: #10275a; }
+    .sidebar h1 { margin-bottom: 8px; font-size: 1.6rem; }
+    .sidebar p { margin-bottom: 30px; color: #c9d7ff; font-size: 0.9rem; }
+
+    .nav-item {
+      display: block;
+      margin-bottom: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .nav-item.active { background: rgba(255,255,255,0.28); font-weight: 800; }
+    .nav-item.disabled { cursor: default; opacity: 0.55; }
+    .nav-item.disabled:hover { background: rgba(255,255,255,0.12); transform: none; }
+
+    .sidebar-toggle {
+      position: fixed;
+      top: 20px;
+      left: calc(240px - 50px);
+      z-index: 300;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.82);
+      color: #1f3b73;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+      transition: all 0.25s ease;
+    }
+    .sidebar-toggle img { display: block; width: 22px; height: 22px; margin: auto; object-fit: contain; }
+    body.sidebar-collapsed .sidebar-toggle { top: 20px; left: 18px; background: rgba(31,59,115,0.92); color: white; }
+    body.dark-theme .sidebar-toggle,
+    body.dark-theme.sidebar-collapsed .sidebar-toggle,
+    body.dark-theme:not(.sidebar-collapsed) .sidebar-toggle {
+      background: rgba(255,255,255,0.92) !important;
+      color: #1f3b73 !important;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+    }
+    body.sidebar-collapsed .sidebar { width: 0; padding: 0; }
+    body.sidebar-collapsed .sidebar * { display: none; }
+
+    .logout-wrapper {
+      position: absolute;
+      right: 20px;
+      bottom: 24px;
+      left: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .settings-btn, .logout-btn {
+      width: auto;
+      margin: 0;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .settings-btn:hover, .logout-btn:hover { background: rgba(255,255,255,0.24); }
+
+
+
+/* MAIN CONTENT */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 24px 32px 40px;
+}
+
+.top-header {
+  padding-left: 0px;
+  margin-bottom: 26px;
+}
+
+.top-header h2 {
+  font-size: 2rem;
+  color: #1f3b73;
+  margin: 0 0 6px;
+}
+
+.top-header p {
+  color: #60708a;
+  margin: 0;
+}
+
+/* SUMMARY CARDS */
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.card, .section {
+  background: white;
+  border: 1px solid #d7e4f2;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(31,60,115,.1);
+}
+
+.card {
+  padding: 22px;
+}
+
+.card h3 {
+  color: #60708a;
+  font-size: .88rem;
+  margin: 0 0 12px;
+}
+
+.metric {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1f3b73;
+}
+
+/* REPORT HISTORY */
+
+.section {
+  padding: 24px;
+  margin-bottom: 22px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.section-header h3 {
+  font-size: 1.4rem;
+  color: #1f3b73;
+  margin: 0;
+}
+
+.subtitle {
+  color: #60708a;
+  font-size: .9rem;
+  margin: 5px 0 0;
+}
+
+/* FILTERS */
+
+.filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 20px;
+}
+
+.field label {
+  display: block;
+  font-size: .8rem;
+  font-weight: 700;
+  margin-bottom: 7px;
+  color: #60708a;
+}
+
+.field input, .field select {
+  width: 100%;
+  border: 1px solid #cad8ec;
+  background: white;
+  color: #1f2a44;
+  border-radius: 10px;
+  padding: 11px;
+  min-height: 42px;
+}
+
+.ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.range-btn, .action-btn {
+  border: 1px solid #cbd9eb;
+  border-radius: 10px;
+  padding: 9px 13px;
+  background: #f6f9fd;
+  color: #1f3b73;
+  font-weight: 700;
+}
+
+.range-btn.selected, .action-btn.primary {
+  background: #1f3b73;
+  color: white;
+  border-color: #1f3b73;
+}
+
+.custom-dates {
+  display: none;
+  gap: 12px;
+  margin: 0 0 16px;
+  flex-wrap: wrap;
+}
+
+.custom-dates.visible {
+  display: flex;
+}
+
+.custom-dates .field {
+  min-width: 180px;
+}
+
+/* TABLE */
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+th, td {
+  padding: 13px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e1e9f3;
+  font-size: .88rem;
+  vertical-align: middle;
+}
+
+th {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #4c5d7a;
+}
+
+tr.data-row:hover {
+  background: #edf4ff;
+}
+
+tr.data-row {
+  cursor: pointer;
+}
+
+/* STATUS BADGES */
+
+.pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 99px;
+  font-weight: 800;
+  font-size: .76rem;
+  white-space: nowrap;
+}
+
+.severity-low, .status-resolved {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.severity-medium, .status-in_review {
+  background: #fff8d6;
+  color: #8a6d00;
+}
+
+.severity-high, .status-open {
+  background: #fde8e8;
+  color: #8a1f1f;
+}
+
+/* EXPANDABLE DETAILS */
+
+.details-row td {
+  background: #f4f8ff;
+  padding: 18px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.detail-label {
+  font-size: .73rem;
+  color: #60708a;
+  margin-bottom: 5px;
+}
+
+.detail-value {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.comment {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  margin: 8px 0 16px;
+}
+
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-actions select {
+  padding: 9px;
+  border-radius: 10px;
+  border: 1px solid #cbd9eb;
+}
+
+.empty {
+  text-align: center;
+  color: #60708a;
+  padding: 30px;
+}
+
+/* PAGINATION */
+
+.footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  color: #60708a;
+  font-size: .88rem;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pager button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* NOTIFICATIONS */
+
+.message {
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #e9f2ff;
+  color: #244576;
+  margin-bottom: 16px;
+}
+
+.message.error {
+  background: #fde8e8;
+  color: #8a1f1f;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+/* DARK MODE */
+
+body.dark-theme {
+  background: #0f1d3a;
+  color: white;
+}
+
+body.dark-theme .sidebar {
+  background: #10275a;
+}
+
+body.dark-theme .top-header h2,
+body.dark-theme .section-header h3,
+body.dark-theme .metric {
+  color: white;
+}
+
+body.dark-theme .top-header p,
+body.dark-theme .subtitle,
+body.dark-theme .card h3,
+body.dark-theme .field label,
+body.dark-theme .detail-label,
+body.dark-theme .footer-row {
+  color: #dbe7ff;
+}
+
+body.dark-theme .card,
+body.dark-theme .section {
+  background: linear-gradient(
+    #243b75,
+    #1d3267 45%,
+    #142650
+  );
+  border-color: rgba(141,170,220,.35);
+  color: white;
+}
+
+body.dark-theme th {
+  color: #dbe7ff;
+}
+
+body.dark-theme td,
+body.dark-theme th {
+  border-color: rgba(219,231,255,.18);
+}
+
+body.dark-theme tr.data-row:hover,
+body.dark-theme .details-row td {
+  background: #29477d;
+}
+
+body.dark-theme input,
+body.dark-theme select {
+  background: #102650;
+  color: white;
+  border-color: #6c87b7;
+}
+
+body.dark-theme .range-btn:not(.selected),
+body.dark-theme .action-btn:not(.primary) {
+  background: #203968;
+  color: #e3edff;
+  border-color: #6c87b7;
+}
+
+body.dark-theme .message {
+  background: #203968;
+  color: #e3edff;
+}
+
+/* RESPONSIVE DESIGN */
+
+@media(max-width:1050px) {
+  .filters {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:700px) {
+  .main {
+    padding: 12px 14px 80px;
+  }
+
+  .top-header {
+    padding-left: 58px;
+  }
+
+  .top-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .metrics {
+    gap: 10px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  .metric {
+    font-size: 1.5rem;
+  }
+
+  .section {
+    padding: 16px;
+  }
+
+      .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 50% !important;
+        max-width: 50vw;
+        height: 100vh;
+        z-index: 500;
+        padding: 20px 16px 24px;
+        overflow-y: auto;
+        box-shadow: 6px 0 24px rgba(0,0,0,0.45);
+        transition: transform 0.25s ease, opacity 0.25s ease;
+      }
+      body.sidebar-collapsed .sidebar {
+        display: block;
+        width: 50% !important;
+        transform: translateX(-100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      body.sidebar-collapsed .sidebar * { display: revert; }
+      body:not(.sidebar-collapsed) .sidebar { transform: translateX(0); opacity: 1; }
+      .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 450;
+        background: rgba(0,0,0,0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      body:not(.sidebar-collapsed) .sidebar-backdrop { opacity: 1; pointer-events: auto; }
+      .sidebar-toggle { top: 15px; left: calc(50% - 48px); }
+      body.sidebar-collapsed .sidebar-toggle { top: 10px; left: 18px; }
+      .logout-wrapper { bottom: 110px; left: 18px; right: 18px; }
+
+  .detail-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media(max-width:480px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .metrics .card:first-child {
+    grid-column: 1/-1;
+  }
+}
+
+/* Student Reports: final UI alignment */
+.sidebar {
+  height:100vh;
+  min-height:100vh;
+  transition:width .25s ease,padding .25s ease
+}
+body.dark-theme .sidebar {
+  background: #10275a;
+}
+.sidebar-toggle {
+  display:flex;
+  align-items:center;
+  justify-content:center
+}
+.sidebar-toggle img {
+  display:block;
+  margin:auto
+}
+.logout-wrapper {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px
+}
+.settings-btn,.logout-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:40px;
+  flex:1 1 0;
+  min-width:0;
+  width:auto;
+  margin:0;
+  padding:8px 10px;
+  border:0;
+  border-radius:10px;
+  background:rgba(255,255,255,.12);
+  color:white;
+  font-size:.8rem;
+  font-weight:600;
+  text-decoration:none;
+  white-space:nowrap
+}
+.settings-btn:hover,.logout-btn:hover {
+  background:rgba(255,255,255,.24)
+}
+.settings-icon {
+  flex:0 0 16px
+}
+.metric-description {
+  margin:12px 0 0;
+  color:#60708a;
+  font-size:.78rem;
+  line-height:1.45
+}
+body.dark-theme .metric-description {
+  color:#dbe7ff
+}
+.range-btn.selected {
+  background:#2763bf;
+  border-color:#4b89e8;
+  color:#fff;
+  box-shadow:0 0 0 2px rgba(92,156,255,.24)
+}
+.range-btn {
+  transition:background .15s,border-color .15s
+}
+.activity-history {
+  border-top:1px solid #d5e1f0;
+  margin-top:22px;
+  padding-top:16px
+}
+.activity-history h4 {
+  margin:0 0 14px;
+  color:#1f3b73;
+  font-size:1rem
+}
+.activity-list {
+  list-style:none;
+  margin:0;
+  padding:0 0 0 18px;
+  border-left:2px solid #8aace0
+}
+.activity-item {
+  position:relative;
+  margin:0 0 16px;
+  padding-left:16px;
+  font-size:.88rem
+}
+.activity-item:before {
+  content:'';
+  position:absolute;
+  left:-24px;
+  top:5px;
+  width:10px;
+  height:10px;
+  background:#4778be;
+  border-radius:50%
+}
+.activity-time {
+  display:block;
+  margin-top:4px;
+  font-size:.78rem;
+  color:#60708a
+}
+.activity-item p {
+  margin:6px 0 0;
+  line-height:1.45
+}
+.activity-note {
+  font-size:.78rem;
+  color:#60708a;
+  margin:10px 0 0
+}
+body.dark-theme .activity-history {
+  border-color:#49679d
+}
+body.dark-theme .activity-history h4 {
+  color:#fff
+}
+body.dark-theme .activity-time,body.dark-theme .activity-note {
+  color:#dbe7ff
+}
+@media(min-width:901px) {
+  body:not(.sidebar-collapsed) .sidebar-toggle {
+    left:190px;
+    top:20px
+  }
+  body.sidebar-collapsed .sidebar-toggle {
+    left:32px;
+    top:24px
+  }
+}
+@media(max-width:900px) {
+  .sidebar {
+    position:fixed!important;
+    top:0;
+    bottom:0;
+    left:0;
+    z-index:500;
+    width:50%!important;
+    max-width:50vw;
+    height:100vh;
+    padding:20px 16px 24px!important;
+    overflow-y:auto;
+    transform:translateX(0);
+    transition:transform .25s ease,opacity .25s ease;
+    box-shadow:6px 0 24px rgba(0,0,0,.45)
+  }
+  body.sidebar-collapsed .sidebar {
+    width:50%!important;
+    transform:translateX(-100%);
+    opacity:0;
+    pointer-events:none
+  }
+  body.sidebar-collapsed .sidebar * {
+    display:revert
+  }
+  .sidebar-backdrop {
+    display:block;
+    position:fixed;
+    inset:0;
+    z-index:450;
+    background:rgba(0,0,0,.55);
+    opacity:1;
+    pointer-events:auto
+  }
+  body.sidebar-collapsed .sidebar-backdrop {
+    opacity:0;
+    pointer-events:none
+  }
+  .sidebar-toggle {
+    top:15px;
+    left:calc(50% - 48px);
+    z-index:600
+  }
+  body.sidebar-collapsed .sidebar-toggle {
+    top:10px;
+    left:18px
+  }
+  .logout-wrapper {
+    bottom:110px;
+    left:18px;
+    right:18px
+  }
+  .top-header {
+    padding-left:0;
+    text-align:center;
+    margin-top:56px
+  }
+  .top-header h2 {
+    font-size:1.65rem
+  }
+  .main {
+    padding:12px 14px 80px
+  }
+  .table-scroll {
+    overflow:visible
+  }
+  table {
+    min-width:0;
+    width:100%;
+    display:block
+  }
+  thead {
+    display:none
+  }
+  tbody {
+    display:block
+  }
+  tr.data-row {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    padding:17px;
+    margin-bottom:10px;
+    border:1px solid #d7e4f2;
+    border-radius:15px;
+    background:#f7faff;
+    box-shadow:0 8px 20px rgba(31,60,115,.10)
+  }
+  tr.data-row td {
+    display:block;
+    padding:0;
+    border:0;
+    min-width:0;
+    overflow-wrap:anywhere
+  }
+  tr.data-row td:before {
+    content:attr(data-label);
+    display:block;
+    margin-bottom:5px;
+    color:#60708a;
+    font-size:.7rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.03em
+  }
+  tr.data-row td:first-child,tr.data-row td:nth-child(3),tr.data-row td:last-child {
+    grid-column:1/-1
+  }
+  tr.data-row td:last-child .action-btn {
+    width:100%;
+    margin-top:3px
+  }
+  tr.details-row {
+    display:block;
+    margin:-4px 0 14px
+  }
+  tr.details-row td {
+    display:block;
+    padding:18px;
+    border-radius:14px
+  }
+  .detail-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+  body.dark-theme tr.data-row {
+    background:#223c71;
+    border-color:#49679d
+  }
+  body.dark-theme tr.data-row td:before {
+    color:#c9d7ff
+  }
+  .filters {
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+}
+@media(max-width:480px) {
+  .filters {
+    grid-template-columns:1fr
+  }
+  .metrics {
+    grid-template-columns:1fr 1fr
+  }
+  .metrics .card:first-child {
+    grid-column:1/-1
+  }
+  .card {
+    padding:15px
+  }
+  .metric {
+    font-size:1.5rem
+  }
+  .section {
+    padding:16px
+  }
+  .detail-grid {
+    grid-template-columns:1fr 1fr
+  }
+}
+
+/* -------------------- Dashboard-matched theme -------------------- */
+body.dark-theme,
+body.dark-theme .main {
+  background: #0f1d3a;
+  color: #ffffff;
+}
+
+body.dark-theme .sidebar { background: #10275a; }
+
+body.dark-theme .card,
+body.dark-theme .section {
+  background: linear-gradient(to bottom, #243b75 0%, #1d3267 45%, #142650 100%);
+  border: 1px solid rgba(141, 170, 220, 0.35);
+  color: #ffffff;
+}
+
+body.dark-theme .top-header h2,
+body.dark-theme .section-header h3,
+body.dark-theme .card h3,
+body.dark-theme .metric,
+body.dark-theme .activity-history h4 { color: #ffffff; }
+
+body.dark-theme .top-header p,
+body.dark-theme .subtitle,
+body.dark-theme .metric-description,
+body.dark-theme .field label,
+body.dark-theme .detail-label,
+body.dark-theme .footer-row,
+body.dark-theme .activity-time,
+body.dark-theme .activity-note { color: #dbe7ff; }
+
+body.dark-theme th {
+  background: #243b75;
+  color: #dbe7ff;
+}
+
+body.dark-theme td { color: #ffffff; }
+body.dark-theme td,
+body.dark-theme th { border-bottom: 1px solid rgba(219, 231, 255, 0.18); }
+
+body.dark-theme .severity-low,
+body.dark-theme .status-resolved { background: #6ee7b7; color: #064e3b; }
+body.dark-theme .severity-medium,
+body.dark-theme .status-in_review { background: #fde68a; color: #6b4e00; }
+body.dark-theme .severity-high,
+body.dark-theme .status-open { background: #fca5a5; color: #7f1d1d; }
+
+body.dark-theme .details-row td { background: #29477d; }
+body.dark-theme .message.error { background: #702c3d; color: #fff; }
+
+@media (max-width: 900px) {
+  body.dark-theme tr.data-row {
+    background: #223c71;
+    border-color: #49679d;
+  }
+}
+
+/* Student report spacing follows the staff dashboard at split desktop widths. */
+body.sidebar-collapsed .top-header { padding-left: 58px; }
+.top-header { margin-bottom: 20px; }
+.metrics { gap: 14px; margin-bottom: 20px; }
+.metrics .card { padding: 18px; }
+.student-report-modal { max-width: 560px; }
+.student-report-detail-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
+.student-report-detail-heading h4 { margin: 0; font-size: 1.1rem; }
+.student-report-modal .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid #7890b344; padding-bottom: 16px; }
+.student-report-modal .activity-history { margin-top: 18px; }
+.student-report-modal .detail-label { color: #a7bfdf; }
+.student-report-modal .status-actions select { background: #142650; color: white; }
+body.light-theme .student-report-modal .detail-label { color: #60708a; }
+body.light-theme .student-report-modal .status-actions select { background: white; color: #1f2a44; }
+@media (min-width: 601px) and (max-width: 900px) {
+  .main { padding: 24px 24px 40px; }
+  .top-header, body.sidebar-collapsed .top-header { padding-left: 58px; margin-top: 0; text-align: left; }
+  .metrics .card { padding: 16px; }
+  .metric { font-size: 1.65rem; }
+  .metric-description { font-size: .75rem; margin-top: 8px; }
+  .section { padding: 18px; }
+  .table-scroll { overflow-x: auto; }
+  table { display: table; min-width: 640px; }
+  thead { display: table-header-group; }
+  tbody { display: table-row-group; }
+  tr.data-row { display: table-row; padding: 0; margin: 0; border: 0; box-shadow: none; background: transparent; }
+  body.dark-theme tr.data-row { background: transparent; }
+  tr.data-row td { display: table-cell; padding: 10px 8px; border-bottom: 1px solid #7890b344; font-size: .8rem; }
+  tr.data-row td::before { display: none; }
+  tr.data-row td:last-child .action-btn { width: auto; margin: 0; white-space: nowrap; }
+}
+@media (max-width: 600px) {
+  .top-header, body.sidebar-collapsed .top-header { padding-left: 58px; margin-top: 8px; text-align: left; }
+  .top-header h2 { font-size: 1.5rem; }
+  .metrics .card { padding: 14px; }
+  tr.data-row { gap: 8px; padding: 12px; }
+}
+</style>
+</head>
+
+<body class="dark-theme">
+
+  <div
+    class="sidebar-backdrop"
+    onclick="toggleSidebar()">
+  </div>
+
+  <button
+    class="sidebar-toggle"
+    onclick="toggleSidebar()"
+    aria-label="Toggle sidebar" aria-expanded="true">
+    <img src="../images/cloudicon.png" alt="" />
+  </button>
+
+  <aside class="sidebar">
+    <h1>QuietSpace</h1>
+    <p>Staff Dashboard</p>
+
+    <a class="nav-item" href="dashboard.html">Overview</a>
+    <a class="nav-item" href="QuietScorePage.html">QuietScore Reports</a>
+    <a class="nav-item active" aria-current="page" href="StudentReportsPage.html">Student Reports</a>
+    <a class="nav-item" href="analytics.html">Analytics</a>
+
+    <div class="logout-wrapper">
+      <a class="settings-btn" href="settings.html">
+        <svg class="settings-icon" width="16" height="16" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-1.91 1.91-.06-.06A1.65 1.65 0 0 0 16 18.4a1.65 1.65 0 0 0-1 .6V21H9v-2a1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06-1.91-1.91.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1H2v-4h2a1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06 1.91-1.91-.06-.06A1.65 1.65 0 0 0 8 5.6a1.65 1.65 0 0 0 1-.6V3h6v2a1.65 1.65 0 0 0 1.82-.33l.06-.06 1.91 1.91-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 .6 1h2v4h-2a1.65 1.65 0 0 0-.6 1z"></path>
+        </svg>
+        <span>Settings</span>
+      </a>
+      <button class="logout-btn" id="logout">Log Out</button>
+    </div>
+  </aside>
+
+<main class="main">
+
+  <header class="top-header">
+    <h2>Student Reports</h2>
+    <p>
+      Review and manage student-submitted noise concerns
+      across all monitoring dates.
+    </p>
+  </header>
+
+  <div id="notice" class="message hidden" role="status"></div>
+
+  <!-- DYNAMIC SUMMARY CARDS -->
+
+  <div class="metrics">
+    <div class="card">
+      <h3>Total Reports</h3>
+      <div class="metric" id="total">—</div>
+      <p class="metric-description">Student reports received during the selected period.</p>
+    </div>
+
+    <div class="card">
+      <h3>Unresolved</h3>
+      <div class="metric" id="unresolved">—</div>
+      <p class="metric-description">Reports still open or under review.</p>
+    </div>
+
+    <div class="card">
+      <h3>Resolved</h3>
+      <div class="metric" id="resolved">—</div>
+      <p class="metric-description">Reports marked as resolved.</p>
+    </div>
+  </div>
+
+  <!-- REPORT HISTORY -->
+
+  <section class="section">
+
+    <div class="section-header">
+      <div>
+        <h3>Report History</h3>
+        <p class="subtitle">
+          Explore all student reports without leaving
+          the staff dashboard.
+        </p>
+      </div>
+
+      <button class="action-btn" id="refresh">
+        Refresh Reports
+      </button>
+    </div>
+
+    <!-- DATE RANGE -->
+
+    <div class="ranges" role="group" aria-label="Date range">
+      <button class="range-btn selected" data-range="all">All Time</button>
+      <button class="range-btn" data-range="7">Last 7 Days</button>
+      <button class="range-btn" data-range="30">Last 30 Days</button>
+      <button class="range-btn" data-range="custom">Custom Range</button>
+    </div>
+
+    <div class="custom-dates" id="customDates">
+      <div class="field">
+        <label for="startDate">From</label>
+        <input type="date" id="startDate">
+      </div>
+
+      <div class="field">
+        <label for="endDate">To</label>
+        <input type="date" id="endDate">
+      </div>
+    </div>
+
+    <!-- SEARCH AND FILTERS -->
+
+    <div class="filters">
+
+      <div class="field">
+        <label for="search">Search Reports</label>
+        <input
+          id="search"
+          type="search"
+          placeholder="Search room, noise type or comment"
+        >
+      </div>
+
+      <div class="field">
+        <label for="room">Room</label>
+        <select id="room">
+          <option value="all">All Rooms</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="severity">Severity</label>
+        <select id="severity">
+          <option value="all">All Severities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="status">Status</label>
+        <select id="status">
+          <option value="all">All Statuses</option>
+          <option value="open">Open</option>
+          <option value="in_review">In Review</option>
+          <option value="resolved">Resolved</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- REPORT TABLE -->
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Submitted</th>
+            <th>Room</th>
+            <th>Noise Type</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+
+        <tbody id="reportRows">
+          <tr>
+            <td colspan="6" class="empty">
+              Loading reports...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINATION -->
+
+    <div class="footer-row">
+      <span id="resultCount">—</span>
+
+      <div class="pager">
+        <button class="action-btn" id="previous">
+          Previous
+        </button>
+
+        <span id="pageLabel">Page 1</span>
+
+        <button class="action-btn" id="next">
+          Next
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<dialog id="studentReportModal" class="qs-modal student-report-modal" aria-labelledby="studentReportModalTitle">
+  <div class="qs-modal-header"><h3 id="studentReportModalTitle">Student Report Details</h3>
+    <button type="button" id="closeStudentReportModal" class="qs-modal-close" aria-label="Close report details">×</button>
+  </div>
+  <div id="studentReportDetails"></div>
+  <p id="studentReportModalMessage" role="status"></p>
+</dialog>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+
+const state = {
+  reports: [],
+  range: "all",
+  page: 1,
+  pageSize: 10,
+  selectedReportId: null,
+  loading: false
+};
+
+/* GLOBAL THEME */
+
+function applyGlobalTheme() {
+  const theme = localStorage.getItem("quietspace_theme");
+
+  document.body.classList.toggle("dark-theme", theme !== "light");
+  document.body.classList.toggle("light-theme", theme === "light");
+}
+
+applyGlobalTheme();
+
+window.addEventListener("storage", e => {
+  if (e.key === "quietspace_theme") {
+    applyGlobalTheme();
+  }
+});
+
+/* PROTOTYPE AUTHENTICATION */
+
+const loggedIn =
+  Boolean(window.quietspaceUser);
+
+const expires = Number(
+  "0" || 0
+);
+
+if (!loggedIn || (expires > 0 && Date.now() > expires)) {
+  localStorage.removeItem("quietspaceLoggedIn");
+  localStorage.removeItem("quietspaceSessionExpiresAt");
+
+  location.replace(
+    "login.html?redirect=dashboard&restricted=1"
+  );
+}
+
+/* SIDEBAR */
+
+function toggleSidebar() {
+  document.body.classList.toggle("sidebar-collapsed");
+  document.querySelector(".sidebar-toggle").setAttribute(
+    "aria-expanded",
+    String(!document.body.classList.contains("sidebar-collapsed"))
+  );
+}
+
+// Start with the mobile sidebar closed.
+if (window.innerWidth <= 900) {
+  document.body.classList.add("sidebar-collapsed");
+  document.querySelector(".sidebar-toggle").setAttribute("aria-expanded", "false");
+}
+
+
+$("logout").addEventListener("click", () => {
+  localStorage.removeItem("quietspaceLoggedIn");
+  localStorage.removeItem("quietspaceSessionExpiresAt");
+  sessionStorage.removeItem("quietspaceLoggedIn");
+
+  location.href = "login.html?logout=1";
+});
+
+/* FORMATTING HELPERS */
+
+function title(s) {
+  return String(s ?? "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function esc(s) {
+  return String(s ?? "").replace(
+    /[&<>"']/g,
+    c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c])
+  );
+}
+
+function parseDate(value) {
+  if (!value) return null;
+
+  const s = String(value);
+
+  const d = new Date(
+    s.includes("T") || s.includes(" ")
+      ? s.replace(" ", "T")
+      : s
+  );
+
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function localDay(d) {
+  return new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate()
+  );
+}
+
+function formatDate(value) {
+  const d = parseDate(value);
+  if (!d) return "Unknown date";
+
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  const date = d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" })
+  });
+  const time = d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+
+  return `${date} at ${time}`;
+}
+
+function showMessage(text, error = false) {
+  if ($("studentReportModal").open) $("studentReportModalMessage").textContent = text;
+  $("notice").textContent = text;
+  $("notice").classList.toggle("error", error);
+  $("notice").classList.toggle("hidden", !text);
+}
+
+/* NORMALIZE BACKEND DATA */
+
+function normalizeReport(r) {
+  return {
+    ...r,
+    id: r.id,
+    room_name: String(r.room_name ?? "Unknown"),
+    noise_type: String(r.noise_type ?? "Unknown"),
+    severity: String(r.severity ?? "low").toLowerCase(),
+    report_status: String(
+      r.report_status ?? "open"
+    ).toLowerCase(),
+    comments: String(r.comments ?? ""),
+    activity_history: Array.isArray(r.activity_history)
+      ? r.activity_history
+      : [],
+    submitted_at:
+      r.submitted_at ??
+      r.created_at ??
+      r.reported_at ??
+      r.timestamp ??
+      null
+  };
+}
+
+/* LOAD ALL STUDENT REPORTS */
+
+async function loadReports() {
+  if (state.loading) return;
+
+  state.loading = true;
+  $("refresh").disabled = true;
+
+  try {
+    const response = await fetch(
+      "/api/reports?t=" + Date.now(),
+      { cache: "no-store" }
+    );
+
+    if (!response.ok) {
+      throw Error("HTTP " + response.status);
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      throw Error("Unexpected report response");
+    }
+
+    state.reports = data.map(normalizeReport);
+
+    showMessage("");
+    updateRooms();
+    render();
+
+  } catch (err) {
+    console.error(err);
+
+    showMessage(
+      "Could not load student reports. Make sure the QuietSpace backend is running and /api/reports is available.",
+      true
+    );
+
+    render();
+
+  } finally {
+    state.loading = false;
+    $("refresh").disabled = false;
+  }
+}
+
+/* ROOM FILTER */
+
+function updateRooms() {
+  const current = $("room").value;
+
+  const rooms = [
+    ...new Set(
+      state.reports.map(r => r.room_name)
+    )
+  ].sort();
+
+  $("room").replaceChildren(
+    new Option("All Rooms", "all"),
+    ...rooms.map(r => new Option(r, r))
+  );
+
+  $("room").value = rooms.includes(current)
+    ? current
+    : "all";
+}
+
+/* DATE FILTER */
+
+function inDateRange(r) {
+  if (state.range === "all") {
+    return true;
+  }
+
+  const d = parseDate(r.submitted_at);
+  if (!d) return false;
+
+  const day = localDay(d);
+  const today = localDay(new Date());
+
+  if (state.range === "7" || state.range === "30") {
+    const start = new Date(today);
+
+    start.setDate(
+      start.getDate() - (Number(state.range) - 1)
+    );
+
+    return day >= start && day <= today;
+  }
+
+  if (state.range === "custom") {
+    const a = $("startDate").value;
+    const b = $("endDate").value;
+
+    if (
+      a &&
+      day < localDay(new Date(a + "T12:00:00"))
+    ) {
+      return false;
+    }
+
+    if (
+      b &&
+      day > localDay(new Date(b + "T12:00:00"))
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  return true;
+}
+
+/* SEARCH AND FILTER REPORTS */
+
+function filtered() {
+  const room = $("room").value;
+  const severity = $("severity").value;
+  const status = $("status").value;
+  const q = $("search").value.trim().toLowerCase();
+
+  return state.reports
+    .filter(r =>
+      inDateRange(r) &&
+      (room === "all" || r.room_name === room) &&
+      (severity === "all" || r.severity === severity) &&
+      (status === "all" || r.report_status === status) &&
+      (
+        !q ||
+        [
+          r.room_name,
+          r.noise_type,
+          r.comments,
+          String(r.id)
+        ].some(x => x.toLowerCase().includes(q))
+      )
+    )
+    .sort(
+      (a, b) =>
+        (parseDate(b.submitted_at)?.getTime() || 0) -
+        (parseDate(a.submitted_at)?.getTime() || 0)
+    );
+}
+
+/* BADGES */
+
+function pill(value, prefix) {
+  const allowed = [
+    "low", "medium", "high",
+    "open", "in_review", "resolved"
+  ];
+
+  const v = allowed.includes(value)
+    ? value
+    : "unknown";
+
+  return `
+    <span class="pill ${prefix}-${v}">
+      ${esc(title(value))}
+    </span>
+  `;
+}
+
+function studentStatusBadge(report) {
+  const value = ['open','in_review','resolved'].includes(report.report_status) ? report.report_status : 'open';
+  const label = value === 'resolved' && report.resolution_method === 'automatic' ? 'Auto-Resolved' : title(value);
+  return `<span class="pill qs-student-status status-${value}">${esc(label)}</span>`;
+}
+/* REPORT ACTIVITY HISTORY */
+
+function renderActivityHistory(report) {
+  const names = { report_submitted: "Report Submitted", report_status_changed: "Status Changed", report_in_review: "Entered In Review",
+    report_resolved: "Report Resolved", report_reopened: "Report Reopened", security_attached: "Linked to Security", security_status_changed: "Security Status Update", security_update: "Security Update" };
+  const events = report.activity_history || [];
+  const activityTime = value => parseDate(value)?.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit" }) || "Unknown time";
+  const items = events.map(event => `<li class="activity-item"><strong>${esc(names[event.event_type] || title(event.event_type))}</strong>
+    <span class="activity-time">${esc(activityTime(event.occurred_at))}${event.actor_name ? ` · ${esc(event.actor_name)}${event.actor_role ? ` (${esc(title(event.actor_role))})` : ""}` : event.resolution_method === "automatic" ? " · Automatic" : ""}</span>
+    <p>${esc(event.description || "")}</p></li>`).join("");
+  const linked = (report.linked_incident_assessments || []).map(assessment => `<li class="activity-item"><strong>Related QuietScore incident #${esc(assessment.incident_id)} · ${esc(assessment.room_name)}</strong>
+    <span>Inferred from historical cycle counts · linked through Security escalation #${esc(assessment.security_request_id)}</span><p>${esc(assessment.legacy_alert_inference.description)} Exact display time unknown.</p></li>`).join('');
+  return `<div class="activity-history"><h4>Report Activity History</h4>${events.length ? `<ol class="activity-list">${items}</ol>` : "<p>Loading recorded activity…</p>"}
+    ${events.length === 1 ? '<p class="activity-note">No additional activity has been recorded.</p>' : ""}
+    ${linked ? `<h4>Related QuietScore Alert Assessments</h4><ol class="activity-list">${linked}</ol>` : ""}</div>`;
+}
+
+/* RENDER TABLE AND SUMMARY CARDS */
+
+function render() {
+  const rows = filtered();
+
+  // Summary cards follow date and room,
+  // but not the status/severity/search filters.
+
+  const summary = state.reports.filter(r =>
+    inDateRange(r) &&
+    (
+      $("room").value === "all" ||
+      r.room_name === $("room").value
+    )
+  );
+
+  $("total").textContent = summary.length;
+
+  $("resolved").textContent = summary.filter(
+    r => r.report_status === "resolved"
+  ).length;
+
+  $("unresolved").textContent = summary.filter(
+    r => r.report_status !== "resolved"
+  ).length;
+
+  const pages = Math.max(
+    1,
+    Math.ceil(rows.length / state.pageSize)
+  );
+
+  state.page = Math.min(state.page, pages);
+
+  const shown = rows.slice(
+    (state.page - 1) * state.pageSize,
+    state.page * state.pageSize
+  );
+
+  $("reportRows").innerHTML = shown.length
+    ? shown.map(r => {
+        const key = String(r.id);
+
+        return `
+          <tr class="data-row" data-id="${esc(key)}">
+            <td data-label="Submitted">${esc(formatDate(r.submitted_at))}</td>
+            <td data-label="Room">${esc(r.room_name)}</td>
+            <td data-label="Noise Type">${esc(title(r.noise_type))}</td>
+            <td data-label="Severity">${pill(r.severity, "severity")}</td>
+            <td data-label="Status">${studentStatusBadge(r)}</td>
+            <td data-label="Details">
+              <button
+                class="action-btn"
+                data-report-details="${esc(key)}"
+                aria-haspopup="dialog"
+              >
+                View Details
+              </button>
+            </td>
+          </tr>
+
+        `;
+      }).join("")
+    : `
+      <tr>
+        <td colspan="6" class="empty">
+          No student reports match these filters.
+        </td>
+      </tr>
+    `;
+
+  $("resultCount").textContent = rows.length
+    ? `Showing ${(state.page - 1) * state.pageSize + 1}–${Math.min(
+        state.page * state.pageSize,
+        rows.length
+      )} of ${rows.length} reports`
+    : "0 matching reports";
+
+  $("pageLabel").textContent =
+    `Page ${state.page} of ${pages}`;
+
+  $("previous").disabled = state.page === 1;
+  $("next").disabled = state.page === pages;
+}
+
+/* REPORT DETAILS DIALOG (same centered, dismissible pattern as QuietScore). */
+function renderReportDetails(r) {
+  const key = String(r.id);
+  $("studentReportDetails").innerHTML = `
+    <div class="student-report-detail-heading"><h4>${esc(r.room_name)}</h4>${studentStatusBadge(r)}</div>
+                    <div class="detail-grid">
+
+                      <div>
+                        <div class="detail-label">
+                          Report ID
+                        </div>
+                        <div class="detail-value">
+                          ${esc(key)}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div class="detail-label">
+                          Submitted
+                        </div>
+                        <div class="detail-value">
+                          ${esc(formatDate(r.submitted_at))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div class="detail-label">
+                          Noise Type
+                        </div>
+                        <div class="detail-value">
+                          ${esc(title(r.noise_type))}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <div class="detail-label">
+                      Student Comment
+                    </div>
+
+                    <div class="comment">${esc(r.comments || "No comment provided.")}</div>
+
+                    <div class="status-actions">
+
+                      <label for="modal-status-${esc(key)}">
+                        Update status:
+                      </label>
+
+                      <select
+                        id="modal-status-${esc(key)}"
+                        data-status-id="${esc(key)}"
+                      >
+                        <option
+                          value="open"
+                          ${r.report_status === "open" ? "selected" : ""}
+                        >
+                          Open
+                        </option>
+
+                        <option
+                          value="in_review"
+                          ${r.report_status === "in_review" ? "selected" : ""}
+                        >
+                          In Review
+                        </option>
+
+                        <option
+                          value="resolved"
+                          ${r.report_status === "resolved" ? "selected" : ""}
+                        >
+                          ${r.resolution_method === "automatic" && r.report_status === "resolved" ? "Auto-Resolved" : "Resolved"}
+                        </option>
+                      </select>
+
+                      <span class="detail-label">
+                        Changes are saved to the backend.
+                      </span>
+
+                    </div>
+
+                    ${renderActivityHistory(r)}
+  `;
+}
+function closeStudentReportDetails() { $("studentReportModal").close(); }
+$("closeStudentReportModal").addEventListener("click", closeStudentReportDetails);
+$("studentReportModal").addEventListener("click", event => {
+  if (event.target === $("studentReportModal")) {
+    const bounds = event.target.getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeStudentReportDetails();
+  }
+});
+$("studentReportModal").addEventListener("close", () => {
+  const trigger = document.querySelector(`[data-report-details="${state.selectedReportId}"]`);
+  state.selectedReportId = null;
+  trigger?.focus();
+});
+$("reportRows").addEventListener("click", event => {
+  const button = event.target.closest("[data-report-details]");
+  const row = event.target.closest("tr.data-row");
+  const id = button?.dataset.reportDetails ?? row?.dataset.id;
+  const report = state.reports.find(r => String(r.id) === id);
+  if (!report) return;
+  openStudentReportDetails(report);
+});
+function openStudentReportDetails(report) {
+  const id = String(report.id);
+  state.selectedReportId = id;
+  $("studentReportModalMessage").textContent = "";
+  renderReportDetails(report);
+  if (!$("studentReportModal").open) $("studentReportModal").showModal();
+  fetch(`/api/reports/${encodeURIComponent(id)}/activity`, { cache: "no-store", signal: AbortSignal.timeout(5000) }).then(async response => {
+    if (!response.ok) throw Error("History unavailable");
+    const history = await response.json();
+    report.activity_history = history.events;
+    report.linked_incident_assessments = history.linked_incident_assessments || [];
+    if (state.selectedReportId === id && $("studentReportModal").open) renderReportDetails(report);
+  }).catch(() => {
+    if (state.selectedReportId === id && $("studentReportModal").open) $("studentReportDetails").querySelector('.activity-history').textContent = 'Recorded activity could not be loaded. Please reopen the report to retry.';
+  });
+  window.QuietSpaceDetailNavigation($("studentReportModal"), { items: filtered, current: () => state.selectedReportId, open: openStudentReportDetails });
+}
+
+/* UPDATE REPORT STATUS */
+
+$("studentReportModal").addEventListener("change", async e => {
+  const select = e.target.closest("[data-status-id]");
+  if (!select) return;
+
+  const id = select.dataset.statusId;
+
+  const report = state.reports.find(
+    r => String(r.id) === id
+  );
+
+  if (!report) return;
+
+  const old = report.report_status;
+  const newStatus = select.value;
+
+  select.disabled = true;
+
+  try {
+    const response = await fetch(
+      `/api/reports/${encodeURIComponent(id)}/status`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          report_status: newStatus
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw Error("HTTP " + response.status);
+    }
+
+    report.report_status = newStatus;
+    report.resolution_method = newStatus === "resolved" ? "manual" : null;
+    report.resolved_at = newStatus === "resolved" ? new Date().toISOString() : null;
+    const historyResponse = await fetch(`/api/reports/${encodeURIComponent(id)}/activity`, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+    if (historyResponse.ok) {
+      const history = await historyResponse.json(); report.activity_history = history.events;
+      report.linked_incident_assessments = history.linked_incident_assessments || [];
+    }
+    renderReportDetails(report);
+
+    showMessage(
+      "Report status updated successfully."
+    );
+
+    render();
+
+  } catch (err) {
+    console.error(err);
+
+    select.value = old;
+    select.disabled = false;
+
+    showMessage(
+      "Could not update report status. No changes were saved.",
+      true
+    );
+  }
+});
+
+/* DATE RANGE BUTTONS */
+
+for (const b of document.querySelectorAll("[data-range]")) {
+  b.addEventListener("click", () => {
+    state.range = b.dataset.range;
+    state.page = 1;
+
+    document.querySelectorAll("[data-range]").forEach(
+      x => x.classList.toggle("selected", x === b)
+    );
+
+    $("customDates").classList.toggle(
+      "visible",
+      state.range === "custom"
+    );
+
+    render();
+  });
+}
+
+/* FILTER EVENTS */
+
+for (const id of [
+  "search",
+  "room",
+  "severity",
+  "status",
+  "startDate",
+  "endDate"
+]) {
+  $(id).addEventListener(
+    id === "search" ? "input" : "change",
+    () => {
+      state.page = 1;
+      render();
+    }
+  );
+}
+
+/* PAGINATION */
+
+$("previous").addEventListener("click", () => {
+  if (state.page > 1) {
+    state.page--;
+    render();
+  }
+});
+
+$("next").addEventListener("click", () => {
+  state.page++;
+  render();
+});
+
+/* REFRESH */
+
+$("refresh").addEventListener("click", loadReports);
+
+/* INITIAL LOAD */
+
+loadReports();
+
+</script>
+</body>
+</html>

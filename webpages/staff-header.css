@@ -1,0 +1,32 @@
+/* One header layout for Overview, QuietScore, Student Reports and Settings. */
+body .main .qs-page-header,
+body.sidebar-collapsed .main .qs-page-header {
+  display:flex; flex-direction:row; align-items:flex-start; justify-content:space-between;
+  gap:18px; width:100%; min-width:0; margin:0 0 24px; padding:0;
+  text-align:left;
+}
+body.sidebar-collapsed .main .qs-page-header { padding-left:58px; }
+.qs-page-header .qs-header-copy { flex:1; min-width:0; min-height:0; display:block; width:auto; }
+.qs-page-header .qs-header-copy h2 { font:700 2rem/1.2 Arial,sans-serif; margin:0 0 6px; padding:0; text-align:left; text-wrap:balance; }
+.qs-page-header .qs-header-copy p { margin:0; font:400 1rem/1.4 Arial,sans-serif; text-align:left; }
+.qs-page-header .top-header-title-row { margin:0 0 6px; justify-content:flex-start; }
+.qs-page-header .top-header-title-row h2 { margin:0; }
+body:not(.light-theme) .qs-page-header h2, body:not(.light-theme) .qs-page-header .time-text { color:#fff; }
+body:not(.light-theme) .qs-page-header p, body:not(.light-theme) .qs-page-header .date-text { color:#c9d7ff; }
+body.light-theme .qs-page-header h2, body.light-theme .qs-page-header .time-text { color:#1f3b73; }
+body.light-theme .qs-page-header p, body.light-theme .qs-page-header .date-text { color:#4c5d7a; }
+body .qs-page-header .overview-date { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; align-self:flex-start; justify-content:center; gap:5px; width:auto; margin:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; white-space:nowrap; text-align:right; }
+.qs-page-header .time-text { font:800 1.75rem/1.2 Arial,sans-serif; font-variant-numeric:tabular-nums; }
+.qs-page-header .date-text { font:500 .95rem/1.4 Arial,sans-serif; }
+@media(max-width:900px) {
+  body .main.qs-header-main { padding-top:calc(env(safe-area-inset-top,0px) + 20px); }
+  body .main .qs-page-header, body.sidebar-collapsed .main .qs-page-header { flex-direction:column; align-items:center; padding:0; gap:14px; text-align:center; }
+  .qs-page-header .qs-header-copy { flex:none; width:100%; min-height:42px; }
+  .qs-page-header .qs-header-copy h2 { width:100%; padding-inline:clamp(48px,13vw,68px); font-size:clamp(1.2rem,4.8vw,1.65rem); text-align:center; }
+  .qs-page-header .qs-header-copy p { width:100%; font-size:clamp(.74rem,2.6vw,.86rem); text-align:center; }
+  .qs-page-header .top-header-title-row { justify-content:center; }
+  body .qs-page-header .overview-date { width:100%; align-self:center; align-items:center; margin:0; text-align:center; white-space:normal; gap:4px; }
+  .qs-page-header .time-text { font-size:1.25rem; }
+  .qs-page-header .date-text { font-size:.82rem; }
+  .qs-page-header .qs-system-status { justify-content:center; }
+}

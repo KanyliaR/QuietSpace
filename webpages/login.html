@@ -12,15 +12,24 @@
       padding: 0;
     }
 
+    html {
+      min-height: 100%;
+      background-color: #c5e6f9;
+    }
+
     body {
       font-family: Arial, sans-serif;
       background-color: #c5e6f9;
       color: #1f2a44;
       min-height: 100vh;
+      min-height: 100dvh;
     }
 
     .page {
       width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: inherit;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -30,6 +39,7 @@
     .header {
       width: 100%;
       height: 300px;
+      flex-shrink: 0;
       overflow: hidden;
       background-color: #dcecf7;
     }
@@ -98,6 +108,7 @@
     }
 
     input[type="email"],
+    input[type="text"],
     input[type="password"] {
       width: 100%;
       padding: 14px 16px;
@@ -167,7 +178,7 @@
 
     /* -------------------- Dark Mode Theme Classes -------------------- */
     body.dark-theme {
-      background-color: #0f1d3a;
+      background-color: #c5e6f9;
       color: #ffffff;
     }
 
@@ -192,6 +203,7 @@
     }
 
     body.dark-theme input[type="email"],
+    body.dark-theme input[type="text"],
     body.dark-theme input[type="password"] {
       background-color: #1b2f61;
       color: #ffffff;
@@ -222,7 +234,7 @@
 
     @media (prefers-color-scheme: dark) {
       body:not(.light-theme) {
-        background-color: #0f1d3a;
+        background-color: #c5e6f9;
         color: #ffffff;
       }
 
@@ -247,6 +259,7 @@
       }
 
       body:not(.light-theme) input[type="email"],
+      body:not(.light-theme) input[type="text"],
       body:not(.light-theme) input[type="password"] {
         background-color: #1b2f61;
         color: #ffffff;
@@ -289,7 +302,7 @@
       }
     }
   </style>
-</head>
+<link rel="stylesheet" href="/webpages/onboarding.css"></head>
 
 <body>
   <div class="page">
@@ -312,11 +325,11 @@
       <form id="loginForm">
 
         <div class="form-group">
-          <label for="email">Staff Email</label>
+          <label for="email">Staff Username or Email</label>
           <input
-            type="email"
+            type="text"
             id="email"
-            placeholder="Enter staff email"
+            placeholder="Enter staff username or email"
             required
           />
         </div>
@@ -335,8 +348,17 @@
           Sign In
         </button>
 
+        <button type="button" class="login-btn request-account-btn" id="requestAccountButton">Request an Account</button>
       </form>
-
+      <form id="accountRequestForm" hidden>
+        <div class="form-group"><label for="requestFirstName">First Name</label><input type="text" id="requestFirstName" autocomplete="given-name" maxlength="49" required></div>
+        <div class="form-group"><label for="requestLastName">Last Name</label><input type="text" id="requestLastName" autocomplete="family-name" maxlength="50" required></div>
+        <div class="form-group"><label for="requestEmail">Email Address</label><input id="requestEmail" type="email" autocomplete="email" maxlength="255" required></div>
+        <div class="form-group"><label for="requestRole">Requested Role</label><select id="requestRole" required><option value="library_monitor">Library Monitor</option><option value="security">Security</option><option value="admin">Library Admin</option></select></div>
+        <button type="submit" class="login-btn" id="submitAccountRequest">Submit Request</button>
+        <button type="button" class="login-btn request-account-btn" id="backToLogin">Back to Sign In</button>
+      </form>
+      <div id="requestConfirmation" hidden role="status"><p>Account request submitted. An administrator will review your request.</p><button class="login-btn" type="button" id="acknowledgeRequest">Back to Sign In</button></div>
       <div class="helper-text">
         Authorized staff access only.
       </div>
@@ -375,131 +397,21 @@
       messageBox.className = `message-box ${type}`;
     }
 
-    loginForm.addEventListener("submit", function (event) {
+    loginForm.addEventListener("submit", async function (event) {
       event.preventDefault();
-
-      const email =
-        document.getElementById("email").value.trim();
-
-      const password =
-        document.getElementById("password").value.trim();
-
-      // Check lockout policy from settings if configured
-      let settings = {};
       try {
-        const raw = localStorage.getItem("quietspace_settings");
-        if (raw) settings = JSON.parse(raw);
-      } catch (e) {}
-
-      if (settings.lockoutTime) {
-        const lockoutUntil = parseInt(localStorage.getItem("quietspaceLockoutUntil") || "0", 10);
-        if (Date.now() < lockoutUntil) {
-          const minutesLeft = Math.ceil((lockoutUntil - Date.now()) / 60000);
-          showMessage(
-            `Account temporarily locked due to failed attempts. Try again in ${minutesLeft} min.`,
-            "error"
-          );
-          return;
-        }
-      }
-
-      if (
-        email === "staff@quietspace.com" &&
-        password === "quiet123"
-      ) {
-        localStorage.removeItem("quietspaceFailedAttempts");
-        localStorage.removeItem("quietspaceLockoutUntil");
-
-        const autoLoginHours = Number(settings.autoLoginHours) || 24;
-        const expiresAt = Date.now() + autoLoginHours * 60 * 60 * 1000;
-
-        localStorage.setItem(
-          "quietspaceLoggedIn",
-          "true"
-        );
-        localStorage.setItem(
-          "quietspaceSessionExpiresAt",
-          String(expiresAt)
-        );
-
-        const redirectParam = new URLSearchParams(window.location.search).get("redirect");
-        if (redirectParam === "settings") {
-          window.location.href = "settings.html";
-        } else if (redirectParam === "reports") {
-          window.location.href = "QuietScorePage.html";
-        } else {
-          window.location.href = "dashboard.html";
-        }
-      } else {
-        if (settings.lockoutTime) {
-          const maxAttempts = Number(settings.maxLoginAttempts) || 5;
-          let attempts = parseInt(localStorage.getItem("quietspaceFailedAttempts") || "0", 10) + 1;
-          localStorage.setItem("quietspaceFailedAttempts", attempts);
-          if (attempts >= maxAttempts) {
-            localStorage.setItem("quietspaceLockoutUntil", Date.now() + 15 * 60 * 1000);
-            showMessage(
-              `Account locked for 15 minutes due to ${maxAttempts} consecutive failed attempts.`,
-              "error"
-            );
-            return;
-          }
-          showMessage(
-            `Invalid login. ${maxAttempts - attempts} attempt(s) remaining before account lockout.`,
-            "error"
-          );
-        } else {
-          showMessage(
-            "Invalid login. Please try again.",
-            "error"
-          );
-        }
-      }
+        const response = await fetch("/api/auth/login", {
+          method: "POST", headers: { "Content-Type": "application/json", "X-QuietSpace-Request": "1" },
+          body: JSON.stringify({ username: document.getElementById("email").value.trim(), password: document.getElementById("password").value })
+        });
+        const result = await response.json();
+        if (!response.ok) throw Error(result.message);
+        window.location.href = "dashboard.html";
+      } catch (error) { showMessage(error.message, "error"); }
     });
-
-    window.addEventListener("load", () => {
-      // Check automatic login session expiration
-      const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
-      const expiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
-      if (isLoggedIn && expiresAt && Date.now() < expiresAt) {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("logout") !== "1") {
-          const redirectParam = params.get("redirect");
-          if (redirectParam === "settings") {
-            window.location.href = "settings.html";
-          } else if (redirectParam === "reports") {
-            window.location.href = "QuietScorePage.html";
-          } else {
-            window.location.href = "dashboard.html";
-          }
-          return;
-        }
-      }
-      const params =
-        new URLSearchParams(window.location.search);
-
-      if (params.get("restricted") === "1") {
-        showMessage(
-          "Authorized personnel only. Please sign in to access that section.",
-          "error"
-        );
-      } else if (params.get("logout") === "1") {
-        showMessage(
-          "You have been logged out successfully.",
-          "success"
-        );
-
-        setTimeout(() => {
-          messageBox.textContent = "";
-          messageBox.className = "message-box";
-        }, 4000);
-
-        window.history.replaceState(
-          {},
-          document.title,
-          "login.html"
-        );
-      }
-    });
+    if (new URLSearchParams(location.search).get("restricted")) {
+      showMessage("Please sign in to access that section.", "error");
+    }
   </script>
-</body>
+<script src="/webpages/account-request.js"></script></body>
 </html>

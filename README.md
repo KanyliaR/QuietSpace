@@ -1,5 +1,9 @@
 # QuietSpace
 
+> Persistent incident/report activity tracking is documented in [ACTIVITY_TRACKING.md](ACTIVITY_TRACKING.md), including migration, device-display refresh, endpoints and verification.
+
+> The local application now uses server-managed staff sessions, role permissions, Security requests and room device controls. Follow [MONITOR_WORKFLOW.md](MONITOR_WORKFLOW.md) for the current monitor workflow, migration and tests, and [IMPLEMENTATION.md](IMPLEMENTATION.md) for account/device setup. The prototype login/setup descriptions below are retained for project history; the new guide supersedes those authentication instructions.
+
 QuietSpace is a real-time study room noise monitoring and reporting system designed for use in library study spaces.
 
 The system monitors room noise levels and displays a simple color-coded QuietScore:
@@ -96,9 +100,9 @@ The schema creates the `sound_monitoring` database and the tables required by Qu
 
 The starter rooms are:
 
-- Room 311
-- Room 312
-- Room 313
+- Room 232
+- Room 233
+- Room 234
 
 ### 4. Configure Environment Variables
 
@@ -165,7 +169,7 @@ Allows students to submit manual noise reports.
 A room can be supplied through the URL query parameter, for example:
 
 ```text
-http://localhost:3000/webpages/reportingPage.html?room=312
+http://localhost:3000/webpages/reportingPage.html?room=233
 ```
 
 ### Staff Login

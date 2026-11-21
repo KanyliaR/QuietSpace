@@ -310,6 +310,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="/webpages/room-display.css">
 </head>
 
 <body>
@@ -317,11 +318,11 @@
 
     <div class="top-bar">
       <div class="room-label" id="roomLabel">
-        Study Room 311
+        Study Room 232
       </div>
     </div>
 
-    <div class="main-panel">
+    <div class="main-panel" id="statusCard">
 
       <div class="status" id="statusText">
         QUIET
@@ -357,6 +358,7 @@
         <button id="demoButton" onclick="runPresentationDemo()">
           Presentation Demo
         </button>
+        <button id="disconnectButton" hidden>Disconnect Device</button>
       </div>
 
     </div>
@@ -395,7 +397,7 @@
       <div class="countdown-card hidden" id="countdownCard">
 
         <div class="countdown-title">
-          Quiet Down to Reset:
+          AWAITING QUIETER CONDITIONS
         </div>
 
         <div class="countdown-circle-wrap">
@@ -427,14 +429,23 @@
         </div>
 
         <div class="countdown-subtext">
-          Staff has been notified.<br />
-          Please lower your volume to restore a quiet study space.
+          <span id="notificationText">Confirming staff notification…</span><br />
+          Alert will remain active until noise levels have improved.
+          <small id="notificationDetail"></small>
         </div>
 
       </div>
     </div>
+    <div id="previewControls" hidden aria-label="Presentation demo controls">
+      <span>VISUAL PREVIEW ONLY</span>
+      <button type="button" onclick="runPresentationDemo()">Next Preview</button>
+      <button type="button" id="exitPreview" onclick="exitPresentationDemo()">Exit Preview</button>
+    </div>
   </div>
 
+  <script src="/webpages/room-device-session.js"></script>
+  <script src="/webpages/device-control.js"></script>
+  <script src="/webpages/monitoring-events.js"></script>
   <script>
     /*
       ============================================================
@@ -462,6 +473,30 @@
     let dataArray;
 
     let isMonitoring = false;
+    let microphoneStream;
+    let microphoneStarting = false;
+    let resumeMicrophone = true;
+    let controlSettings = null;
+    let microphoneFrame = null;
+    let monitoringOperational = false;
+    let restoredStateApplied = false;
+    let activeConfig = null;
+    let startupError = "";
+    let initialEnrollmentSetup = false;
+    let enrollmentFailure = "";
+    const deviceFetch = window.fetch.bind(window);
+    const deviceSession = new QuietSpaceRoomDeviceSession({
+      roomId: Number(new URLSearchParams(location.search).get("room_id") || 1), fetch: deviceFetch
+    });
+    // Legacy tab-only keys are no longer retained by the display.
+    sessionStorage.removeItem?.("quietspaceDeviceKey");
+    window.fetch = (input, options = {}) => {
+      const url = new URL(input, location.href);
+      return url.origin === location.origin && url.pathname.startsWith("/api/")
+        ? deviceSession.request(input, options) : deviceFetch(input, options);
+    };
+
+
 
     /*
       Presentation demo state.
@@ -469,7 +504,7 @@
       green -> yellow -> red -> green.
     */
     let demoStage = "green";
-    let demoRedCycleCount = 0;
+    let presentationPreview = false;
 
     /*
       Timer used by the red-state countdown.
@@ -479,10 +514,29 @@
     /*
       Current prototype room.
 
-      Room 311 maps to room_id 1 in the backend.
+      Room 232 maps to room_id 1 in the backend.
       Multi-room support can later provide this dynamically.
     */
-    const ROOM_ID = 1;
+    const ROOM_ID = Number(new URLSearchParams(location.search).get("room_id") || 1);
+    const monitoringEvents = new QuietSpaceMonitoringEvents(async (url, packet) => {
+      if (!deviceControl.allowed()) throw Object.assign(Error("Monitoring Disabled"), { status: 409 });
+      const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(packet), signal: AbortSignal.timeout(3000) });
+      const result = await response.json();
+      if (!response.ok) throw Object.assign(Error(result.message || "Device action failed"), { status: response.status });
+      return result;
+    });
+    let lastReportedState = null;
+    async function recordRoomState(state) {
+      if (lastReportedState === state) return;
+      lastReportedState = state;
+      try { await monitoringEvents.enqueue("/api/incidents/state", { room_id: ROOM_ID, state }); }
+      catch (error) {
+        if (lastReportedState === state) lastReportedState = null;
+        console.error("Could not record room state:", error.message);
+      }
+    }
+
 
     /*
       Noise-state timing configuration.
@@ -505,33 +559,6 @@
       the sliding-window average.
     */
     const levelSamples = [];
-
-    /*
-      Guidance displayed while the room is in the yellow
-      warning state. Messages rotate between warnings.
-    */
-    const warningMessages = [
-      {
-        title: "Quiet Floor Reminder",
-        text:
-          "The third floor is designated for quiet study. " +
-          "Please keep conversations to a minimum."
-      },
-      {
-        title: "Need to Talk?",
-        text:
-          "For conversation or group work, please use the " +
-          "second floor collaboration areas."
-      },
-      {
-        title: "Study Space Courtesy",
-        text:
-          "Others may be studying nearby. " +
-          "Please be mindful of sound levels."
-      }
-    ];
-
-    let warningMessageIndex = 0;
 
     /*
       Room state tracking.
@@ -657,6 +684,7 @@
       or fall back to the default relative thresholds.
     */
     function getActiveThresholds() {
+      if (controlSettings) return controlSettings;
       try {
         const saved = localStorage.getItem("quietspace_settings");
         if (saved) {
@@ -735,7 +763,8 @@
       };
 
       try {
-        await fetch("/api/readings", {
+        await recordRoomState(state);
+        const response = await fetch("/api/readings", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -743,15 +772,16 @@
           body: JSON.stringify(readingData)
         });
 
-        console.log(
-          "Sent reading to backend:",
-          readingData
-        );
+        if (!response.ok) throw Error("Reading acknowledgement failed");
+        if(!isMonitoring||!deviceControl.allowed())return;
+        await deviceSession.heartbeat('active');
+        if(!isMonitoring||!deviceControl.allowed())return;
+        monitoringOperational=true;initialEnrollmentSetup=false;document.body.classList.add('room-operational','room-configured');startButton.textContent='Microphone Active';
       } catch (error) {
-        console.error(
-          "Error sending reading:",
-          error
-        );
+        startupError="Backend connection interrupted. Monitoring will resume when authorized communication returns.";
+        stopMicrophoneCapture();messageText.textContent=startupError;
+        deviceSession.heartbeat('error').catch(()=>{});
+        deviceControl.deny();
       }
     }
 
@@ -776,6 +806,7 @@
 
       reportCard.classList.add("hidden");
       countdownCard.classList.remove("hidden");
+      document.body.classList.add('red-countdown');
 
       updateCircle(RED_TIME);
 
@@ -811,6 +842,7 @@
 
       reportCard.classList.remove("hidden");
       countdownCard.classList.add("hidden");
+      document.body.classList.remove('red-countdown');
 
       updateCircle(RED_TIME);
     }
@@ -821,22 +853,60 @@
       the Web Audio API analyser.
     */
     async function startMonitoring() {
-      if (isMonitoring) {
+      if (presentationPreview) {
+        presentationPreview = false; demoStage = "green";
+        currentState = "green"; latestDetectedState = "green"; stateEnteredAt = Date.now();
+        resetCountdown(); showReportQRCode();
+        document.body.style.backgroundColor = "#7ed957";
+        statusText.textContent = "QUIET";
+        thankYouText.textContent = "Thank you for keeping this space quiet!";
+        messageText.textContent = "Ready for microphone monitoring.";
+        soundLevelText.textContent = "Microphone inactive";
+        document.getElementById("demoButton").textContent = "Presentation Demo";
+      }
+      resumeMicrophone = true;
+      if (!deviceSession.authenticated) {
+        initialEnrollmentSetup=true;
+        const key = prompt("Enter this room device's key (issued by register-device.js):") || "";
+        if (!key) return;
+        try { await deviceSession.enroll(key.trim()); enrollmentFailure=""; }
+        catch (error) { startupError=error.message;enrollmentFailure=error.message;messageText.textContent=enrollmentFailure;return; }
+      }
+      if (!deviceControl.allowed()) {
+        await deviceControl.check();
+        if (!deviceControl.allowed()) return;
+      }
+      if (isMonitoring || microphoneStarting) {
         return;
       }
 
+      microphoneStarting = true;
       try {
         const stream =
           await navigator.mediaDevices.getUserMedia({
             audio: true
           });
 
+        if (!deviceControl.allowed()) {
+          stream.getTracks().forEach(track => { track.onended=null;track.stop(); });
+          return;
+        }
+        microphoneStream = stream;
+        stream.getAudioTracks?.().forEach(track => { track.onended = () => {
+          startupError="Microphone disconnected. Check the USB input and reconnect.";
+          resumeMicrophone=false;stopMicrophoneCapture();renderAvailability('recovery');
+          deviceSession.heartbeat('error').catch(()=>{});
+        }; });
         audioContext =
           new (
             window.AudioContext ||
             window.webkitAudioContext
           )();
 
+        if (audioContext.resume) {
+          await Promise.race([audioContext.resume(),new Promise((_,reject)=>setTimeout(()=>reject(Error("Browser requires operator interaction to start audio")),3500))]);
+          if (audioContext.state !== "running") throw Error("Browser requires operator interaction to start audio");
+        }
         analyser =
           audioContext.createAnalyser();
 
@@ -857,26 +927,21 @@
         isMonitoring = true;
 
         startButton.textContent =
-          "Microphone Active";
+          "Connecting Microphone…";
 
         startButton.disabled = true;
         startButton.style.opacity = "0.82";
         startButton.style.cursor = "default";
 
+        startupError="";
+        restoreMonitoringDisplay(activeConfig);
+        deviceSession.heartbeat('starting').catch(()=>{});
         updateSoundLevel();
       } catch (error) {
-        console.error(
-          "Microphone access error:",
-          error
-        );
-
-        alert(
-          "Could not access microphone: " +
-          error.name +
-          " - " +
-          error.message
-        );
-      }
+        startupError="Microphone could not start. Check permission, USB input and browser audio policy, then reconnect.";
+        resumeMicrophone=false;stopMicrophoneCapture();renderAvailability('recovery');
+        deviceSession.heartbeat(error.name==='NotAllowedError'?'blocked':'error').catch(()=>{});
+      } finally { microphoneStarting = false; }
     }
 
 
@@ -888,6 +953,7 @@
       is used to determine the room's target state.
     */
     function updateSoundLevel() {
+      if (!deviceControl.allowed()) { deviceControl.deny(); return; }
       if (!analyser) {
         return;
       }
@@ -1004,9 +1070,7 @@
         }
       }
 
-      requestAnimationFrame(
-        updateSoundLevel
-      );
+      microphoneFrame = requestAnimationFrame(updateSoundLevel);
     }
 
 
@@ -1082,92 +1146,18 @@
       enters the red state.
     */
     async function startIncident() {
-      console.log(
-        "START INCIDENT FIRED"
-      );
-
-      try {
-        const response =
-          await fetch(
-            "/api/incidents/start",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json"
-              },
-              body: JSON.stringify({
-                room_id: ROOM_ID,
-                trigger_level: "red"
-              })
-            }
-          );
-
-        const data =
-          await response.json();
-
-        console.log(data);
-      } catch (error) {
-        console.error(
-          "Error starting incident:",
-          error
-        );
-      }
+      try { return await monitoringEvents.enqueue("/api/incidents/start", { room_id: ROOM_ID, trigger_level: "red" }); }
+      catch (error) { console.error("Error starting incident:", error.message); }
     }
 
-
-    /*
-      Mark the active room incident as resolved.
-    */
     async function resolveIncident() {
-      try {
-        await fetch(
-          "/api/incidents/resolve",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              room_id: ROOM_ID
-            })
-          }
-        );
-      } catch (error) {
-        console.error(
-          "Error resolving incident:",
-          error
-        );
-      }
+      try { return await monitoringEvents.enqueue("/api/incidents/resolve", { room_id: ROOM_ID }); }
+      catch (error) { console.error("Error resolving incident:", error.message); }
     }
 
-
-    /*
-      Increase the escalation level of the active
-      room incident.
-    */
     async function escalateIncident() {
-      try {
-        await fetch(
-          "/api/incidents/escalate",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-            body: JSON.stringify({
-              room_id: ROOM_ID
-            })
-          }
-        );
-      } catch (error) {
-        console.error(
-          "Error escalating incident:",
-          error
-        );
-      }
+      try { return await monitoringEvents.enqueue("/api/incidents/escalate", { room_id: ROOM_ID }); }
+      catch (error) { console.error("Error escalating incident:", error.message); }
     }
 
 
@@ -1180,125 +1170,75 @@
       - restores the QR reporting card
 
       Yellow:
-      - resolves the current incident
+      - keeps the current incident open
       - shows rotating quiet-floor guidance
 
       Red:
       - begins the countdown
       - starts a backend incident
     */
+    function renderAvailability(state) {
+      document.body.classList.toggle('monitoring-disabled',state==='disabled');
+      document.body.classList.add('device-unavailable');
+      document.getElementById('previewControls').hidden=true;
+      document.body.dataset.noiseState=state==='disabled'?'disabled':state==='enrollment'?'enrollment':'paused';
+      document.body.style.backgroundColor='#202225';
+      document.body.style.color='#f0f2f4';
+      document.body.classList.remove('red-countdown');
+      const messages={
+        disabled:['MONITORING DISABLED','We’ll be back soon.','Noise monitoring is temporarily unavailable in this study room.'],
+        offline:['DEVICE OFFLINE','Waiting for the connection to return.',startupError||'Monitoring is unavailable until the device can reconnect.'],
+        recovering:['RESTORING MONITORING','Checking the microphone and connection.','Monitoring will resume when capture and backend communication are available.'],
+        recovery:['MICROPHONE RECOVERY REQUIRED','Monitoring is not active.',startupError],
+        enrollment:['DEVICE ENROLLMENT REQUIRED','Connect this room’s microphone to begin monitoring.',enrollmentFailure]
+      };
+      const copy=messages[state];statusText.textContent=copy[0];thankYouText.textContent=copy[1];messageText.textContent=copy[2];
+      if(state==='disabled')statusText.innerHTML='MONITORING <br>DISABLED';
+      soundLevelText.textContent='Microphone inactive';
+    }
+    function renderNoiseState(state) {
+      document.getElementById('previewControls').hidden=true;
+      document.body.classList.remove('monitoring-disabled','device-unavailable');
+      document.body.dataset.noiseState=state;
+      document.body.style.backgroundColor=({green:'#7ed957',yellow:'#ffd966',red:'#ff6b6b'})[state];
+      document.body.style.color='#111';
+      statusText.textContent=({green:'QUIET',yellow:'WARNING',red:'TOO LOUD'})[state];
+      thankYouText.textContent=({green:'Thank you for keeping this space quiet!',yellow:'Noise levels in this area are increasing.',red:'Elevated noise levels have been detected in this area.'})[state];
+      messageText.textContent=({green:'Noise level is acceptable.',yellow:'Elevated noise levels may disrupt students studying in surrounding areas.',red:''})[state];
+      if(state==='yellow')showWarningGuidance();else showReportQRCode();
+      reportCard.classList.toggle('hidden',state==='red');
+      const showingCountdown=state==='red'&&redLockActive;
+      document.body.classList.toggle('red-countdown',showingCountdown);
+      countdownCard.classList.toggle('hidden',!showingCountdown);
+    }
+    function notificationState(recorded,preview=false) {
+      document.getElementById('notificationText').textContent=preview?'Preview only — no notification was sent.':recorded?'Staff have been notified.':'Staff notification has not yet been confirmed.';
+      document.getElementById('notificationDetail').textContent=recorded&&!preview?'In-app notification recorded; delivery/read confirmation is not implied.':'';
+    }
+    function restoreMonitoringDisplay(config) {
+      if(restoredStateApplied)return;restoredStateApplied=true;
+      const state=config?.current_state||'green';currentState=state;latestDetectedState=state;stateEnteredAt=Date.now();renderNoiseState(state);
+      if(state==='red'&&config?.incident?.timer_started_at){
+        const serverNow=Date.parse(config.server_time),start=Date.parse(config.incident.timer_started_at);
+        countdownStart=Date.now()-(serverNow-start);redLockEndsAt=countdownStart+RED_TIME;redLockActive=true;countdownFinished=false;
+        document.body.classList.add('red-countdown');countdownCard.classList.remove('hidden');
+        updateCircle(Math.max(0,redLockEndsAt-Date.now()));
+        notificationState(!!config.incident.notification_recorded);
+      }
+    }
     function setState(state) {
-      currentState = state;
-      stateEnteredAt = Date.now();
-
-      if (state === "green") {
-        resetCountdown();
-        resolveIncident();
-        showReportQRCode();
-
-        document.body.style.backgroundColor =
-          "#7ed957";
-
-        document.body.style.color =
-          "#111";
-
-        statusText.textContent =
-          "QUIET";
-
-        thankYouText.textContent =
-          "Thank you for keeping this space quiet!";
-
-        messageText.textContent =
-          "Noise level is acceptable.";
-
-        return;
-      }
-
-      if (state === "yellow") {
-        resetCountdown();
-        resolveIncident();
-        showWarningGuidance();
-
-        document.body.style.backgroundColor =
-          "#ffd966";
-
-        document.body.style.color =
-          "#111";
-
-        statusText.textContent =
-          "WARNING";
-
-        thankYouText.textContent =
-          "Please lower your volume to maintain a quiet study space.";
-
-        messageText.textContent =
-          "Noise level is rising.";
-
-        return;
-      }
-
-      startCountdown();
-      startIncident();
-
-      document.body.style.backgroundColor =
-        "#ff6b6b";
-
-      document.body.style.color =
-        "#111";
-
-      statusText.textContent =
-        "TOO LOUD";
-
-      thankYouText.textContent =
-        "This room is too loud. Please be mindful of others.";
-
-      messageText.textContent =
-        "Noise level is too high.";
+      recordRoomState(state);currentState=state;stateEnteredAt=Date.now();
+      if(state==='green'){resetCountdown();resolveIncident();}
+      else if(state==='yellow')resetCountdown();
+      else{renderNoiseState(state);startCountdown();startIncident().then(result=>notificationState(!!result?.notification_recorded));}
+      renderNoiseState(state);
     }
-
-
-    /*
-      Replace the QR reporting prompt with one of the
-      rotating warning messages while the room is yellow.
-    */
     function showWarningGuidance() {
-      const message =
-        warningMessages[
-          warningMessageIndex
-        ];
-
-      reportCard.classList.add(
-        "warning-guidance"
-      );
-
-      document.querySelector(
-        ".report-title"
-      ).textContent =
-        message.title;
-
-      document.querySelector(
-        ".report-subtext"
-      ).textContent =
-        message.text;
-
-      const qrImage =
-        document.querySelector(
-          ".qr-image"
-        );
-
-      if (qrImage) {
-        qrImage.classList.add(
-          "hidden"
-        );
-      }
-
-      warningMessageIndex =
-        (
-          warningMessageIndex + 1
-        ) %
-        warningMessages.length;
+      reportCard.classList.remove('warning-guidance');
+      document.querySelector('.report-title').textContent='ARE YOUR STUDIES BEING DISRUPTED?';
+      document.querySelector('.report-subtext').textContent='Scan the QR code to report a noise disturbance to library staff.';
+      document.querySelector('.qr-image')?.classList.remove('hidden');
     }
-
 
     /*
       Restore the normal student-report QR card.
@@ -1331,154 +1271,93 @@
     }
 
 
-    /*
-      Presentation-only demo.
-
-      Each click advances the display through:
-      green -> yellow -> red -> green.
-
-      Demo readings are also sent to the backend so the
-      staff dashboard can reflect the presentation state.
-
-      After repeated red demo cycles, the existing incident
-      is escalated rather than creating a new one.
-    */
-    async function runPresentationDemo() {
-      if (isMonitoring) {
-        alert(
-          "Turn off microphone mode before using presentation demo mode."
-        );
-
-        return;
-      }
-
-      /*
-        GREEN -> YELLOW
-      */
-      if (demoStage === "green") {
-        demoStage = "yellow";
-
-        currentState = "yellow";
-        stateEnteredAt = Date.now();
-
-        resetCountdown();
-
-        document.body.style.backgroundColor =
-          "#ffd966";
-
-        document.body.style.color =
-          "#111";
-
-        statusText.textContent =
-          "WARNING";
-
-        thankYouText.textContent =
-          "Please lower your volume to maintain a quiet study space.";
-
-        messageText.textContent =
-          "Noise level is rising.";
-
-        showWarningGuidance();
-
-        await sendReadingToBackend(
-          10,
-          "yellow"
-        );
-
-        return;
-      }
-
-      /*
-        YELLOW -> RED
-      */
-      if (demoStage === "yellow") {
-        demoStage = "red";
-        demoRedCycleCount++;
-
-        currentState = "red";
-        stateEnteredAt = Date.now();
-
-        document.body.style.backgroundColor =
-          "#ff6b6b";
-
-        document.body.style.color =
-          "#111";
-
-        statusText.textContent =
-          "TOO LOUD";
-
-        thankYouText.textContent =
-          "This room is too loud. Please be mindful of others.";
-
-        messageText.textContent =
-          "Noise level is too high.";
-
-        showReportQRCode();
-        startCountdown();
-
-        await sendReadingToBackend(
-          20,
-          "red"
-        );
-
-        if (
-          demoRedCycleCount === 1
-        ) {
-          await startIncident();
-        } else {
-          await escalateIncident();
-        }
-
-        return;
-      }
-
-      /*
-        RED -> GREEN
-      */
-      if (demoStage === "red") {
-        demoStage = "green";
-
-        currentState = "green";
-        stateEnteredAt = Date.now();
-
-        resetCountdown();
-
-        document.body.style.backgroundColor =
-          "#7ed957";
-
-        document.body.style.color =
-          "#111";
-
-        statusText.textContent =
-          "QUIET";
-
-        thankYouText.textContent =
-          "Thank you for keeping this space quiet!";
-
-        messageText.textContent =
-          "Noise level is acceptable.";
-
-        showReportQRCode();
-
-        await sendReadingToBackend(
-          4,
-          "green"
-        );
-
-        /*
-          For the presentation demo, resolve the incident
-          after the third completed red cycle.
-        */
-        if (
-          demoRedCycleCount >= 3
-        ) {
-          await resolveIncident();
-          demoRedCycleCount = 0;
-        }
-
-        return;
-      }
+    /* Local screen preview only: no readings, state events or incident actions. */
+    function exitPresentationDemo() {
+      if(!presentationPreview)return;
+      presentationPreview=false;demoStage='green';
+      document.getElementById('demoButton').textContent='Presentation Demo';
+      document.getElementById('previewControls').hidden=true;
+      if(deviceSession.authenticated){
+        if(activeConfig&&!activeConfig.monitoring_enabled)renderAvailability('disabled');
+        else renderAvailability('recovering');
+        deviceControl.check();
+      }else renderAvailability('enrollment');
     }
+    function runPresentationDemo() {
+      if(deviceSession.authenticated&&activeConfig&&!activeConfig.monitoring_enabled){presentationPreview=false;renderAvailability('disabled');return;}
+      if (isMonitoring || microphoneStarting) {
+        alert("Live microphone monitoring is running. Use a separate room-display tab to preview the color screens.");
+        return;
+      }
+      presentationPreview = true;
+      demoStage = ({green:"yellow",yellow:"red",red:"disabled",disabled:"green"})[demoStage];
+      if(demoStage==='disabled'){
+        renderAvailability('disabled');
+        document.getElementById('previewControls').hidden=false;
+        return;
+      }
+      renderNoiseState(demoStage);
+      soundLevelText.textContent="SCREEN PREVIEW ONLY — monitoring and reports are unchanged";
+      document.getElementById('demoButton').textContent='Preview Next Color';
+      if(demoStage==='red'){document.body.classList.add('red-countdown');countdownCard.classList.remove('hidden');updateCircle(RED_TIME);notificationState(false,true);}
+    }
+
+    function stopMicrophoneCapture() {
+      monitoringOperational=false;restoredStateApplied=false;document.body.classList.remove('room-operational');
+      window.cancelAnimationFrame?.(microphoneFrame);
+      lastReportedState = null;
+      microphoneStream?.getTracks().forEach(track => { track.onended=null;track.stop(); });
+      microphoneStream = null;
+      microphone?.disconnect(); microphone = null;
+      if (audioContext && audioContext.state !== "closed") audioContext.close().catch(() => {});
+      audioContext = null; analyser = null; isMonitoring = false;
+      if (!presentationPreview) resetCountdown(); levelSamples.length = 0;
+      redLockActive = false; redLockEndsAt = null;
+      countdownStart = null; countdownFinished = false;
+      startButton.disabled = false;
+    }
+    const deviceControl = new QuietSpaceDeviceControl({
+      roomId: ROOM_ID,
+      getConfig: async () => {
+        let config;try{config=await deviceSession.config();}catch(error){startupError=error.message;throw error;}activeConfig=config;
+        document.getElementById('roomLabel').textContent='Study '+config.room_name;
+        return config;
+      },
+      stop: stopMicrophoneCapture,
+      resume: async () => {
+        if(presentationPreview)return;
+        if(resumeMicrophone&&!microphoneStarting)await startMonitoring();
+      },
+      onState: (enabled, config) => {
+        if (config) controlSettings = { yellow: config.yellowThreshold, red: config.redThreshold };
+        const administrativePause=!enabled&&config&&deviceSession.authenticated;
+        if(administrativePause){presentationPreview=false;renderAvailability('disabled');return;}
+        if (presentationPreview) return;
+        if(!deviceSession.authenticated)document.body.classList.remove('room-configured');
+        else if(!initialEnrollmentSetup)document.body.classList.add('room-configured');
+        if (!enabled) {
+          const needsEnrollment=!deviceSession.authenticated&&/enrollment|another room/i.test(startupError);
+          renderAvailability(needsEnrollment?'enrollment':'offline');
+          startButton.textContent='Connect Room Microphone';
+        } else if (!isMonitoring) {
+          renderAvailability(resumeMicrophone?'recovering':'recovery');
+          startButton.textContent='Connect Room Microphone';
+        }
+      }
+    });
+    document.getElementById('roomLabel').textContent='Study '+({1:'Room 232',2:'Room 233',3:'Room 234'}[ROOM_ID]||'Room '+ROOM_ID);
+    if(new URLSearchParams(location.search).get('maintenance')==='1'){
+      fetch('/api/auth/me').then(r=>r.ok?r.json():null).then(user=>{if(user?.role==='admin'){
+        document.body.classList.add('operator-maintenance');
+        const disconnect=document.getElementById('disconnectButton');disconnect.hidden=false;
+        disconnect.onclick=async()=>{try{resumeMicrophone=false;stopMicrophoneCapture();await deviceSession.disconnect();restoredStateApplied=false;messageText.textContent='Device disconnected. Enroll again to reconnect.';}catch{messageText.textContent='Disconnect failed. Check backend connectivity.';}};
+      }}).catch(()=>{});
+    }
+    deviceControl.check();
+    setInterval(() => deviceControl.check(), 2000);
+    // The watchdog also stops capture if a control request hangs or the connection disappears.
+    setInterval(() => { if (!deviceControl.allowed()) deviceControl.deny(); }, 500);
+    window.addEventListener("pagehide", () => { deviceSession.heartbeat('stopped').catch(()=>{});stopMicrophoneCapture(); });
   </script>
 </body>
 </html>

@@ -1,0 +1,656 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuietSpace | Noise Analytics</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #eef5fb;
+      --surface: #ffffff;
+      --text: #1f2a44;
+      --heading: #1f3b73;
+      --muted: #64748b;
+      --border: #d7e4f2;
+      --sidebar: #1f3b73;
+      --soft: #f2f6fc;
+      --shadow: 0 12px 28px rgba(31,60,115,.10);
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body.dark-theme {
+      --bg: #0f1d3a;
+      --surface: #1d3267;
+      --text: #ffffff;
+      --heading: #ffffff;
+      --muted: #d1dffa;
+      --border: #48618c;
+      --sidebar: #10275a;
+      --soft: #142650;
+      --shadow: 0 12px 28px rgba(0,0,0,.20);
+    }
+
+    /* -------------------- Sidebar (matches Overview) -------------------- */
+    .sidebar {
+      position: relative;
+      width: 240px;
+      height: 100vh;
+      min-height: 100vh;
+      flex-shrink: 0;
+      overflow: hidden;
+      padding: 28px 20px;
+      background: #1f3b73;
+      color: white;
+      transition: width 0.25s ease, padding 0.25s ease;
+    }
+
+    body.dark-theme .sidebar { background: #10275a; }
+    .sidebar h1 { margin-bottom: 8px; font-size: 1.6rem; }
+    .sidebar p { margin-bottom: 30px; color: #c9d7ff; font-size: 0.9rem; }
+
+    .nav-item {
+      display: block;
+      margin-bottom: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .nav-item.active { background: rgba(255,255,255,0.28); font-weight: 800; }
+    .nav-item.disabled { cursor: default; opacity: 0.55; }
+    .nav-item.disabled:hover { background: rgba(255,255,255,0.12); transform: none; }
+
+    .sidebar-toggle {
+      position: fixed;
+      top: 20px;
+      left: calc(240px - 50px);
+      z-index: 300;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.82);
+      color: #1f3b73;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+      transition: all 0.25s ease;
+    }
+    .sidebar-toggle img { display: block; width: 22px; height: 22px; margin: auto; object-fit: contain; }
+    body.sidebar-collapsed .sidebar-toggle { top: 20px; left: 18px; background: rgba(31,59,115,0.92); color: white; }
+    body.dark-theme .sidebar-toggle,
+    body.dark-theme.sidebar-collapsed .sidebar-toggle,
+    body.dark-theme:not(.sidebar-collapsed) .sidebar-toggle {
+      background: rgba(255,255,255,0.92) !important;
+      color: #1f3b73 !important;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.28);
+    }
+    body.sidebar-collapsed .sidebar { width: 0; padding: 0; }
+    body.sidebar-collapsed .sidebar * { display: none; }
+
+    .logout-wrapper {
+      position: absolute;
+      right: 20px;
+      bottom: 24px;
+      left: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .settings-btn, .logout-btn {
+      width: auto;
+      margin: 0;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .settings-btn:hover, .logout-btn:hover { background: rgba(255,255,255,0.24); }
+
+
+
+    /* MAIN CONTENT */
+
+    .main {
+      flex: 1;
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 24px 32px 40px;
+    }
+
+    .top-header {
+      padding-left: 58px;
+      margin-bottom: 25px;
+    }
+
+    .top-header h2 {
+      color: var(--heading);
+      font-size: 2rem;
+      margin-bottom: 7px;
+    }
+
+    .top-header p {
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    /* FILTERS */
+
+    .filters {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .filter-group label {
+      font-size: .8rem;
+      font-weight: bold;
+      color: var(--muted);
+    }
+
+    select {
+      min-width: 175px;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    /* GENERAL SECTIONS */
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .section h3 {
+      color: var(--heading);
+      font-size: 1.35rem;
+    }
+
+    .section-description {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    /* SUMMARY CARDS */
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: .8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 12px;
+    }
+
+    .summary-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--heading);
+      margin-bottom: 8px;
+    }
+
+    .summary-note {
+      color: var(--muted);
+      font-size: .83rem;
+      line-height: 1.4;
+    }
+
+    /* OUTLOOK CARDS */
+
+    .date-badge {
+      padding: 9px 13px;
+      background: var(--soft);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: .85rem;
+      font-weight: bold;
+    }
+
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 18px;
+    }
+
+    .room-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .room-title {
+      font-size: 1.15rem;
+      color: var(--heading);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .badge {
+      display: inline-block;
+      width: fit-content;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: bold;
+    }
+
+    .badge-elevated {
+      background: #fde8e8;
+      color: #b42318;
+    }
+
+    .badge-quiet {
+      background: #e3f5e9;
+      color: #176534;
+    }
+
+    .badge-active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-inactive {
+      background: #e5e7eb;
+      color: #4b5563;
+    }
+
+    .predicted-time {
+      font-size: 1.45rem;
+      font-weight: bold;
+      color: var(--heading);
+    }
+
+    .prediction-description {
+      font-size: .9rem;
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .suggestion {
+      padding: 13px 14px;
+      border-radius: 12px;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      font-size: .85rem;
+      line-height: 1.55;
+    }
+
+    .suggestion strong {
+      display: block;
+      color: var(--heading);
+      margin-bottom: 4px;
+    }
+
+    /* HISTORICAL ANALYTICS */
+
+    .tabs {
+      display: flex;
+      width: fit-content;
+      gap: 6px;
+      padding: 5px;
+      background: var(--soft);
+      border-radius: 13px;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      border: none;
+      background: transparent;
+      color: var(--text);
+      padding: 11px 18px;
+      border-radius: 10px;
+      font: inherit;
+      font-size: .9rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--surface);
+      box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    }
+
+    .chart-heading {
+      font-size: 1.05rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .chart-description {
+      color: var(--muted);
+      font-size: .87rem;
+      margin-bottom: 15px;
+    }
+
+    .chart-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 310px;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin: 15px 0;
+      font-size: .85rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .chart-summary {
+      margin-top: 20px;
+      padding: 17px 19px;
+      background: var(--soft);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+    }
+
+    .chart-summary h4 {
+      color: var(--heading);
+      font-size: .95rem;
+      margin-bottom: 8px;
+    }
+
+    .chart-summary p {
+      font-size: .9rem;
+      line-height: 1.65;
+    }
+
+    .demo-note {
+      color: var(--muted);
+      font-size: .8rem;
+      margin-top: 15px;
+      line-height: 1.5;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 1050px) {
+      .room-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .room-card {
+        min-height: 0;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .sidebar {
+        position: fixed;
+        z-index: 500;
+        top: 0;
+        left: 0;
+        width: min(75vw,280px);
+        min-width: 0;
+        box-shadow: 5px 0 25px rgba(0,0,0,.3);
+      }
+
+      body.sidebar-collapsed .sidebar {
+        width: min(75vw,280px);
+        transform: translateX(-105%);
+        padding: 28px 20px;
+      }
+
+      .sidebar-toggle {
+        left: calc(min(75vw,280px) - 50px);
+      }
+
+      body.sidebar-collapsed .sidebar-toggle {
+        left: 18px;
+      }
+
+      .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 450;
+        background: rgba(0,0,0,.5);
+        display: block;
+      }
+
+      body.sidebar-collapsed .sidebar-backdrop {
+        display: none;
+      }
+
+      .main {
+        padding: 18px 15px 35px;
+      }
+
+      .top-header h2 {
+        font-size: 1.55rem;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .section {
+        padding: 18px;
+      }
+
+      .filter-group {
+        flex: 1;
+      }
+
+      select {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .date-badge {
+        font-size: .75rem;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="/webpages/analytics-dashboard.css">
+</head>
+
+<body>
+
+  <!-- SIDEBAR BACKDROP -->
+  <div
+    class="sidebar-backdrop"
+    onclick="toggleSidebar()">
+  </div>
+
+  <!-- CLOUD ICON -->
+  <button
+    class="sidebar-toggle"
+    id="sidebarToggle"
+    onclick="toggleSidebar()"
+    aria-label="Toggle sidebar"
+    aria-expanded="true">
+
+    <img
+      src="../images/cloudicon.png"
+      alt="Cloud">
+  </button>
+
+  <!-- SIDEBAR: matches Overview -->
+  <aside class="sidebar">
+    <h1>QuietSpace</h1>
+    <p>Staff Dashboard</p>
+
+    <a class="nav-item" href="dashboard.html">
+      Overview
+    </a>
+
+    <a class="nav-item" href="QuietScorePage.html">
+      QuietScore Reports
+    </a>
+
+    <a class="nav-item" href="StudentReportsPage.html">
+  Student Reports
+</a>
+
+    <a class="nav-item active" href="analytics.html">
+      Analytics
+    </a>
+
+<div class="logout-wrapper">
+      <a class="settings-btn" href="settings.html">⚙ Settings</a>
+      <button class="logout-btn" onclick="logout()">
+        Log Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main analytics-dashboard">
+    <header class="top-header">
+      <div class="header-copy"><h2>Noise Analytics</h2><p>Explore historical noise patterns, compare room performance, and review observed disruptions.</p></div>
+    </header>
+
+    <div class="an-filters" aria-label="Analytics filters">
+      <div><label for="roomFilter">Room</label><select id="roomFilter"><option value="all">All Rooms</option></select></div>
+      <div><label for="rangeFilter">Time Period</label><select id="rangeFilter"><option value="today">Today</option><option value="7" selected>Last 7 Days</option><option value="30">Last 30 Days</option><option value="90">Last 90 Days</option><option value="all">All Available History</option></select></div>
+    </div>
+    <div class="an-data-note"><div><strong id="dataProvenance">Loading recorded history…</strong><p id="dataCoverage">Readings use a relative noise index, not calibrated decibels. Coverage and source information appear with the results.</p></div><button id="refreshAnalytics" type="button">Refresh data</button></div>
+    <p id="analyticsMessage" class="an-message" role="status">Loading analytics…</p>
+
+    <div class="an-summary" aria-label="Historical summary">
+      <article class="an-card an-metric"><span class="an-icon an-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12h4l3-8 4 16 3-8h6"/></svg></span><div><div class="an-value" id="averageIndex">—</div><h3>Average Noise Index</h3><p id="averageComparison">Stored relative noise index</p></div></article>
+      <article class="an-card an-metric"><span class="an-icon an-green" aria-hidden="true">♧</span><div><div class="an-value" id="quietPercentage">—</div><h3>Quiet Time</h3><p id="quietComparison">Observed room-time only</p></div></article>
+      <article class="an-card an-metric"><span class="an-icon an-purple" aria-hidden="true">▥</span><div><div class="an-value" id="loudestPeriod">—</div><h3>Loudest Period</h3><p id="loudestCaption">Historical measurements</p></div></article>
+      <article class="an-card an-metric"><span class="an-icon an-red" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10.3 3.8 2.1 18a2 2 0 0 0 1.7 3h16.4a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z"/><path d="M12 8v5"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></span><div><div class="an-value" id="thresholdEvents">—</div><h3>Threshold Events</h3><p id="thresholdBreakdown">Observed Yellow / Red episodes</p></div></article>
+    </div>
+
+    <div class="an-chart-grid">
+      <section class="an-card an-trends" aria-labelledby="trendsHeading">
+        <h3 id="trendsHeading">Noise Levels Over Time <button type="button" class="an-info" data-analytics-info="trends" aria-label="About Noise Levels Over Time" aria-expanded="false" aria-haspopup="dialog" aria-controls="analyticsInfoPopover">ⓘ</button></h3>
+        <p class="an-subtitle" id="trendCaption">Recorded noise index by room</p>
+        <div class="an-trend-controls"><label for="trendView">Time view</label><select id="trendView"><option value="summary">Historical summary · observed span</option><option value="period">Historical summary · full period</option></select><button type="button" id="latestRecordingSession">Latest session</button></div>
+        <p class="an-footnote an-trend-note" id="trendViewNote"></p>
+        <div class="an-canvas-wrap"><canvas id="trendsChart" tabindex="0" aria-label="Historical noise trends. Use left and right arrow keys to inspect values, or use the data table below."></canvas><div id="trendTooltip" class="an-tooltip" role="status" hidden></div><p id="trendEmpty" class="an-chart-empty" hidden>No recorded readings in this period.</p></div>
+        <div class="an-legend" id="trendsLegend"></div>
+        <details class="an-chart-data"><summary>View recorded chart values</summary><div class="an-table-scroll"><table><thead><tr><th scope="col">Period</th><th scope="col">Room</th><th scope="col">Mean index</th><th scope="col">Samples</th></tr></thead><tbody id="trendData"></tbody></table></div></details>
+      </section>
+      <section class="an-card" aria-labelledby="distributionHeading">
+        <h3 id="distributionHeading">Noise Status Distribution <button type="button" class="an-info" data-analytics-info="distribution" aria-label="About Noise Status Distribution" aria-expanded="false" aria-haspopup="dialog" aria-controls="analyticsInfoPopover">ⓘ</button></h3>
+        <p class="an-subtitle">Share of observed monitored room-time</p>
+        <div class="an-distribution"><div class="an-donut-wrap"><canvas id="distributionChart" role="img" aria-label="Observed status duration distribution"></canvas><div class="an-donut-label"><strong id="donutQuiet">—</strong><span id="donutCaption">Quiet Time</span></div></div><ul id="distributionLegend" class="an-status-legend"></ul></div>
+        <p class="an-footnote" id="durationCoverage">Waiting for recorded intervals.</p>
+      </section>
+    </div>
+
+    <div class="an-comparison-grid">
+      <section class="an-card" aria-labelledby="roomComparisonHeading">
+        <h3 id="roomComparisonHeading">Room Comparison <button type="button" class="an-info" data-analytics-info="comparison" aria-label="About Room Comparison" aria-expanded="false" aria-haspopup="dialog" aria-controls="analyticsInfoPopover">ⓘ</button></h3>
+        <p class="an-subtitle" id="comparisonCaption">Historical measurements across all rooms</p>
+        <div class="an-table-scroll"><table class="an-room-table"><thead><tr><th scope="col">Room</th><th scope="col">Avg. Noise Index</th><th scope="col">Quiet Time</th><th scope="col">Yellow Episodes</th><th scope="col">Red Episodes</th><th scope="col">Historical Indicator</th></tr></thead><tbody id="comparisonRows"></tbody></table></div>
+      </section>
+      <section class="an-card" aria-labelledby="thresholdHeading">
+        <h3 id="thresholdHeading">Threshold Activity by Room <button type="button" class="an-info" data-analytics-info="threshold" aria-label="About Threshold Activity by Room" aria-expanded="false" aria-haspopup="dialog" aria-controls="analyticsInfoPopover">ⓘ</button></h3>
+        <p class="an-subtitle">Observed elevated-state episodes · all rooms</p>
+        <div id="thresholdBars" class="an-threshold-bars"></div>
+        <div class="an-legend"><span><i class="an-swatch an-yellow-fill"></i> Yellow episodes</span><span><i class="an-swatch an-red-fill"></i> Red episodes</span></div>
+        <p class="an-footnote" id="episodeCoverage">Repeated readings in one continuous state are counted once.</p>
+      </section>
+    </div>
+
+    <section class="an-card an-insights" aria-labelledby="insightsHeading"><h3 id="insightsHeading"><span class="an-insight-icon" aria-hidden="true">◇</span> Key Insights</h3><ul id="keyInsights"><li>Loading historical observations…</li></ul></section>
+    <details class="an-methodology"><summary>Data coverage and calculation methods</summary><div id="analyticsMethods"></div></details>
+  </main>
+  <script src="/webpages/analytics-dashboard.js"></script>
+</body>
+</html>

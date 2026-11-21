@@ -120,6 +120,6 @@ CREATE TABLE IF NOT EXISTS incidents (
 -- -----------------------------------------------------
 
 INSERT IGNORE INTO rooms (id, room_name, location) VALUES
-    (1, 'Room 311', 'Bluford Library 3rd Floor'),
-    (2, 'Room 312', 'Bluford Library 3rd Floor'),
-    (3, 'Room 313', 'Bluford Library 3rd Floor');
+    (1, 'Room 232', 'Bluford Library 2nd Floor'),
+    (2, 'Room 233', 'Bluford Library 2nd Floor'),
+    (3, 'Room 234', 'Bluford Library 2nd Floor');

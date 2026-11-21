@@ -1,0 +1,11 @@
+/* Extends the existing login button and card without altering Sign In. */
+.login-card [hidden]{display:none!important}
+.login-btn.request-account-btn{background:transparent;color:#75a8ff;box-shadow:inset 0 0 0 2px #75a8ff;margin-top:0}
+.login-btn.request-account-btn:hover{background:rgba(89,143,232,.1)}
+body.light-theme .login-btn.request-account-btn{color:#285cbb;box-shadow:inset 0 0 0 2px #285cbb}
+.login-card select{width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid #829ac6;background:#172c58;color:white;font:inherit;font-size:16px}
+body.light-theme .login-card select{background:white;color:#1f2a44}
+.login-card input{font-size:16px}
+.setup-return{display:block;text-align:center;text-decoration:none;box-sizing:border-box;margin-top:18px}
+
+#requestConfirmation{text-align:center}#requestConfirmation .login-btn{display:block;margin:18px auto 0;max-width:100%}

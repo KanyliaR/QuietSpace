@@ -1,0 +1,79 @@
+/* Public room display only. Green's established layout and QR implementation are retained. */
+[hidden]{display:none!important}
+body.room-operational:not(.operator-maintenance) .button-group{display:none}
+body.room-operational .main-panel{gap:clamp(14px,2.3vh,24px)}
+
+/* Yellow shares Green's centered primary card and smaller reporting card below. */
+body[data-noise-state="yellow"] .main-panel{padding:clamp(22px,3vw,32px);gap:12px}
+body[data-noise-state="yellow"] .status{font-size:clamp(4rem,9vw,7rem)}
+body[data-noise-state="yellow"] .thank-you{font-size:clamp(1.2rem,2.3vw,1.8rem)}
+body[data-noise-state="yellow"] .message{font-size:clamp(1rem,1.6vw,1.15rem)}
+body[data-noise-state="yellow"] .button-group{margin-top:4px}
+body[data-noise-state="yellow"] .button-group button{margin-top:0;padding:11px 18px}
+
+/* Red keeps the primary warning above a smaller countdown card for the entire state. */
+body[data-noise-state="red"] .screen{gap:16px}
+body[data-noise-state="red"] .bottom-row{display:none}
+body[data-noise-state="red"] .report-card{display:none!important}
+body[data-noise-state="red"] .thank-you{font-size:clamp(1.6rem,3vw,2.6rem)}
+body[data-noise-state="red"].red-countdown .main-panel{min-height:clamp(180px,30vh,330px);padding:clamp(18px,2.5vh,28px);gap:12px}
+body[data-noise-state="red"].red-countdown .status{font-size:clamp(4rem,11vh,7rem)}
+body[data-noise-state="red"].red-countdown .thank-you{font-size:clamp(1.5rem,3.4vh,2.3rem)}
+body[data-noise-state="red"].red-countdown .bottom-row{display:flex;margin:0;padding:0}
+body[data-noise-state="red"].red-countdown .countdown-card{width:min(620px,100%);min-height:0;padding:14px 24px;border-radius:24px;gap:10px;justify-content:center}
+body[data-noise-state="red"].red-countdown .countdown-title{font-size:clamp(1rem,2.4vh,1.4rem);line-height:1.25}
+body[data-noise-state="red"].red-countdown .countdown-subtext{font-size:clamp(.9rem,1.8vh,1.1rem);line-height:1.4}
+body[data-noise-state="red"].red-countdown .countdown-circle-wrap{width:clamp(128px,22vh,180px);height:clamp(128px,22vh,180px);transform:none;margin:0}
+body[data-noise-state="red"].red-countdown .countdown-circle-wrap svg{width:100%;height:100%}
+body[data-noise-state="red"].red-countdown .button-group{margin:0}
+body[data-noise-state="red"].red-countdown .button-group button{margin-top:0}
+#notificationText{font-weight:800}
+#notificationDetail{display:block;font-size:.68em;margin-top:8px;opacity:.8;max-width:440px;margin-inline:auto}
+body[data-noise-state="paused"] .status{font-size:clamp(2rem,5.5vw,5rem);line-height:1.1}
+
+@media(max-width:700px){
+ body[data-noise-state="red"].red-countdown .countdown-card{min-height:0;padding:14px 20px}
+ body[data-noise-state="red"] .status{font-size:clamp(3rem,13vw,5rem)}
+}
+@media(min-width:701px) and (max-height:700px){
+ body{padding:16px}.screen{min-height:calc(100dvh - 32px)!important}
+ .countdown-circle-wrap{transform:scale(.85);margin:-10px}.top-bar{padding:0}.room-label{padding:6px 14px}
+ body[data-noise-state="yellow"] .main-panel{padding:20px;gap:12px}
+ body[data-noise-state="yellow"] .status{font-size:clamp(3.5rem,12vh,6rem)}
+ body[data-noise-state="yellow"] .thank-you{font-size:clamp(1.1rem,3.7vh,1.6rem)}
+ body[data-noise-state="yellow"] .report-card{padding:14px}
+ body[data-noise-state="yellow"] .qr-image{width:120px;height:120px}
+ body[data-noise-state="red"] .screen{gap:14px}
+ body[data-noise-state="red"].red-countdown .countdown-card{min-height:0;padding:12px 20px;gap:10px}
+ /* Existing compact Green presentation: no redesign. */
+ body:not([data-noise-state="yellow"]):not([data-noise-state="red"]) .main-panel{padding:20px;gap:12px}
+ body:not([data-noise-state="yellow"]):not([data-noise-state="red"]) .status{font-size:clamp(3.5rem,14vh,6rem)}
+ body:not([data-noise-state="yellow"]):not([data-noise-state="red"]) .thank-you{font-size:clamp(1.1rem,4vh,1.6rem)}
+ body:not([data-noise-state="yellow"]):not([data-noise-state="red"]) .report-card{padding:14px}
+ body:not([data-noise-state="yellow"]):not([data-noise-state="red"]) .qr-image{width:120px;height:120px}
+}
+
+/* Administrative pause and authenticated recovery reuse the existing primary card. */
+body.device-unavailable .screen{justify-content:flex-start;gap:24px}
+body.device-unavailable .main-panel{margin-block:auto;min-height:clamp(240px,48vh,460px);border:1px solid rgba(178,187,196,.6);background:linear-gradient(145deg,#2c2f33,#25282c);box-shadow:inset 0 1px 0 #eef2f51a,0 0 18px #bac4ce0b;gap:22px}
+body.device-unavailable .status{font-size:clamp(2rem,5vw,4.5rem);line-height:1.12;color:#f0f2f4}
+body.device-unavailable .thank-you{font-size:clamp(1.3rem,2.5vw,2rem);color:#e3e7eb}
+body.device-unavailable .message{font-size:clamp(1rem,1.6vw,1.3rem);color:#bfc6cd;opacity:1}
+body.device-unavailable .room-label{background:#ffffff08;border:1px solid #b2bbc433;color:#dce1e6}
+body.device-unavailable .bottom-row{display:none!important}
+body.room-configured:not(.operator-maintenance) .button-group{display:none}
+body.monitoring-disabled .button-group{display:none!important}
+@media(max-width:700px){body.device-unavailable .main-panel{padding:24px 18px;min-height:260px}}
+
+/* Enrollment shares the existing unavailable card; preview controls are outside the simulation. */
+body[data-noise-state="enrollment"] .message:empty{display:none}
+#previewControls:not([hidden]){display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;color:#c3cad1;font-size:.75rem}
+#previewControls button{margin:0;padding:9px 14px;font-size:.85rem}
+
+body.room-operational:not(.operator-maintenance) #previewControls{display:none!important}
+
+/* Give the disabled message a deliberate two-line hierarchy at every viewport. */
+body.monitoring-disabled .status{font-size:clamp(2.5rem,min(7vw,12vh),6rem);line-height:1;letter-spacing:-.025em}
+body.monitoring-disabled .thank-you{font-size:clamp(1.45rem,3.4vh,2.4rem);line-height:1.25}
+body.monitoring-disabled .message{font-size:clamp(1rem,2.4vh,1.4rem);line-height:1.5;max-width:660px}
+body.monitoring-disabled .main-panel{gap:clamp(16px,3vh,30px)}

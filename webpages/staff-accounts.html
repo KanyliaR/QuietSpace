@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Account Requests &amp; Staff | QuietSpace</title><link rel="stylesheet" href="staff-accounts.css"><script src="staff-accounts.js" defer></script></head>
+<body>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar"><img src="../images/cloudicon.png" alt=""></button>
+<aside class="sidebar"></aside>
+<main class="main">
+ <div class="top-header"><div class="header-copy"><h2>Account Requests &amp; Staff</h2><p>Manage staff accounts, assign roles, and review access requests.</p></div><button class="sm-button sm-primary" id="addStaff">Add User</button></div>
+ <p id="staffFeedback" role="status" aria-live="polite"></p>
+ <div class="sm-summary" aria-label="Account summary"><article class="sm-card"><h3>Active Accounts</h3><strong id="activeAccounts">—</strong><p>Staff accounts with access to QuietSpace.</p></article><article class="sm-card"><h3>Pending Requests</h3><strong id="pendingRequests">—</strong><p>Awaiting admin review.</p></article><article class="sm-card"><h3>Accounts Deleted</h3><strong id="deletedAccounts">—</strong><p>Staff accounts removed from QuietSpace.</p></article></div>
+ <p id="legacyAccountNotice" class="sm-setup-note" role="status" hidden></p><section class="sm-card" aria-labelledby="staffTitle"><h3 id="staffTitle">Staff Accounts</h3><p>Manage staff access. Deleted accounts cannot sign in or be restored.</p>
+ <form id="staffFilters" class="sm-filters"><label>Search by name or email<input id="staffSearch" type="search" maxlength="255" placeholder="Search accounts"></label><label>Assigned role<select id="staffRole"><option value="">All roles</option><option value="admin">Library Admin</option><option value="library_monitor">Library Monitor</option><option value="security">Security</option></select></label><label>Account status<select id="staffStatus"><option value="">Current accounts</option><option value="active">Active</option><option value="deleted">Deleted</option><option value="legacy">Inactive</option><option value="pending_setup">Pending Setup</option></select></label><button class="sm-button" type="submit">Apply filters</button></form>
+ <div class="sm-table-wrap"><table><thead><tr><th>Full Name</th><th>Email Address</th><th>Assigned Role</th><th>Account Status</th><th>Actions</th></tr></thead><tbody id="staffRows"></tbody></table></div><p id="staffEmpty" hidden>No accounts match these filters.</p>
+ </section>
+ <section class="sm-card" id="pending-requests" aria-labelledby="requestTitle"><h3 id="requestTitle">Pending Account Requests</h3><p>Review prospective staff access. Approved accounts require secure setup before sign-in.</p><div id="requestRows" class="sm-requests"></div><p id="requestEmpty" hidden>No pending account requests.</p></section>
+ <section class="sm-card" aria-labelledby="activityTitle"><h3 id="activityTitle">Administrative Activity</h3><p>Recent account and request actions, including previous and new access values.</p><ol id="staffActivity" class="sm-activity"></ol><p id="activityEmpty" hidden>No administrative account activity recorded.</p></section>
+ <p id="invitationNotice" class="sm-setup-note">Accounts awaiting password setup cannot sign in. Administrators can resend setup invitations from Account Details.</p>
+</main>
+<dialog id="staffDialog" aria-labelledby="staffDialogTitle"><div class="sm-dialog-heading"><h2 id="staffDialogTitle"></h2><button type="button" class="sm-button" id="closeStaffDialog" aria-label="Close dialog">×</button></div><div id="staffDialogBody"></div><p id="staffDialogError" role="alert"></p></dialog>
+</body></html>

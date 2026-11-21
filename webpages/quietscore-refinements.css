@@ -1,0 +1,21 @@
+/* Existing calendar controls/cells are unchanged. Only the history layout is refined. */
+.incident-records-section{container-type:inline-size}
+.incident-records-section .content-grid{grid-template-columns:minmax(270px,.9fr) minmax(240px,1.5fr)}
+.incident-history{min-width:0}
+.incident-history .table-scroll{max-height:650px;overflow-y:auto;overflow-x:hidden;border:0;overscroll-behavior:contain;scrollbar-width:thin}
+.incident-history table,.incident-history tbody{display:block;width:100%}
+.incident-history thead{display:none}
+#reportsTableBody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-alt)}
+#reportsTableBody td{display:block;min-width:0;padding:0;border:0;font-size:.85rem;overflow-wrap:anywhere}
+#reportsTableBody td::before{content:attr(data-label);display:block;margin-bottom:5px;color:var(--muted);font-size:.7rem;font-weight:bold}
+#reportsTableBody td:nth-child(5){grid-column:1/-1;padding-top:10px;border-top:1px solid var(--border)}
+#reportsTableBody .details-btn{width:100%;padding:9px 12px}
+#reportsTableBody .desktop-action-label{display:inline!important}#reportsTableBody .mobile-action-label{display:none!important}
+#reportsTableBody tr:has(.empty){display:block}#reportsTableBody .empty::before{display:none}
+@media(max-width:1200px){.incident-records-section .content-grid{grid-template-columns:minmax(0,1fr)}
+ @container(min-width:824px){.incident-records-section .content-grid{grid-template-columns:560px minmax(240px,1fr)}.incident-records-section .calendar-panel{max-width:560px}}
+}
+/* Preserve three summary/report cards at normal half-window laptop sizes. */
+@media(min-width:561px) and (max-width:1100px){.overview-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.overview-cards .summary-card{padding:14px 10px}.overview-cards h4{font-size:.67rem;line-height:1.4}.overview-cards .summary-value{font-size:1.6rem}.overview-cards .summary-note{font-size:.7rem;line-height:1.45}}
+@media(max-width:560px){.overview-cards{grid-template-columns:1fr}.incident-records-section .content-grid{grid-template-columns:minmax(0,1fr)}.incident-history .table-scroll{max-height:560px}}
+@media(max-width:560px){#reportsTableBody .details-btn{min-height:44px}}

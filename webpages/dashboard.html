@@ -121,17 +121,62 @@
       left: 20px;
     }
 
-    .logout-btn {
-      width: 100%;
-      padding: 12px 14px;
-      border: none;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.12);
-      color: white;
-      font-weight: 700;
-      text-align: left;
-      cursor: pointer;
-    }
+    .settings-btn {
+  display: block;
+  width: fit-content;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+
+  border-radius: 10px;
+  background: rgba(255,255,255,0.10);
+  color: #c9d7ff;
+
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+
+  transition: background 0.2s ease;
+}
+
+.logout-wrapper {
+  position: absolute;
+  bottom: 24px;
+  left: 20px;
+  right: 20px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-btn,
+.logout-btn {
+  width: auto;
+  margin: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+
+  background: rgba(255,255,255,0.12);
+  color: white;
+
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.settings-btn:hover,
+.logout-btn:hover {
+  background: rgba(255,255,255,0.24);
+}
+
+.settings-btn:hover {
+  background: rgba(255,255,255,0.22);
+  color: white;
+}
 
     .logout-btn:hover {
       background: rgba(255, 255, 255, 0.24);
@@ -150,6 +195,10 @@
     .top-header {
       position: relative;
       margin-bottom: 28px;
+      padding-left: 0;
+    }
+
+    body.sidebar-collapsed .top-header {
       padding-left: 58px;
     }
 
@@ -343,6 +392,39 @@
     .priority-high {
       color: #8a1f1f;
     }
+
+    /* -------------------- Escalation Badges -------------------- */
+
+.escalation-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Light Mode */
+.escalation-badge.priority-medium {
+  background: #fff8d6;
+  color: #8a6d00;
+}
+
+.escalation-badge.priority-high {
+  background: #fde8e8;
+  color: #8a1f1f;
+}
+
+/* Dark Mode */
+body.dark-theme .escalation-badge.priority-medium {
+  background: #fde68a !important;
+  color: #6b4e00 !important;
+}
+
+body.dark-theme .escalation-badge.priority-high {
+  background: #fca5a5 !important;
+  color: #7f1d1d !important;
+}
 
     /* -------------------- Student Report Controls -------------------- */
 
@@ -820,23 +902,28 @@
       }
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
       body {
         display: flex;
         overflow: hidden;
+        width: 100%;
+        height: 100dvh;
       }
 
       .main {
         flex: 1;
+        min-width: 0;
         width: 100%;
-        height: 100vh;
+        height: 100dvh;
+        overflow-x: hidden;
         overflow-y: auto;
-        padding: 12px 14px 120px;
+        padding: calc(env(safe-area-inset-top, 0px) + 76px) 14px calc(env(safe-area-inset-bottom, 0px) + 32px);
       }
 
-      .top-header {
+      .top-header,
+      body.sidebar-collapsed .top-header {
         margin-bottom: 20px;
-        padding-left: 58px;
+        padding-left: 0;
       }
 
       .top-header h2 {
@@ -854,52 +941,60 @@
         top: 0 !important;
         left: 0 !important;
         bottom: 0 !important;
-        width: 50% !important;
-        max-width: 50vw;
-        height: 100vh !important;
+        width: min(78vw, 300px) !important;
+        max-width: none;
+        height: 100dvh !important;
+        min-height: 0;
         z-index: 500 !important;
-        padding: 20px 16px 24px;
+        padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 18px);
         box-shadow: 6px 0 24px rgba(0, 0, 0, 0.45);
         transition: transform 0.25s ease, opacity 0.25s ease !important;
-        overflow-y: auto !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column;
       }
 
       body.sidebar-collapsed .sidebar {
         transform: translateX(-100%) !important;
         opacity: 0 !important;
         pointer-events: none !important;
-        display: block !important;
-        width: 50% !important;
       }
 
       body:not(.sidebar-collapsed) .sidebar {
         transform: translateX(0) !important;
         opacity: 1 !important;
         pointer-events: auto !important;
-        display: block !important;
-        width: 50% !important;
       }
 
-      body.sidebar-collapsed .sidebar * {
-        display: block !important;
-      }
-
+      body.sidebar-collapsed .sidebar * ,
       body:not(.sidebar-collapsed) .sidebar * {
         display: block !important;
       }
 
+      .sidebar .logout-wrapper {
+        position: static;
+        margin-top: auto;
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .sidebar .settings-btn,
+      .sidebar .logout-btn {
+        font-size: 0.75rem;
+        padding: 9px 8px;
+      }
+
       body:not(.sidebar-collapsed) .sidebar-toggle {
-        top: 15px !important;
-        left: calc(50% - 48px) !important;
-        z-index: 600 !important;
-        left: calc(50% - 48px) !important;
+        top: calc(env(safe-area-inset-top, 0px) + 15px) !important;
+        left: calc(min(78vw, 300px) - 49px) !important;
         z-index: 600 !important;
       }
 
       body.sidebar-collapsed .sidebar-toggle {
-        top: 10px !important;
-        left: 18px !important;
-        z-index: 600 !important;
+        top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
+        left: 14px !important;
         z-index: 600 !important;
       }
 
@@ -912,33 +1007,34 @@
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.25s ease;
-      .sidebar-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(2px);
-        z-index: 450;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.25s ease;
       }
 
-      body:not(.sidebar-collapsed) .sidebar-backdrop {
-        opacity: 1;
-        pointer-events: auto;
       body:not(.sidebar-collapsed) .sidebar-backdrop {
         opacity: 1;
         pointer-events: auto;
       }
 
       .cards {
-        grid-template-columns: repeat(3, minmax(100px, 1fr));
-        gap: 10px;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .card {
+        min-height: 0;
+        padding: 18px;
+      }
+
+      .card .status {
+        min-width: 0;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+        text-align: center;
       }
 
       .section {
         padding: 16px 12px;
         border-radius: 16px;
+        min-width: 0;
       }
 
       .section-header h3 {
@@ -949,39 +1045,92 @@
         font-size: 0.78rem;
       }
 
-      table {
+      .table-scroll,
+      .incidents-scroll,
+      .reports-scroll {
+        max-height: none;
+        overflow: visible;
+      }
+
+      table,
+      tbody {
+        display: block;
         width: 100%;
-        table-layout: fixed;
       }
 
-      th,
-      td {
-        padding: 8px 4px;
-        font-size: 0.68rem;
-        line-height: 1.25;
-        word-break: normal;
-        overflow-wrap: break-word;
+      thead {
+        display: none;
       }
 
-      th {
-        font-size: 0.6rem;
-        letter-spacing: 0;
+      #incidentsTableBody tr,
+      #reportsTableBody tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 16px;
+        border: 1px solid #d7e4f2;
+        border-radius: 14px;
+        background: #f7faff;
       }
 
-      #studentReportsSection th {
-        padding: 8px 3px;
-        font-size: 0.56rem;
+      #incidentsTableBody td,
+      #reportsTableBody td {
+        display: block;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
       }
 
-      .status,
-      .severity-badge,
-      .status-select {
-        padding: 5px 6px;
-        font-size: 0.62rem;
+      #incidentsTableBody td::before,
+      #reportsTableBody td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 5px;
+        color: #60708a;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      #incidentsTableBody td:first-child,
+      #reportsTableBody td:first-child {
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+
+      #incidentsTableBody td:nth-child(5),
+      #reportsTableBody td:nth-child(4),
+      #reportsTableBody td:nth-child(5) {
+        grid-column: 1 / -1;
+      }
+
+      #incidentsTableBody td:nth-child(2) .status {
+        margin-top: 0;
+      }
+
+      #incidentsTableBody tr:has(.empty),
+      #reportsTableBody tr:has(.empty) {
+        display: block;
+      }
+
+      #incidentsTableBody td.empty,
+      #reportsTableBody td.empty {
+        padding: 12px;
+        text-align: center;
+      }
+
+      #incidentsTableBody td.empty::before,
+      #reportsTableBody td.empty::before {
+        display: none;
       }
 
       .status-select {
         max-width: 100%;
+        font-size: 0.82rem;
       }
 
       .toast,
@@ -990,18 +1139,27 @@
         width: calc(100% - 28px);
       }
 
-      .card .status {
-        min-width: 120px;
-        padding: 10px 18px !important;
-        font-size: 1rem !important;
-        font-weight: 800 !important;
-        text-align: center;
+      .toast {
+        top: calc(env(safe-area-inset-top, 0px) + 16px);
       }
 
-      .logout-wrapper {
-        right: 18px;
-        bottom: 110px !important;
-        left: 18px;
+      .report-notice {
+        top: calc(env(safe-area-inset-top, 0px) + 82px);
+      }
+
+      body.dark-theme #incidentsTableBody tr,
+      body.dark-theme #reportsTableBody tr,
+      body:not(.light-theme) #incidentsTableBody tr,
+      body:not(.light-theme) #reportsTableBody tr {
+        background: rgba(9, 23, 55, 0.38);
+        border-color: rgba(219, 231, 255, 0.2);
+      }
+
+      body.dark-theme #incidentsTableBody td::before,
+      body.dark-theme #reportsTableBody td::before,
+      body:not(.light-theme) #incidentsTableBody td::before,
+      body:not(.light-theme) #reportsTableBody td::before {
+        color: #dbe7ff;
       }
     }
 
@@ -1011,7 +1169,7 @@
       }
     }
 
-    @media (min-width: 701px) {
+    @media (min-width: 901px) {
       .nav-item:not(.disabled):hover {
         background: rgba(255, 255, 255, 0.22);
         transform: translateX(4px);
@@ -1023,13 +1181,574 @@
         transform: scale(0.98);
       }
     }
+
+    /* -------------------- Overview Date and Security Placeholder -------------------- */
+    .overview-date {
+      margin: 0 0 8px;
+      color: #60708a;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .security-section {
+      margin-bottom: 30px;
+    }
+
+    .ambassador-availability {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #eef5fb;
+      font-size: 0.88rem;
+    }
+
+    .ambassador-availability span,
+    .security-empty {
+      color: #60708a;
+    }
+
+    .security-empty {
+      margin-top: 16px;
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    body.dark-theme .overview-date,
+    body:not(.light-theme) .overview-date,
+    body.dark-theme .ambassador-availability span,
+    body:not(.light-theme) .ambassador-availability span,
+    body.dark-theme .security-empty,
+    body:not(.light-theme) .security-empty {
+      color: #dbe7ff;
+    }
+
+    body.dark-theme .ambassador-availability,
+    body:not(.light-theme) .ambassador-availability {
+      background: rgba(9, 23, 55, 0.38);
+    }
+
+    /* -------------------- Dashboard Layout Refinements -------------------- */
+    .top-header,
+    body.sidebar-collapsed .top-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      padding-left: 58px;
+      min-width: 0;
+    }
+
+    .overview-copy { flex: 1; min-width: 0; }
+    .overview-copy h2 { margin-bottom: 6px; }
+    .overview-copy p { line-height: 1.4; }
+    .overview-date {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      margin: 0;
+      padding: 10px 14px;
+      border: 1px solid #d7e4f2;
+      border-radius: 12px;
+      background: rgba(255,255,255,.82);
+      color: #4c5d7a;
+      font-size: .82rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .time-text { font-size: 1rem; color: #1f3b73; font-variant-numeric: tabular-nums; }
+
+    /* The icon starts at the same horizontal edge as the room cards. */
+    @media (min-width: 901px) {
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        left: 272px;
+        top: 24px;
+      }
+      body.sidebar-collapsed .sidebar-toggle {
+        left: 32px;
+        top: 24px;
+      }
+    }
+
+    .security-section .section-header { align-items: center; }
+    .ambassador-indicator {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 12px;
+      border: 1px solid #8b98ad;
+      border-radius: 999px;
+      background: #edf1f6;
+      color: #536177;
+      box-shadow: 0 0 0 2px rgba(139,152,173,.12);
+      font-size: .76rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .ambassador-person { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+    /* These states are styling hooks for the future presence API. */
+    .ambassador-indicator.ambassador-active { border-color: #34d399; background: #e3f9ef; color: #065f46; box-shadow: 0 0 9px rgba(52,211,153,.35); }
+    .ambassador-indicator.ambassador-offline { border-color: #f87171; background: #fff0f0; color: #991b1b; box-shadow: 0 0 9px rgba(248,113,113,.3); }
+
+    body.dark-theme .overview-date,
+    body:not(.light-theme) .overview-date {
+      background: rgba(9,23,55,.42);
+      border-color: rgba(219,231,255,.2);
+      color: #dbe7ff;
+    }
+    body.dark-theme .time-text,
+    body:not(.light-theme) .time-text { color: #fff; }
+    body.dark-theme .ambassador-none,
+    body:not(.light-theme) .ambassador-none {
+      background: rgba(100,116,139,.18);
+      color: #e0e7f3;
+      border-color: #94a3b8;
+      box-shadow: 0 0 9px rgba(148,163,184,.18);
+    }
+    body.dark-theme .ambassador-active,
+    body:not(.light-theme) .ambassador-active { background: rgba(16,185,129,.16); color: #6ee7b7; }
+    body.dark-theme .ambassador-offline,
+    body:not(.light-theme) .ambassador-offline { background: rgba(248,113,113,.16); color: #fca5a5; }
+    .mobile-comment { display: none; }
+
+    @media (max-width: 900px) {
+      body, .main { height: 100dvh; }
+      .main {
+        padding: 20px 14px 36px;
+        overflow-x: hidden;
+      }
+      .top-header,
+      body.sidebar-collapsed .top-header {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 22px;
+        padding-left: 64px;
+        min-height: 0;
+      }
+      .overview-copy h2 { font-size: clamp(1.18rem, 4.6vw, 1.5rem); line-height: 1.2; margin-bottom: 6px; }
+      .overview-copy p { font-size: .82rem; line-height: 1.4; }
+      .overview-date {
+        align-self: flex-end;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 6px 9px;
+        font-size: .72rem;
+      }
+      .time-text { font-size: .76rem; }
+      body.sidebar-collapsed .sidebar-toggle,
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        top: 20px !important;
+        z-index: 600 !important;
+      }
+      body.sidebar-collapsed .sidebar-toggle { left: 14px !important; }
+      .sidebar {
+        width: min(68vw, 265px) !important;
+        height: 100dvh !important;
+        padding: 22px 13px 20px !important;
+        overflow: hidden !important;
+      }
+      body.sidebar-collapsed .sidebar,
+      body:not(.sidebar-collapsed) .sidebar { width: min(68vw, 265px) !important; }
+      body:not(.sidebar-collapsed) .sidebar-toggle { left: calc(min(68vw, 265px) - 48px) !important; }
+      .sidebar h1 { font-size: 1.45rem; }
+      .sidebar .nav-item { padding: 11px 10px; font-size: .89rem; }
+      .sidebar .logout-wrapper {
+        position: static;
+        margin-top: auto;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: stretch;
+        justify-content: space-between;
+        gap: 7px;
+        min-width: 0;
+      }
+      .sidebar .logout-wrapper .settings-btn,
+      .sidebar .logout-wrapper .logout-btn {
+        display: inline-flex !important;
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 5px;
+        font-size: .73rem;
+        white-space: nowrap;
+        margin: 0;
+      }
+      /* The page outside the sidebar remains untouched; the backdrop only dims/blurs it. */
+      .sidebar-backdrop { backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+      .security-section .section-header { align-items: flex-start; gap: 10px; }
+      .security-section .section-header > div:first-child { flex: 1; min-width: 0; }
+      .ambassador-indicator { font-size: .65rem; padding: 7px 8px; gap: 4px; max-width: 45%; white-space: normal; line-height: 1.2; }
+      .ambassador-person { flex-shrink: 0; width: 15px; height: 15px; }
+
+      /* Each report list scrolls within its own panel, independently of the page. */
+      .table-scroll.incidents-scroll,
+      .table-scroll.reports-scroll {
+        max-height: 350px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 2px;
+      }
+      #incidentsTableBody tr,
+      #reportsTableBody tr { gap: 12px; padding: 13px; }
+      #incidentsTableBody td::before,
+      #reportsTableBody td::before { font-size: .7rem; }
+
+      /* QuietScore card: title/status, two details, and a distinct footer. */
+      #incidentsTableBody tr:not(:has(.empty)) {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        align-items: center;
+      }
+      #incidentsTableBody td:nth-child(1) { grid-column: 1; grid-row: 1; font-size: 1rem; }
+      #incidentsTableBody td:nth-child(2) { grid-column: 2; grid-row: 1; text-align: right; }
+      #incidentsTableBody td:nth-child(1)::before,
+      #incidentsTableBody td:nth-child(2)::before { display: none; }
+      #incidentsTableBody td:nth-child(2) .status { margin: 0; font-size: .75rem; padding: 6px 9px; }
+      #incidentsTableBody td:nth-child(3) { grid-column: 1; grid-row: 2; }
+      #incidentsTableBody td:nth-child(4) { grid-column: 2; grid-row: 2; }
+      #incidentsTableBody td:nth-child(5) {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 11px;
+        border-radius: 10px;
+        background: rgba(100,116,139,.12);
+      }
+      #incidentsTableBody td:nth-child(5)::before {
+        display: inline;
+        margin: 0;
+        font-size: .73rem;
+        white-space: nowrap;
+      }
+      #incidentsTableBody td:nth-child(5) .escalation-badge { font-size: .7rem; padding: 5px 8px; }
+
+      /* Student card: room/noise type on left, severity on right, three details below. */
+      #reportsTableBody tr:not(:has(.empty)) { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 11px 6px; align-items: start; }
+      #reportsTableBody td:nth-child(1) { grid-column: 1 / 3; grid-row: 1; font-size: 1rem; }
+      #reportsTableBody td:nth-child(1)::before,
+      #reportsTableBody td:nth-child(2)::before { display: none; }
+      #reportsTableBody td:nth-child(2) { grid-column: 1 / 3; grid-row: 1; margin-top: 25px; font-size: .76rem; font-weight: 400; color: #60708a; }
+      #reportsTableBody td:nth-child(3) { grid-column: 3; grid-row: 1; text-align: right; }
+      #reportsTableBody td:nth-child(3)::before { content: 'Noise Severity'; font-size: .62rem; white-space: nowrap; }
+      #reportsTableBody td:nth-child(4),
+      #reportsTableBody td:nth-child(5),
+      #reportsTableBody td:nth-child(6) { grid-row: 2; grid-column: auto; border-top: 1px solid rgba(148,163,184,.25); padding-top: 10px; font-size: .73rem; }
+      #reportsTableBody td:nth-child(4) { grid-column: 1; }
+      #reportsTableBody td:nth-child(5) { grid-column: 2; }
+      #reportsTableBody td:nth-child(6) { grid-column: 3; }
+      #reportsTableBody .desktop-comment { display: none; }
+      #reportsTableBody .mobile-comment { display: inline; }
+      #reportsTableBody .view-btn { margin: 0; }
+      #reportsTableBody .status-select { font-size: .68rem; padding: 6px 4px; width: 100%; }
+      #reportsTableBody td:nth-child(6) { overflow-wrap: normal; font-size: .69rem; }
+      body.dark-theme #incidentsTableBody td:nth-child(5),
+      body:not(.light-theme) #incidentsTableBody td:nth-child(5) { background: rgba(5,15,38,.48); }
+      body.dark-theme #reportsTableBody td:nth-child(2),
+      body:not(.light-theme) #reportsTableBody td:nth-child(2) { color: #dbe7ff; }
+    }
+    @media (max-width: 360px) {
+      .ambassador-indicator { font-size: .59rem; }
+      .overview-date { font-size: .65rem; }
+      #reportsTableBody td:nth-child(3)::before { font-size: .56rem; }
+    }
+
+
+    /* -------------------- Header polish: reversible layout adjustments -------------------- */
+    @media (min-width: 901px) {
+      /* Expanded: cloud stays inside the sidebar; content begins at its natural edge. */
+      body:not(.sidebar-collapsed) .top-header {
+        padding-left: 0;
+      }
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        left: 190px;
+        top: 20px;
+      }
+      /* Collapsed: reserve room for the cloud before the heading. */
+      body.sidebar-collapsed .top-header {
+        padding-left: 58px;
+      }
+      body.sidebar-collapsed .sidebar-toggle {
+        left: 32px;
+        top: 24px;
+      }
+    }
+
+    .overview-date {
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      gap: 5px;
+    }
+    .time-text {
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .date-text {
+      font-size: .95rem;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+    body.dark-theme .overview-date,
+    body:not(.light-theme) .overview-date {
+      background: transparent;
+      border: none;
+    }
+
+    @media (max-width: 900px) {
+      /* Keep the mobile cloud in its original position; center all header text. */
+      .main {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 76px);
+      }
+      .top-header,
+      body.sidebar-collapsed .top-header {
+        padding-left: 0;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+      }
+      .overview-copy {
+        width: 100%;
+      }
+      .overview-copy h2,
+      .overview-copy p {
+        text-align: center;
+      }
+      .overview-date {
+        align-self: center;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: nowrap;
+        padding: 0;
+        gap: 4px;
+        white-space: normal;
+        text-align: center;
+      }
+      .time-text {
+        font-size: 1.25rem;
+      }
+      .date-text {
+        font-size: .82rem;
+      }
+      .sidebar {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 22px) !important;
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px) !important;
+      }
+      .sidebar .logout-wrapper {
+        margin-top: auto;
+        flex-shrink: 0;
+      }
+    }
+
+
+    /* Final responsive refinements: no changes to dashboard data or interactions. */
+    .settings-btn, .logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 40px;
+      flex: 1 1 0;
+      min-width: 0;
+      text-align: center;
+    }
+    .settings-icon { flex: 0 0 16px; }
+    .logout-wrapper { gap: 12px; }
+
+    @media (max-width: 900px) {
+      /* Keep the cloud at the top-left, bring the title up alongside it. */
+      .main {
+        padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
+      }
+      .top-header,
+      body.sidebar-collapsed .top-header {
+        padding-left: 64px;
+        gap: 14px;
+        align-items: center;
+        text-align: center;
+      }
+      .overview-copy {
+        width: 100%;
+        min-height: 42px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .overview-copy h2 {
+        font-size: clamp(1.05rem, 4.4vw, 1.5rem);
+        overflow-wrap: normal;
+      }
+      .overview-copy p { font-size: clamp(.74rem, 2.6vw, .86rem); }
+      .overview-date {
+        width: calc(100% + 64px);
+        margin-left: -64px;
+        align-self: center;
+        text-align: center;
+      }
+      /* One consistent fluid sidebar width for phones and tablets. */
+      .sidebar,
+      body.sidebar-collapsed .sidebar,
+      body:not(.sidebar-collapsed) .sidebar {
+        width: clamp(205px, 62vw, 255px) !important;
+      }
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        left: calc(clamp(205px, 62vw, 255px) - 48px) !important;
+      }
+      .sidebar .logout-wrapper {
+        gap: 10px;
+        width: 100%;
+      }
+      .sidebar .logout-wrapper .settings-btn,
+      .sidebar .logout-wrapper .logout-btn {
+        flex: 1 1 0;
+        width: 0;
+        min-height: 42px;
+        padding: 9px 4px;
+        font-size: clamp(.67rem, 2vw, .76rem);
+        white-space: nowrap;
+      }
+      /* Allocate room to the long status value and separate all three fields. */
+      #reportsTableBody tr:not(:has(.empty)) {
+        grid-template-columns: minmax(0, .75fr) minmax(0, 1.55fr) minmax(0, 1.05fr);
+        column-gap: 10px;
+      }
+      #reportsTableBody td:nth-child(4) {
+        text-align: left;
+        padding-right: 5px;
+        border-right: 1px solid rgba(148,163,184,.28);
+      }
+      #reportsTableBody td:nth-child(5) {
+        text-align: center;
+        padding-inline: 3px;
+        border-right: 1px solid rgba(148,163,184,.28);
+      }
+      #reportsTableBody td:nth-child(6) {
+        text-align: right;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      #reportsTableBody .status-select {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        font-size: clamp(.59rem, 1.85vw, .75rem);
+        padding: 6px 2px;
+      }
+      #reportsTableBody td:nth-child(4)::before,
+      #reportsTableBody td:nth-child(5)::before,
+      #reportsTableBody td:nth-child(6)::before {
+        font-size: clamp(.61rem, 1.8vw, .73rem);
+      }
+    }
+    @media (max-width: 370px) {
+      .top-header, body.sidebar-collapsed .top-header { padding-left: 58px; }
+      .overview-date { width: calc(100% + 58px); margin-left: -58px; }
+      #reportsTableBody tr:not(:has(.empty)) { column-gap: 6px; }
+    }
+
+
+    /* FINAL MOBILE-ONLY FIXES: center header in viewport and restore footer buttons. */
+    @media (max-width: 900px) {
+      /* The cloud remains fixed at its existing top-left location. */
+      .top-header,
+      body.sidebar-collapsed .top-header {
+        padding-left: 0;
+        width: 100%;
+        align-items: center;
+        text-align: center;
+      }
+      .overview-copy {
+        width: 100%;
+        min-width: 0;
+        align-items: center;
+      }
+      .overview-copy h2 {
+        width: 100%;
+        padding-inline: clamp(48px, 13vw, 68px);
+        text-align: center;
+        text-wrap: balance;
+        font-size: clamp(1.2rem, 4.8vw, 1.65rem);
+      }
+      .overview-copy p { width: 100%; text-align: center; }
+      .overview-date {
+        width: 100%;
+        margin-left: 0;
+        align-self: center;
+        align-items: center;
+      }
+      /* A narrower sidebar with a cap, but room for full navigation labels. */
+      .sidebar,
+      body.sidebar-collapsed .sidebar,
+      body:not(.sidebar-collapsed) .sidebar {
+        width: clamp(204px, 55vw, 235px) !important;
+      }
+      body:not(.sidebar-collapsed) .sidebar-toggle {
+        left: calc(clamp(204px, 55vw, 235px) - 48px) !important;
+      }
+      /* Override the old universal display:block !important sidebar rule. */
+      body:not(.sidebar-collapsed) .sidebar .logout-wrapper,
+      body.sidebar-collapsed .sidebar .logout-wrapper {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: stretch;
+        gap: 10px;
+        width: 100%;
+        margin-top: auto;
+      }
+      body:not(.sidebar-collapsed) .sidebar .logout-wrapper > .settings-btn,
+      body:not(.sidebar-collapsed) .sidebar .logout-wrapper > .logout-btn,
+      body.sidebar-collapsed .sidebar .logout-wrapper > .settings-btn,
+      body.sidebar-collapsed .sidebar .logout-wrapper > .logout-btn {
+        display: flex !important;
+        width: 100% !important;
+        height: 42px;
+        min-height: 42px;
+        min-width: 0;
+        padding: 8px 3px;
+        margin: 0;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-size: 0.7rem;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      body:not(.sidebar-collapsed) .sidebar .logout-wrapper .settings-icon,
+      body.sidebar-collapsed .sidebar .logout-wrapper .settings-icon {
+        display: block !important;
+        width: 14px;
+        height: 14px;
+        flex: 0 0 14px;
+      }
+    }
+    @media (max-width: 370px) {
+      .top-header, body.sidebar-collapsed .top-header { padding-left: 0; }
+      .overview-date { width: 100%; margin-left: 0; }
+    }
+
   </style>
 </head>
 
 <body>
-  <!-- Mobile Overlay Backdrop -->
-  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
-
   <!-- Mobile Overlay Backdrop -->
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
@@ -1051,47 +1770,66 @@
       QuietScore Reports
     </a>
 
-    <a
-      class="nav-item"
-      href="#studentReportsSection"
-      onclick="jumpToStudentReports(); return false;"
-    >
-      Student Reports
-    </a>
+    <a class="nav-item" href="StudentReportsPage.html">
+  Student Reports
+</a>
 
-    <div
-      class="nav-item disabled"
-      aria-disabled="true"
-      title="Analytics is not available yet."
-    >
-      Analytics
-    </div>
+    <a href="analytics.html" class="nav-item">
+    Analytics
+  </a>
 
-    <a
-      class="nav-item"
-      href="settings.html"
-    >
-      Settings
-    </a>
+   <div class="logout-wrapper">
 
-    <div class="logout-wrapper">
-      <button class="logout-btn" onclick="logout()">Log Out</button>
-    </div>
+  <a class="settings-btn" href="settings.html">
+    <svg class="settings-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.9 1.9-.06-.06A1.7 1.7 0 0 0 16 18.44a1.7 1.7 0 0 0-1 .96V20h-2v-.6a1.7 1.7 0 0 0-1-.96 1.7 1.7 0 0 0-1.88.34l-.06.06-1.9-1.9.06-.06A1.7 1.7 0 0 0 8.56 15a1.7 1.7 0 0 0-.96-1H7v-2h.6a1.7 1.7 0 0 0 .96-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.9-1.9.06.06A1.7 1.7 0 0 0 12 7.56a1.7 1.7 0 0 0 1-.96V6h2v.6a1.7 1.7 0 0 0 1 .96 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.9 1.9-.06.06A1.7 1.7 0 0 0 19.44 11a1.7 1.7 0 0 0 .96 1h.6v2h-.6a1.7 1.7 0 0 0-1 .96Z" transform="translate(-2 -1)"/></svg> <span>Settings</span>
+  </a>
+
+  <button class="logout-btn" id="logout">
+    Log Out
+  </button>
+
+</div>
   </aside>
 
   <main class="main">
     <div class="top-header">
-      <h2>Today's Monitoring Overview</h2>
-      <p>
-        View live room status and active QuietScore incidents in real time.
-      </p>
+      <div class="overview-copy">
+        <h2>Today's Monitoring Overview</h2>
+        <p>
+          View live room status and active QuietScore incidents.
+        </p>
+      </div>
+      <div class="overview-date" id="overviewDate" aria-live="off">
+        <span class="time-text"><span aria-hidden="true">◷</span> <span id="overviewTimeText"></span></span>
+        <span class="date-text" id="overviewDateText"></span>
+        <span class="qs-system-status" id="systemStatus" data-state="unknown" role="status">Checking connection…</span>
+      </div>
     </div>
 
     <div class="cards" id="roomCards">
       <div class="card">Loading room data...</div>
     </div>
 
-    <section class="section incidents-section">
+    <section class="section security-section" id="securityEscalationsSection">
+      <div class="section-header">
+        <div>
+          <h3>Security Escalations</h3>
+          <p class="section-subtitle">Requests for security assistance submitted by student ambassadors.</p>
+        </div>
+        <div class="ambassador-indicator ambassador-none" aria-label="Ambassador status: no accounts created">
+          <svg class="ambassador-person" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.5"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>
+          <span>No Accounts Created</span>
+        </div>
+      </div>
+
+      <p class="security-empty">No security assistance requests yet. This section will become active when ambassador accounts and escalation features are implemented.</p>
+    </section>
+
+    <div class="qs-overview-tabs" id="dailyOverviewReportTabs" role="tablist" aria-label="Overview reports">
+      <button id="quietscoreReportTab" role="tab" type="button" aria-selected="true" aria-controls="quietscoreReportsSection" data-report-tab="quietscore"> <span class="qs-tab-summary"><span>QuietScore Reports</span> <span class="qs-report-count" data-report-total="quietscore" aria-label="Report count loading">—</span></span><span class="qs-unread" hidden></span></button>
+      <button id="studentReportTab" role="tab" type="button" tabindex="-1" aria-selected="false" aria-controls="studentReportsSection" data-report-tab="student"> <span class="qs-tab-summary"><span>Student Reports</span> <span class="qs-report-count" data-report-total="student" aria-label="Report count loading">—</span></span><span class="qs-unread" hidden></span></button>
+    </div>
+    <section class="section incidents-section" id="quietscoreReportsSection" role="tabpanel" aria-labelledby="quietscoreReportTab">
       <div class="section-header">
         <div>
           <h3>QuietScore Reports</h3>
@@ -1124,7 +1862,7 @@
       </div>
     </section>
 
-    <section class="section" id="studentReportsSection">
+    <section class="section" id="studentReportsSection" role="tabpanel" aria-labelledby="studentReportTab" hidden>
       <div class="section-header">
         <h3>Student Reports</h3>
       </div>
@@ -1215,19 +1953,20 @@
     /*
      * Global Theme Support (Default: Dark Mode)
      */
+    const overviewThemeKey = window.quietspaceUser?.role === 'library_monitor'
+      ? `quietspace_theme_user_${window.quietspaceUser.id}` : 'quietspace_theme';
     function applyGlobalTheme() {
-      const theme = localStorage.getItem("quietspace_theme");
-      if (theme === "light") {
-        document.body.classList.add("light-theme");
-        document.body.classList.remove("dark-theme");
-      } else {
-        document.body.classList.add("dark-theme");
-        document.body.classList.remove("light-theme");
-      }
+      const theme = localStorage.getItem(overviewThemeKey);
+      const light = theme === 'light' || (window.quietspaceUser?.role === 'library_monitor' && theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.body.classList.toggle('light-theme', light);
+      document.body.classList.toggle('dark-theme', !light);
     }
+    if (window.quietspaceUser?.role === 'library_monitor') window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (localStorage.getItem(overviewThemeKey) === 'system') applyGlobalTheme();
+    });
     applyGlobalTheme();
     window.addEventListener("storage", (e) => {
-      if (e.key === "quietspace_theme") {
+      if (e.key === overviewThemeKey) {
         applyGlobalTheme();
       }
     });
@@ -1236,8 +1975,8 @@
      * Prototype Authentication Guard: Authorized personnel only
      * Requires valid login session from login.html.
      */
-    const isLoggedIn = localStorage.getItem("quietspaceLoggedIn") === "true";
-    const sessionExpiresAt = parseInt(localStorage.getItem("quietspaceSessionExpiresAt") || "0", 10);
+    const isLoggedIn = Boolean(window.quietspaceUser);
+    const sessionExpiresAt = parseInt("0" || "0", 10);
     if (!isLoggedIn || (sessionExpiresAt > 0 && Date.now() > sessionExpiresAt)) {
       localStorage.removeItem("quietspaceLoggedIn");
       localStorage.removeItem("quietspaceSessionExpiresAt");
@@ -1252,8 +1991,19 @@
     /*
      * Load student-submitted noise reports.
      */
+    function updateReportTabCount(kind, count) {
+      const tab = document.querySelector(`#dailyOverviewReportTabs [data-report-tab="${kind}"]`);
+      const badge = tab.querySelector('[data-report-total]');
+      badge.textContent = String(count);
+      badge.setAttribute('aria-label', `${count} total reports`);
+      const unread = tab.querySelector('.qs-unread');
+      const name = kind === 'quietscore' ? 'QuietScore Reports' : 'Student Reports';
+      tab.setAttribute('aria-label', `${name}, ${count} total reports${!unread.hidden ? `, ${unread.textContent} unread` : ''}`);
+    }
+
     async function loadReports() {
       const tableBody = document.getElementById("reportsTableBody");
+      if (!tableBody) return;
 
       try {
         const response = await fetch(`/api/reports?t=${Date.now()}`);
@@ -1263,17 +2013,8 @@
         }
 
         const reports = await response.json();
+        updateReportTabCount("student", reports.length);
 
-        if (
-          lastReportCount !== null &&
-          reports.length > lastReportCount
-        ) {
-          showStudentReportNotice(
-            reports.length - lastReportCount
-          );
-        }
-
-        lastReportCount = reports.length;
         tableBody.innerHTML = "";
 
         if (reports.length === 0) {
@@ -1289,20 +2030,34 @@
 
         reports.forEach(report => {
           const row = document.createElement("tr");
+          row.dataset.reportId = report.id;
 
           row.innerHTML = `
-            <td>${report.room_name}</td>
-            <td>${formatText(report.noise_type)}</td>
-            <td>${buildSeverityBadge(report.severity)}</td>
-            <td>${buildCommentCell(report.comments)}</td>
-            <td>
+            <td data-label="Room">${escapeHtml(report.room_name)}</td>
+            <td data-label="Noise Type">${escapeHtml(formatText(report.noise_type))}</td>
+            <td data-label="Severity">${buildSeverityBadge(report.severity)}</td>
+            <td data-label="Comment"><span class="desktop-comment">${buildCommentCell(report.comments)}</span><span class="mobile-comment"></span></td>
+            <td data-label="Status">
               ${buildReportStatusDropdown(
-                report.id,
-                report.report_status
-              )}
+            report.id,
+            report.report_status,
+            report.resolution_method
+            )}
             </td>
-            <td>${formatTimeOnly(report.submitted_at)}</td>
+            <td data-label="Submitted">${formatTimeOnly(report.submitted_at)}</td>
           `;
+
+          const mobileComment = row.querySelector(".mobile-comment");
+          if (report.comments && report.comments.trim()) {
+            const viewButton = document.createElement("button");
+            viewButton.type = "button";
+            viewButton.className = "view-btn";
+            viewButton.textContent = "View";
+            viewButton.addEventListener("click", () => openComment(report.comments));
+            mobileComment.appendChild(viewButton);
+          } else {
+            mobileComment.textContent = "—";
+          }
 
           tableBody.appendChild(row);
         });
@@ -1322,8 +2077,7 @@
     /*
      * Load the most recent room readings.
      *
-     * Room 311 / room_id 1 is currently the active prototype room.
-     * Other returned rooms remain visible but display as inactive.
+     * Availability is determined by registered devices, capture health and recent acknowledgements.
      */
     async function loadLatestReadings() {
       const roomCards = document.getElementById("roomCards");
@@ -1339,46 +2093,7 @@
 
         const rooms = await response.json();
 
-        roomCards.innerHTML = "";
-
-        rooms.forEach(room => {
-          const isActiveRoom = room.room_id === 1;
-
-          const status = isActiveRoom
-            ? room.status_color || "green"
-            : "inactive";
-
-          const level =
-            isActiveRoom && room.level
-              ? `${room.level} dB`
-              : "—";
-
-          const updated =
-            isActiveRoom && room.recorded_at
-              ? formatTimeOnly(room.recorded_at)
-              : "—";
-
-          const card = document.createElement("div");
-
-          card.className = isActiveRoom
-            ? "card"
-            : "card inactive-card";
-
-          card.innerHTML = `
-            <h3>${room.room_name}</h3>
-            <p>Current Level: ${level}</p>
-            <p>Last Updated: ${updated}</p>
-            <span class="status ${status}">
-              ${
-                isActiveRoom
-                  ? formatText(status)
-                  : "Not Active"
-              }
-            </span>
-          `;
-
-          roomCards.appendChild(card);
-        });
+        window.QuietSpaceRoomCards.render(roomCards, rooms, window.quietspaceUser, window.quietspaceBusyRooms);
       } catch (error) {
         console.error("Error loading readings:", error);
 
@@ -1396,6 +2111,7 @@
     async function loadIncidents() {
       const tableBody =
         document.getElementById("incidentsTableBody");
+      if (!tableBody) return;
 
       try {
         const response = await fetch(
@@ -1407,6 +2123,7 @@
         }
 
         const incidents = await response.json();
+        updateReportTabCount("quietscore", incidents.length);
 
         const toast = document.getElementById("toast");
         const activeToastIncidentId =
@@ -1451,7 +2168,8 @@
            */
           if (
             incident.status === "open" &&
-            incident.escalation_count >= 3
+            (incident.staff_alert_triggered === true ||
+              (incident.staff_alert_triggered == null && incident.escalation_count >= 3))
           ) {
             showToast(
               `${incident.room_name} remains excessively loud.\nImmediate staff attention recommended.`,
@@ -1460,6 +2178,7 @@
           }
 
           const row = document.createElement("tr");
+          row.dataset.reportId = incident.id;
 
           const statusClass =
             incident.status === "resolved"
@@ -1474,17 +2193,19 @@
           );
 
           row.innerHTML = `
-            <td>${incident.room_name}</td>
-            <td>
+            <td data-label="Room">${incident.room_name}</td>
+            <td data-label="Status">
               <span class="status ${statusClass}">
                 ${formatText(incident.status)}
               </span>
             </td>
-            <td>${incident.timer_remaining || "Completed"}</td>
-            <td>${formatTimeOnly(incident.started_at)}</td>
-            <td class="priority ${priorityLabel.className}">
-              ${priorityLabel.text}
-            </td>
+            <td data-label="Timer">${incident.timer_remaining || "Completed"}</td>
+            <td data-label="Opened">${formatTimeOnly(incident.started_at)}</td>
+            <td data-label="Automatic Escalation">
+  <span class="escalation-badge ${priorityLabel.className}">
+    ${priorityLabel.text}
+  </span>
+</td>
           `;
 
           tableBody.appendChild(row);
@@ -1506,29 +2227,20 @@
      * Short comments display directly in the table.
      * Longer comments receive a View button.
      */
-    function buildCommentCell(comment) {
-      if (!comment || comment.trim() === "") {
-        return "—";
-      }
-
-      if (comment.length <= 25) {
-        return comment;
-      }
-
-      const safeComment = comment
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'");
-
-      return `
-        ${comment.substring(0, 25)}...
-        <button
-          class="view-btn"
-          onclick="openComment('${safeComment}')"
-        >
-          View
-        </button>
-      `;
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[char]);
     }
+    function buildCommentCell(comment) {
+      if (!comment || !comment.trim()) return "—";
+      if (comment.length <= 25) return escapeHtml(comment);
+      return `${escapeHtml(comment.substring(0, 25))}... <button class="view-btn" data-comment="${escapeHtml(comment)}">View</button>`;
+    }
+    document.addEventListener("click", event => {
+      const button = event.target.closest("[data-comment]");
+      if (button) openComment(button.dataset.comment);
+    });
 
     /*
      * Convert student-selected severity into a compact badge.
@@ -1587,52 +2299,34 @@
      * priority indicator displayed in the table.
      */
     function getPriorityLabel(escalationCount, status) {
-      if (!escalationCount || escalationCount < 1) {
-        return {
-          text: "—",
-          className: "priority-low"
-        };
-      }
+  if (!escalationCount || escalationCount < 1) {
+    return {
+      text: "—",
+      className: "priority-low"
+    };
+  }
 
-      const marks = "!".repeat(escalationCount);
+  const marks = "!".repeat(escalationCount);
 
-      if (status === "open") {
-        if (escalationCount >= 3) {
-          return {
-            text: "NEEDS ATTENTION",
-            className: "priority-high"
-          };
-        }
+  if (status === "open" && escalationCount >= 3) {
+    return {
+      text: "NEEDS ATTENTION",
+      className: "priority-high"
+    };
+  }
 
-        if (escalationCount >= 2) {
-          return {
-            text: marks,
-            className: "priority-high"
-          };
-        }
+  if (escalationCount >= 2) {
+    return {
+      text: marks,
+      className: "priority-high"
+    };
+  }
 
-        return {
-          text: marks,
-          className: "priority-medium"
-        };
-      }
-
-      /*
-       * Resolved incidents retain their historical
-       * escalation level.
-       */
-      if (escalationCount >= 2) {
-        return {
-          text: marks,
-          className: "priority-high"
-        };
-      }
-
-      return {
-        text: marks,
-        className: "priority-medium"
-      };
-    }
+  return {
+    text: marks,
+    className: "priority-medium"
+  };
+}
 
     function formatText(text) {
       if (!text) {
@@ -1660,8 +2354,10 @@
      * immediately reopen.
      */
     const acknowledgedAlerts = new Set();
+    const reportedAlertDisplays = new Set();
 
     function showToast(message, incidentId) {
+      if (window.quietspacePreferences?.toast_enabled === false || window.quietspacePreferences?.quietscore_visual === false) return;
       if (acknowledgedAlerts.has(incidentId)) {
         return;
       }
@@ -1673,6 +2369,12 @@
       toastMessage.textContent = message;
       toast.dataset.incidentId = incidentId;
       toast.classList.add("show");
+      if (document.visibilityState === "visible" && !reportedAlertDisplays.has(incidentId)) {
+        reportedAlertDisplays.add(incidentId);
+        fetch(`/api/incidents/${incidentId}/alert-displayed`, { method: "POST" }).then(response => {
+          if (!response.ok) reportedAlertDisplays.delete(incidentId);
+        }).catch(() => reportedAlertDisplays.delete(incidentId));
+      }
     }
 
     function closeToast() {
@@ -1719,6 +2421,7 @@
      * Notify staff when the number of student reports increases.
      */
     function showStudentReportNotice(count) {
+      if (window.quietspacePreferences?.toast_enabled === false) return;
       const notice =
         document.getElementById("reportNotice");
 
@@ -1790,41 +2493,47 @@
      * Build the editable staff status control for
      * student-submitted reports.
      */
-    function buildReportStatusDropdown(
-      reportId,
-      status
-    ) {
-      const currentStatus = status || "open";
 
-      return `
-        <select
-          class="status-select status-${currentStatus}"
-          onfocus="isEditingReportStatus = true"
-          onchange="updateReportStatus(${reportId}, this)"
-        >
-          <option
-            value="open"
-            ${currentStatus === "open" ? "selected" : ""}
-          >
-            Open
-          </option>
+function buildReportStatusDropdown(
+  reportId,
+  status,
+  resolutionMethod = null
+) {
+  const currentStatus = status || "open";
+  const isAutoResolved =
+    currentStatus === "resolved" &&
+    resolutionMethod === "automatic";
 
-          <option
-            value="in_review"
-            ${currentStatus === "in_review" ? "selected" : ""}
-          >
-            In Review
-          </option>
+  return `
+    <select
+      class="status-select qs-student-status status-${currentStatus}"
+      onfocus="isEditingReportStatus = true"
+      onchange="updateReportStatus(${reportId}, this)"
+    >
+      <option
+        value="open"
+        ${currentStatus === "open" ? "selected" : ""}
+      >
+        Open
+      </option>
 
-          <option
-            value="resolved"
-            ${currentStatus === "resolved" ? "selected" : ""}
-          >
-            Resolved
-          </option>
-        </select>
-      `;
-    }
+      <option
+        value="in_review"
+        ${currentStatus === "in_review" ? "selected" : ""}
+      >
+        In Review
+      </option>
+
+      <option
+        value="resolved"
+        ${currentStatus === "resolved" ? "selected" : ""}
+      >
+        ${isAutoResolved ? "Auto-Resolved" : "Resolved"}
+      </option>
+    </select>
+  `;
+}
+
 
     /*
      * Save a staff-selected student report status.
@@ -1838,7 +2547,7 @@
       const newStatus = selectElement.value;
 
       selectElement.className =
-        `status-select status-${newStatus}`;
+        `status-select qs-student-status status-${newStatus}`;
 
       try {
         const response = await fetch(
@@ -1858,10 +2567,8 @@
           throw new Error("Status update failed");
         }
 
-        setTimeout(async () => {
-          isEditingReportStatus = false;
-          await loadReports();
-        }, 500);
+        isEditingReportStatus = false;
+        await loadReports();
       } catch (error) {
         console.error(
           "Error updating report status:",
@@ -1870,6 +2577,7 @@
 
         alert("Unable to update report status.");
         isEditingReportStatus = false;
+        await loadReports();
       }
     }
 
@@ -1889,12 +2597,20 @@
         "login.html?logout=1";
     }
 
+    function updateOverviewDate() {
+      window.quietspaceUpdateHeaderClock?.();
+    }
+
+    document.getElementById("logout").addEventListener("click", logout);
+    updateOverviewDate();
+    setInterval(updateOverviewDate, 1000);
+
     /*
      * Initial load and live refresh.
      */
     refreshDashboard();
 
-    setInterval(refreshDashboard, 1000);
+    setInterval(() => { loadLatestReadings(); loadIncidents(); }, 1000);
 
     window.addEventListener(
       "focus",

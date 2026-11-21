@@ -1,12 +1,17 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>QuietSpace - Submit a Noise Report</title>
 
   <style>
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -380,82 +385,18 @@
        Dark Mode
     ----------------------------- */
 
-    /* -------------------- Dark Mode Theme Classes -------------------- */
-    body.dark-theme {
-      background-color: #0f1d3a;
-      color: #ffffff;
-    }
-
-    body.dark-theme .header {
-      background-color: #10275a;
-    }
-
-    body.dark-theme .form-card {
-      background: linear-gradient(
-        to bottom,
-        #243b75 0%,
-        #1d3267 45%,
-        #142650 100%
-      );
-      border: 1px solid rgba(141, 170, 220, 0.35);
-      box-shadow:
-        0 24px 55px rgba(31, 59, 115, 0.28),
-        0 10px 24px rgba(5, 15, 40, 0.22);
-    }
-
-    body.dark-theme .title,
-    body.dark-theme label {
-      color: #ffffff;
-    }
-
-    body.dark-theme .subtitle,
-    body.dark-theme .helper-text {
-      color: #dbe7ff;
-    }
-
-    body.dark-theme input[type="text"],
-    body.dark-theme select,
-    body.dark-theme textarea {
-      background-color: #1b2f61;
-      color: #ffffff;
-      border-color: #5f7fc4;
-    }
-
-    body.dark-theme input::placeholder,
-    body.dark-theme textarea::placeholder {
-      color: #c9d7ff;
-    }
-
-    body.dark-theme input[readonly] {
-      background-color: #243b75;
-      color: #ffffff;
-    }
-
-    body.dark-theme select:focus,
-    body.dark-theme textarea:focus,
-    body.dark-theme input[type="text"]:focus {
-      background-color: #22386f;
-      border-color: #9fc0ff;
-      box-shadow: 0 0 0 3px rgba(159, 192, 255, 0.18);
-    }
-
-    body.dark-theme .error-message {
-      color: #ffd8d8;
-      background-color: #472020;
-      border-color: #8e3a3a;
-    }
-
     @media (prefers-color-scheme: dark) {
-      body:not(.light-theme) {
-        background-color: #0f1d3a;
-        color: #ffffff;
+
+      body {
+        background-color: #c5e6f9;
+        color: #1f2a44;
       }
 
-      body:not(.light-theme) .header {
-        background-color: #10275a;
+      .header {
+        background-color: #dcecf7;
       }
 
-      body:not(.light-theme) .form-card {
+      .form-card {
         background: linear-gradient(
           to bottom,
           #243b75 0%,
@@ -471,37 +412,37 @@
           0 10px 24px rgba(5, 15, 40, 0.22);
       }
 
-      body:not(.light-theme) .title,
-      body:not(.light-theme) label {
+      .title,
+      label {
         color: #ffffff;
       }
 
-      body:not(.light-theme) .subtitle,
-      body:not(.light-theme) .helper-text {
+      .subtitle,
+      .helper-text {
         color: #dbe7ff;
       }
 
-      body:not(.light-theme) input[type="text"],
-      body:not(.light-theme) select,
-      body:not(.light-theme) textarea {
+      input[type="text"],
+      select,
+      textarea {
         background-color: #1b2f61;
         color: #ffffff;
         border-color: #5f7fc4;
       }
 
-      body:not(.light-theme) input::placeholder,
-      body:not(.light-theme) textarea::placeholder {
+      input::placeholder,
+      textarea::placeholder {
         color: #c9d7ff;
       }
 
-      body:not(.light-theme) input[readonly] {
+      input[readonly] {
         background-color: #243b75;
         color: #ffffff;
       }
 
-      body:not(.light-theme) select:focus,
-      body:not(.light-theme) textarea:focus,
-      body:not(.light-theme) input[type="text"]:focus {
+      select:focus,
+      textarea:focus,
+      input[type="text"]:focus {
         background-color: #22386f;
         border-color: #9fc0ff;
 
@@ -509,44 +450,53 @@
           0 0 0 3px rgba(159, 192, 255, 0.18);
       }
 
-      body:not(.light-theme) .error-message {
+      .error-message {
         color: #ffd8d8;
         background-color: #472020;
         border-color: #8e3a3a;
       }
 
-      /* Confirmation remains green in dark mode */
+      /* -----------------------------
+         Confirmation - Dark Mode
+      ----------------------------- */
 
       .form-card.confirmed {
         background: linear-gradient(
           to bottom,
-          #e8f5e9 0%,
-          #dcefe0 50%,
-          #cfe8d5 100%
+          #245c3a 0%,
+          #1d4d32 50%,
+          #163d29 100%
         );
 
-        border-color: #83bc93;
+        border-color: #4f8f67;
 
         box-shadow:
-          0 24px 55px rgba(27, 94, 32, 0.28),
-          0 10px 24px rgba(27, 94, 32, 0.18),
-          0 0 32px rgba(76, 175, 80, 0.18);
+          0 24px 55px rgba(8, 35, 20, 0.35),
+          0 10px 24px rgba(8, 35, 20, 0.25),
+          0 0 32px rgba(47, 143, 78, 0.18);
+      }
+
+      .confirmation-icon {
+        background-color: #3aa35c;
+
+        box-shadow:
+          0 10px 24px rgba(12, 45, 25, 0.35);
       }
 
       .confirmation-title {
-        color: #1b5e20;
+        color: #ffffff;
       }
 
       .confirmation-room {
-        color: #2d6d42;
+        color: #d5f2df;
       }
 
       .confirmation-message {
-        color: #365f43;
+        color: #d1e8d8;
       }
 
       .confirmation-message strong {
-        color: #1f5732;
+        color: #ffffff;
       }
     }
 
@@ -555,6 +505,7 @@
     ----------------------------- */
 
     @media (max-width: 700px) {
+
       .header {
         height: 180px;
       }
@@ -584,6 +535,7 @@
     ----------------------------- */
 
     @media (prefers-reduced-motion: reduce) {
+
       .confirmation,
       .confirmation-icon {
         animation: none !important;
@@ -593,7 +545,9 @@
         scroll-behavior: auto;
       }
     }
+
   </style>
+
 </head>
 
 <body>
@@ -603,12 +557,16 @@
     <!-- QuietSpace Header -->
 
     <header class="header">
+
       <div class="logo-wrap">
+
         <img
           src="../images/logo.png"
           alt="QuietSpace logo"
         />
+
       </div>
+
     </header>
 
     <!-- Report / Confirmation Card -->
@@ -825,6 +783,7 @@
         <p class="confirmation-message">
           Your report has been submitted successfully
           and is now
+
           <strong>
             available for library staff to review.
           </strong>
@@ -842,49 +801,31 @@
   </div>
 
   <script>
-    /*
-     * Global Theme Support (Default: Dark Mode)
-     */
-    function applyGlobalTheme() {
-      const theme = localStorage.getItem("quietspace_theme");
-      if (theme === "light") {
-        document.body.classList.add("light-theme");
-        document.body.classList.remove("dark-theme");
-      } else {
-        document.body.classList.add("dark-theme");
-        document.body.classList.remove("light-theme");
-      }
-    }
-    applyGlobalTheme();
-    window.addEventListener("storage", (e) => {
-      if (e.key === "quietspace_theme") {
-        applyGlobalTheme();
-      }
-    });
 
     /* -----------------------------
        Room Configuration
     ----------------------------- */
 
     const ROOM_IDS = {
-      "311": 1,
-      "312": 2,
-      "313": 3
+      "232": 1,
+      "233": 2,
+      "234": 3
     };
 
     function getRoomFromURL() {
+
       const params =
         new URLSearchParams(window.location.search);
 
       const room =
-        params.get("room");
+        ({"311":"232","312":"233","313":"234"}[params.get("room")] || params.get("room"));
 
       if (ROOM_IDS[room]) {
         return room;
       }
 
       // Used only when testing without a QR code.
-      return "312";
+      return "232";
     }
 
     const room =
@@ -1059,6 +1000,7 @@
         */
 
         const reportData = {
+
           room_id:
             ROOM_IDS[roomValue.value],
 
@@ -1136,4 +1078,5 @@
   </script>
 
 </body>
+
 </html>

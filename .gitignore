@@ -25,3 +25,5 @@ npm-debug.log*
 goals
 .goals
 .goals/
+# Recoverable local source snapshots
+backups/
