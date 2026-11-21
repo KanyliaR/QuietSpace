@@ -443,6 +443,16 @@
     </div>
   </div>
 
+  <dialog id="deviceEnrollmentDialog" aria-labelledby="deviceEnrollmentTitle">
+    <form id="deviceEnrollmentForm">
+      <h2 id="deviceEnrollmentTitle">Connect Room Microphone</h2>
+      <label for="deviceEnrollmentKey">Registered device key</label>
+      <input id="deviceEnrollmentKey" type="password" autocomplete="off" spellcheck="false" autocapitalize="none" required>
+      <p id="deviceEnrollmentStatus" role="status" aria-live="polite">Enter the key issued for this room.</p>
+      <div class="enrollment-actions"><button id="deviceEnrollmentCancel" type="button">Cancel</button><button id="deviceEnrollmentSubmit" type="submit">Enroll Device</button></div>
+    </form>
+  </dialog>
+
   <script src="/webpages/room-device-session.js"></script>
   <script src="/webpages/device-control.js"></script>
   <script src="/webpages/monitoring-events.js"></script>
@@ -521,7 +531,7 @@
     const monitoringEvents = new QuietSpaceMonitoringEvents(async (url, packet) => {
       if (!deviceControl.allowed()) throw Object.assign(Error("Monitoring Disabled"), { status: 409 });
       const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(packet), signal: AbortSignal.timeout(3000) });
+        body: JSON.stringify(packet), timeoutMs: 3000 });
       const result = await response.json();
       if (!response.ok) throw Object.assign(Error(result.message || "Device action failed"), { status: response.status });
       return result;
@@ -852,6 +862,39 @@
       Request browser microphone permission and initialize
       the Web Audio API analyser.
     */
+    const enrollmentDialog=document.getElementById('deviceEnrollmentDialog');
+    const enrollmentForm=document.getElementById('deviceEnrollmentForm');
+    const enrollmentKey=document.getElementById('deviceEnrollmentKey');
+    const enrollmentStatus=document.getElementById('deviceEnrollmentStatus');
+    const enrollmentSubmit=document.getElementById('deviceEnrollmentSubmit');
+    const enrollmentCancel=document.getElementById('deviceEnrollmentCancel');
+    let enrollmentPending=false,enrollmentConfirmed=false;
+    function openDeviceEnrollment(){
+      resumeMicrophone=false;
+      if(enrollmentDialog.open)return;
+      enrollmentConfirmed=false;enrollmentKey.hidden=false;enrollmentKey.disabled=false;
+      enrollmentStatus.textContent='Enter the key issued for this room.';enrollmentSubmit.textContent='Enroll Device';
+      enrollmentDialog.showModal();enrollmentKey.focus();
+    }
+    enrollmentCancel.onclick=()=>{if(!enrollmentPending)enrollmentDialog.close();};
+    enrollmentDialog.addEventListener('cancel',event=>{if(enrollmentPending)event.preventDefault();});
+    enrollmentDialog.addEventListener('close',()=>{enrollmentKey.value='';});
+    enrollmentForm.addEventListener('submit',async event=>{
+      event.preventDefault();if(enrollmentPending)return;
+      if(enrollmentConfirmed){enrollmentDialog.close();await startMonitoring();return;}
+      enrollmentPending=true;enrollmentSubmit.disabled=true;enrollmentCancel.disabled=true;
+      enrollmentStatus.textContent='Confirming enrollment with the server…';
+      try{
+        await deviceSession.enroll(enrollmentKey.value.trim());
+        enrollmentFailure='';startupError='';enrollmentConfirmed=true;
+        enrollmentKey.value='';enrollmentKey.disabled=true;enrollmentKey.hidden=true;
+        enrollmentStatus.textContent='Device enrollment confirmed by the server. Select Start Microphone to begin monitoring.';
+        enrollmentSubmit.textContent='Start Microphone';
+      }catch(error){
+        startupError=error.message;enrollmentFailure=error.message;enrollmentStatus.textContent=error.message;messageText.textContent=error.message;
+      }finally{enrollmentPending=false;enrollmentSubmit.disabled=false;enrollmentCancel.disabled=false;}
+    });
+
     async function startMonitoring() {
       if (presentationPreview) {
         presentationPreview = false; demoStage = "green";
@@ -867,10 +910,8 @@
       resumeMicrophone = true;
       if (!deviceSession.authenticated) {
         initialEnrollmentSetup=true;
-        const key = prompt("Enter this room device's key (issued by register-device.js):") || "";
-        if (!key) return;
-        try { await deviceSession.enroll(key.trim()); enrollmentFailure=""; }
-        catch (error) { startupError=error.message;enrollmentFailure=error.message;messageText.textContent=enrollmentFailure;return; }
+        openDeviceEnrollment();
+        return;
       }
       if (!deviceControl.allowed()) {
         await deviceControl.check();

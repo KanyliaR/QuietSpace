@@ -77,3 +77,14 @@ body.monitoring-disabled .status{font-size:clamp(2.5rem,min(7vw,12vh),6rem);line
 body.monitoring-disabled .thank-you{font-size:clamp(1.45rem,3.4vh,2.4rem);line-height:1.25}
 body.monitoring-disabled .message{font-size:clamp(1rem,2.4vh,1.4rem);line-height:1.5;max-width:660px}
 body.monitoring-disabled .main-panel{gap:clamp(16px,3vh,30px)}
+
+/* Enrollment remains visible until the server confirms the room-bound session. */
+#deviceEnrollmentDialog{width:min(460px,calc(100vw - 40px));box-sizing:border-box;border:1px solid #7185a5;border-radius:20px;padding:24px;background:#14233b;color:#fff;text-align:left}
+#deviceEnrollmentDialog::backdrop{background:rgba(0,0,0,.65)}
+#deviceEnrollmentDialog h2{margin:0 0 18px;font-size:1.4rem}
+#deviceEnrollmentDialog input{display:block;box-sizing:border-box;width:100%;margin-top:8px;padding:12px;font-size:16px;background:#0c1729;color:#fff;border:1px solid #7185a5;border-radius:8px}
+#deviceEnrollmentDialog input[hidden]{display:none}
+#deviceEnrollmentStatus{font-size:1rem;line-height:1.5;overflow-wrap:anywhere}
+#deviceEnrollmentDialog .enrollment-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px}
+#deviceEnrollmentDialog button{padding:10px 16px;border:1px solid #7185a5;border-radius:10px;font-size:1rem;background:#254a80;color:#fff;cursor:pointer}
+#deviceEnrollmentDialog button:disabled{opacity:.6;cursor:wait}
