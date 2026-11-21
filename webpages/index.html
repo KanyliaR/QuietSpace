@@ -453,6 +453,7 @@
     </form>
   </dialog>
 
+  <script src="/webpages/kiosk-health.js"></script>
   <script src="/webpages/room-device-session.js"></script>
   <script src="/webpages/device-control.js"></script>
   <script src="/webpages/monitoring-events.js"></script>
@@ -494,9 +495,12 @@
     let startupError = "";
     let initialEnrollmentSetup = false;
     let enrollmentFailure = "";
+    const kioskHealth=new QuietSpaceKioskHealth();
+    window.quietspaceKioskHealth=kioskHealth;
+    let captureGeneration=0,readingInFlight=false,lastAudioTime=-1,lastAudioProgress=0;
     const deviceFetch = window.fetch.bind(window);
     const deviceSession = new QuietSpaceRoomDeviceSession({
-      roomId: Number(new URLSearchParams(location.search).get("room_id") || 1), fetch: deviceFetch
+      roomId: Number(new URLSearchParams(location.search).get("room_id") || 1), fetch: deviceFetch, onRequest:info=>kioskHealth.request(info)
     });
     // Legacy tab-only keys are no longer retained by the display.
     sessionStorage.removeItem?.("quietspaceDeviceKey");
@@ -530,9 +534,8 @@
     const ROOM_ID = Number(new URLSearchParams(location.search).get("room_id") || 1);
     const monitoringEvents = new QuietSpaceMonitoringEvents(async (url, packet) => {
       if (!deviceControl.allowed()) throw Object.assign(Error("Monitoring Disabled"), { status: 409 });
-      const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+      const {response,data:result} = await deviceSession.json(url, { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(packet), timeoutMs: 3000 });
-      const result = await response.json();
       if (!response.ok) throw Object.assign(Error(result.message || "Device action failed"), { status: response.status });
       return result;
     });
@@ -765,6 +768,8 @@
       Send the latest averaged room reading to the backend.
     */
     async function sendReadingToBackend(level, state) {
+      if(readingInFlight||!isMonitoring||!deviceControl.allowed())return;
+      readingInFlight=true;const generation=captureGeneration;
       const readingData = {
         room_id: ROOM_ID,
         level: level,
@@ -774,25 +779,28 @@
 
       try {
         await recordRoomState(state);
-        const response = await fetch("/api/readings", {
+        if(generation!==captureGeneration||!deviceControl.allowed())return;
+        const {response} = await deviceSession.json("/api/readings", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify(readingData)
+          body: JSON.stringify(readingData),timeoutMs:3000
         });
 
         if (!response.ok) throw Error("Reading acknowledgement failed");
-        if(!isMonitoring||!deviceControl.allowed())return;
+        if(generation!==captureGeneration||!isMonitoring||!deviceControl.allowed())return;
+        kioskHealth.mark('reading');
+        if(Date.now()-kioskHealth.times.sample>1500||Date.now()-kioskHealth.times.evaluation>2500)throw Error('Capture stalled');
         await deviceSession.heartbeat('active');
-        if(!isMonitoring||!deviceControl.allowed())return;
-        monitoringOperational=true;initialEnrollmentSetup=false;document.body.classList.add('room-operational','room-configured');startButton.textContent='Microphone Active';
+        if(generation!==captureGeneration||!isMonitoring||!deviceControl.allowed())return;
+        kioskHealth.mark('heartbeat');
+        if(!monitoringOperational){monitoringOperational=true;renderNoiseState(currentState);}
+        if(Date.now()-kioskHealth.started>=30000)kioskHealth.healthy();
+        initialEnrollmentSetup=false;document.body.classList.add('room-operational','room-configured');startButton.textContent='Microphone Active';
       } catch (error) {
-        startupError="Backend connection interrupted. Monitoring will resume when authorized communication returns.";
-        stopMicrophoneCapture();messageText.textContent=startupError;
-        deviceSession.heartbeat('error').catch(()=>{});
-        deviceControl.deny();
-      }
+        if(generation===captureGeneration)recoverMonitoring('submission_failed');
+      }finally{readingInFlight=false;}
     }
 
 
@@ -917,27 +925,26 @@
         await deviceControl.check();
         if (!deviceControl.allowed()) return;
       }
-      if (isMonitoring || microphoneStarting) {
-        return;
-      }
-
+      if (isMonitoring || microphoneStarting || !kioskHealth.ready()) return;
       microphoneStarting = true;
+      const generation=++captureGeneration;kioskHealth.begin();
+      let microphoneDeadline;
+      let expired=false;
       try {
-        const stream =
-          await navigator.mediaDevices.getUserMedia({
-            audio: true
-          });
-
-        if (!deviceControl.allowed()) {
-          stream.getTracks().forEach(track => { track.onended=null;track.stop(); });
+        const capture=navigator.mediaDevices.getUserMedia({audio:true});
+        capture.then(stream=>{if(expired||generation!==captureGeneration)stream.getTracks().forEach(track=>track.stop());},()=>{});
+        const stream=await Promise.race([capture,new Promise((resolve,reject)=>{
+          microphoneDeadline=setTimeout(()=>{expired=true;reject(Error('Microphone permission timed out'));},5000);
+        })]);
+        clearTimeout(microphoneDeadline);
+        if (generation!==captureGeneration||!deviceControl.allowed()) {
+          stream.getTracks().forEach(track => { track.onended=null;track.onmute=null;track.stop(); });
           return;
         }
         microphoneStream = stream;
         stream.getAudioTracks?.().forEach(track => { track.onended = () => {
-          startupError="Microphone disconnected. Check the USB input and reconnect.";
-          resumeMicrophone=false;stopMicrophoneCapture();renderAvailability('recovery');
-          deviceSession.heartbeat('error').catch(()=>{});
-        }; });
+          recoverMonitoring('track_ended');
+        };track.onmute=()=>recoverMonitoring('track_muted'); });
         audioContext =
           new (
             window.AudioContext ||
@@ -948,6 +955,10 @@
           await Promise.race([audioContext.resume(),new Promise((_,reject)=>setTimeout(()=>reject(Error("Browser requires operator interaction to start audio")),3500))]);
           if (audioContext.state !== "running") throw Error("Browser requires operator interaction to start audio");
         }
+        if(generation!==captureGeneration||!deviceControl.allowed()){stopMicrophoneCapture();return;}
+        audioContext.onstatechange=()=>{
+          if(isMonitoring&&audioContext&&audioContext.state!=='running')recoverMonitoring('audio_suspended');
+        };
         analyser =
           audioContext.createAnalyser();
 
@@ -975,14 +986,12 @@
         startButton.style.cursor = "default";
 
         startupError="";
-        restoreMonitoringDisplay(activeConfig);
+        restoreMonitoringDisplay(activeConfig);renderAvailability('recovering');
         deviceSession.heartbeat('starting').catch(()=>{});
         updateSoundLevel();
       } catch (error) {
-        startupError="Microphone could not start. Check permission, USB input and browser audio policy, then reconnect.";
-        resumeMicrophone=false;stopMicrophoneCapture();renderAvailability('recovery');
-        deviceSession.heartbeat(error.name==='NotAllowedError'?'blocked':'error').catch(()=>{});
-      } finally { microphoneStarting = false; }
+        if(generation===captureGeneration)recoverMonitoring(error.name==='NotAllowedError'?'microphone_blocked':'microphone_start_failed');
+      } finally { clearTimeout(microphoneDeadline);microphoneStarting = false; }
     }
 
 
@@ -994,11 +1003,19 @@
       is used to determine the room's target state.
     */
     function updateSoundLevel() {
+      try{
+      if (!isMonitoring)return;
       if (!deviceControl.allowed()) { deviceControl.deny(); return; }
       if (!analyser) {
         return;
       }
 
+      if(audioContext.state!=='running'){recoverMonitoring('audio_suspended');return;}
+      if(microphoneStream?.getAudioTracks?.().some(track=>track.muted||track.readyState==='ended')){recoverMonitoring('track_interrupted');return;}
+      if(Number.isFinite(audioContext.currentTime)){
+        if(audioContext.currentTime!==lastAudioTime){lastAudioTime=audioContext.currentTime;lastAudioProgress=Date.now();}
+        else if(Date.now()-lastAudioProgress>3000){recoverMonitoring('audio_clock_stalled');return;}
+      }
       analyser.getByteTimeDomainData(
         dataArray
       );
@@ -1028,8 +1045,7 @@
       const instantLevel =
         Math.round(rawLevel);
 
-      const now =
-        Date.now();
+      const now = Date.now();kioskHealth.mark('sample');
 
       levelSamples.push({
         time: now,
@@ -1061,6 +1077,7 @@
           targetState
         );
 
+        kioskHealth.mark('evaluation');
         sendReadingToBackend(
           averageLevel,
           currentState
@@ -1111,7 +1128,8 @@
         }
       }
 
-      microphoneFrame = requestAnimationFrame(updateSoundLevel);
+      if(isMonitoring)microphoneFrame=setTimeout(updateSoundLevel,50);
+      }catch(error){recoverMonitoring('sampling_error');}
     }
 
 
@@ -1228,9 +1246,9 @@
       document.body.classList.remove('red-countdown');
       const messages={
         disabled:['MONITORING DISABLED','We’ll be back soon.','Noise monitoring is temporarily unavailable in this study room.'],
-        offline:['DEVICE OFFLINE','Waiting for the connection to return.',startupError||'Monitoring is unavailable until the device can reconnect.'],
+        offline:['MONITORING UNAVAILABLE','Waiting for the connection to return.',startupError||'Monitoring is unavailable until the device can reconnect.'],
         recovering:['RESTORING MONITORING','Checking the microphone and connection.','Monitoring will resume when capture and backend communication are available.'],
-        recovery:['MICROPHONE RECOVERY REQUIRED','Monitoring is not active.',startupError],
+        recovery:['MONITORING UNAVAILABLE','Monitoring is not active. Retrying safely.',startupError],
         enrollment:['DEVICE ENROLLMENT REQUIRED','Connect this room’s microphone to begin monitoring.',enrollmentFailure]
       };
       const copy=messages[state];statusText.textContent=copy[0];thankYouText.textContent=copy[1];messageText.textContent=copy[2];
@@ -1238,6 +1256,7 @@
       soundLevelText.textContent='Microphone inactive';
     }
     function renderNoiseState(state) {
+      if(!presentationPreview&&!monitoringOperational){renderAvailability('recovering');return;}
       document.getElementById('previewControls').hidden=true;
       document.body.classList.remove('monitoring-disabled','device-unavailable');
       document.body.dataset.noiseState=state;
@@ -1344,12 +1363,14 @@
     }
 
     function stopMicrophoneCapture() {
+      captureGeneration++;monitoringEvents.invalidate();lastAudioTime=-1;lastAudioProgress=0;
       monitoringOperational=false;restoredStateApplied=false;document.body.classList.remove('room-operational');
-      window.cancelAnimationFrame?.(microphoneFrame);
+      clearTimeout(microphoneFrame);
       lastReportedState = null;
-      microphoneStream?.getTracks().forEach(track => { track.onended=null;track.stop(); });
+      microphoneStream?.getTracks().forEach(track => { track.onended=null;track.onmute=null;track.stop(); });
       microphoneStream = null;
       microphone?.disconnect(); microphone = null;
+      if(audioContext)audioContext.onstatechange=null;
       if (audioContext && audioContext.state !== "closed") audioContext.close().catch(() => {});
       audioContext = null; analyser = null; isMonitoring = false;
       if (!presentationPreview) resetCountdown(); levelSamples.length = 0;
@@ -1359,15 +1380,16 @@
     }
     const deviceControl = new QuietSpaceDeviceControl({
       roomId: ROOM_ID,
+      needsResume:()=>resumeMicrophone&&!isMonitoring&&!microphoneStarting&&kioskHealth.ready(),
       getConfig: async () => {
-        let config;try{config=await deviceSession.config();}catch(error){startupError=error.message;throw error;}activeConfig=config;
+        let config;try{config=await deviceSession.config();}catch(error){startupError=error.message;kioskHealth.event(error.status===401?'authorization_required':'config_failed',error.status||0);throw error;}activeConfig=config;kioskHealth.mark('config');
         document.getElementById('roomLabel').textContent='Study '+config.room_name;
         return config;
       },
       stop: stopMicrophoneCapture,
       resume: async () => {
         if(presentationPreview)return;
-        if(resumeMicrophone&&!microphoneStarting)await startMonitoring();
+        if(resumeMicrophone&&!microphoneStarting&&kioskHealth.ready())await startMonitoring();
       },
       onState: (enabled, config) => {
         if (config) controlSettings = { yellow: config.yellowThreshold, red: config.redThreshold };
@@ -1386,6 +1408,32 @@
         }
       }
     });
+    function recoverMonitoring(reason){
+      kioskHealth.failure(reason);
+      startupError='Monitoring interrupted ('+reason+'). Retrying after authorization and microphone checks.';
+      stopMicrophoneCapture();
+      if(!presentationPreview)renderAvailability(deviceControl.disabledConfig?'disabled':'recovery');
+      if(deviceSession.authenticated)deviceSession.heartbeat(reason==='microphone_blocked'?'blocked':'error').catch(()=>{});
+    }
+    kioskHealth.describe=()=>({
+      roomId:ROOM_ID,audioTime:Number.isFinite(audioContext?.currentTime)?audioContext.currentTime:null,visibility:document.visibilityState||'unknown',audioState:audioContext?.state||'closed',
+      tracks:microphoneStream?.getAudioTracks?.().slice(0,4).map(track=>({readyState:track.readyState,muted:!!track.muted,enabled:!!track.enabled}))||[],
+      authenticated:deviceSession.authenticated,authorized:deviceControl.allowed(),administrativelyDisabled:!!deviceControl.disabledConfig,
+      polling:deviceControl.busy,monitoring:isMonitoring,live:monitoringOperational
+    });
+    setInterval(()=>{
+      if(presentationPreview||!isMonitoring)return;
+      const track= microphoneStream?.getAudioTracks?.()[0];
+      const reason=track?.readyState==='ended'?'track_ended':audioContext?.state!=='running'?'audio_suspended':kioskHealth.stale();
+      if(reason)recoverMonitoring(reason);
+    },1000);
+    document.addEventListener('visibilitychange',()=>{
+      kioskHealth.event(document.visibilityState==='visible'?'visible':'hidden');
+      if(document.visibilityState==='visible')deviceControl.check();
+    });
+    window.addEventListener('online',()=>{kioskHealth.event('network_online');deviceControl.check();});
+    window.addEventListener('error',event=>{kioskHealth.fault(event.error,event.lineno,event.colno);if(isMonitoring)recoverMonitoring('application_error');});
+    window.addEventListener('unhandledrejection',event=>{kioskHealth.fault(event.reason);kioskHealth.event('unhandled_rejection');if(isMonitoring)recoverMonitoring('application_error');});
     document.getElementById('roomLabel').textContent='Study '+({1:'Room 232',2:'Room 233',3:'Room 234'}[ROOM_ID]||'Room '+ROOM_ID);
     if(new URLSearchParams(location.search).get('maintenance')==='1'){
       fetch('/api/auth/me').then(r=>r.ok?r.json():null).then(user=>{if(user?.role==='admin'){

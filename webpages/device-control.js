@@ -4,8 +4,8 @@
   else root.QuietSpaceDeviceControl = factory();
 })(typeof window === 'object' ? window : globalThis, function () {
   return class DeviceControl {
-    constructor({ roomId, getConfig, stop, resume, onState, now = Date.now }) {
-      Object.assign(this, { roomId, getConfig, stop, resume, onState, now });
+    constructor({ roomId, getConfig, stop, resume, onState, needsResume = () => false, now = Date.now }) {
+      Object.assign(this, { roomId, getConfig, stop, resume, onState, needsResume, now });
       this.enabled = false; this.confirmedAt = 0; this.busy = false; this.disabledConfig = null;
     }
     allowed() { return this.enabled && this.now() - this.confirmedAt < 5000; }
@@ -17,9 +17,13 @@
     async check() {
       if (this.busy) return this.allowed();
       this.busy = true;
+      let resume=false;
       try {
         const config = await this.getConfig();
         if (Number(config.room_id) !== this.roomId) {
+          this.disabledConfig=null;this.deny(null);return false;
+        }
+        if (![true,1,false,0].includes(config.monitoring_enabled)) {
           this.disabledConfig=null;this.deny(null);return false;
         }
         if (![true, 1].includes(config.monitoring_enabled)) {
@@ -28,11 +32,13 @@
         this.disabledConfig=null;
         const wasEnabled = this.enabled;
         this.enabled = true; this.confirmedAt = this.now(); this.onState(true, config);
-        if (!wasEnabled) await this.resume();
-        return true;
+        resume=!wasEnabled || this.needsResume();
       } catch {
         this.disabledConfig=null;this.deny(null);return false;
       } finally { this.busy = false; }
+      // Permission/audio startup must not block continued kill-switch polling.
+      if(resume){try{await this.resume();}catch{this.deny(null);return false;}}
+      return this.allowed();
     }
   };
 });

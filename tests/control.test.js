@@ -66,13 +66,13 @@ test('actual room display script stops microphone tracks and AudioContext, then 
   };
   const callbacks = [];
   const context = {
-    console, URL, URLSearchParams, Headers, AbortSignal, Uint8Array, crypto: globalThis.crypto, QuietSpaceRoomDeviceSession: require('../webpages/room-device-session'), QuietSpaceDeviceControl: Control, QuietSpaceMonitoringEvents: require('../webpages/monitoring-events'),
+    console, URL, URLSearchParams, Headers, AbortSignal, QuietSpaceKioskHealth: require('../webpages/kiosk-health'), Uint8Array, crypto: globalThis.crypto, QuietSpaceRoomDeviceSession: require('../webpages/room-device-session'), QuietSpaceDeviceControl: Control, QuietSpaceMonitoringEvents: require('../webpages/monitoring-events'),
     location: { href: 'http://localhost:3000/?room_id=1', origin: 'http://localhost:3000', search: '?room_id=1' },
     sessionStorage: { getItem: () => 'a'.repeat(64), setItem() {} },
     localStorage: { getItem: () => null },
-    document: { body: { style: {}, dataset:{}, classList:{add(){},remove(){},toggle(){}} }, getElementById: element, querySelector: element },
+    document: { addEventListener() {}, body: { style: {}, dataset:{}, classList:{add(){},remove(){},toggle(){}} }, getElementById: element, querySelector: element },
     navigator: { mediaDevices: { getUserMedia: async () => { captures++; return { getTracks: () => [{ stop() { stops++; } }] }; } } },
-    setTimeout,
+    setTimeout,clearTimeout,
     setInterval: callback => { callbacks.push(callback); return callbacks.length; }, clearInterval() {},
     requestAnimationFrame() {}, alert: message => { throw Error(message); }, prompt: () => '',
     fetch: async (url, options = {}) => {

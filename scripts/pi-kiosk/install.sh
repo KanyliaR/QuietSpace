@@ -18,6 +18,7 @@ trap 'rm -rf -- "$kiosk_temporary"' EXIT
 python3 "$kiosk_source/configure.py" --url "$kiosk_url" --browser "$kiosk_browser" --output "$kiosk_temporary/kiosk.json" --policy "$kiosk_temporary/microphone.json"
 install -m 600 "$kiosk_temporary/kiosk.json" "$kiosk_root/kiosk.json"
 install -m 700 "$kiosk_source/launch.sh" "$kiosk_root/launch.sh"
+install -m 600 "$kiosk_source/health.py" "$kiosk_root/health.py"
 kiosk_policy_dir="${QUIETSPACE_POLICY_DIR:-/etc/chromium/policies/managed}"
 if [[ "$kiosk_browser" == chromium-browser && -z "${QUIETSPACE_POLICY_DIR:-}" ]]; then kiosk_policy_dir=/etc/chromium-browser/policies/managed; fi
 sudo install -d -m 755 "$kiosk_policy_dir"
