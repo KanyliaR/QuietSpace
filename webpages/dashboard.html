@@ -1745,6 +1745,359 @@ body.dark-theme .escalation-badge.priority-high {
       .overview-date { width: 100%; margin-left: 0; }
     }
 
+    /* -------------------- Analytics Section & Charts -------------------- */
+
+    .analytics-section {
+      margin-bottom: 30px;
+    }
+
+    .analytics-header {
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .analytics-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .control-group select,
+    .control-group input[type="date"] {
+      padding: 6px 10px;
+      border: 1px solid #d7e4f2;
+      border-radius: 8px;
+      background: white;
+      color: #1e293b;
+      font-size: 0.85rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .control-group select:focus,
+    .control-group input[type="date"]:focus {
+      border-color: #2563eb;
+    }
+
+    .button-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      border: 1px solid #d7e4f2;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #1f3b73;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+    }
+
+    .action-btn.export-btn {
+      background: #1f3b73;
+      color: white;
+      border-color: #1f3b73;
+    }
+
+    .action-btn.export-btn:hover {
+      background: #162b55;
+    }
+
+    .action-btn.export-btn.secondary {
+      background: #f1f5f9;
+      color: #1f3b73;
+      border-color: #cbd5e1;
+    }
+
+    .action-btn.export-btn.secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .analytics-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .kpi-card {
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      transition: transform 0.15s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .kpi-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .kpi-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #1f3b73;
+      line-height: 1.2;
+    }
+
+    .kpi-sub {
+      font-size: 0.78rem;
+      color: #8896ab;
+      margin-top: 4px;
+    }
+
+    .chart-container {
+      position: relative;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .legend-dot.green { background: #10b981; }
+
+    .legend-line {
+      width: 14px;
+      height: 2px;
+      border-radius: 1px;
+    }
+
+    .legend-line.yellow {
+      background: #f59e0b;
+    }
+
+    .legend-line.red {
+      background: #ef4444;
+    }
+
+    .legend-bar {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: rgba(239, 68, 68, 0.4);
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      height: 320px;
+    }
+
+    #hourlyTrendsCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .chart-tooltip {
+      position: absolute;
+      z-index: 10;
+      pointer-events: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+      background: white;
+      border: 1px solid #d7e4f2;
+      color: #1e293b;
+      min-width: 160px;
+      transform: translate(-50%, -110%);
+      transition: opacity 0.1s ease;
+    }
+
+    .chart-tooltip-title {
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: #0f172a;
+    }
+
+    .chart-tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 3px;
+    }
+
+    .chart-tooltip-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .chart-tooltip-badge.green {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .chart-tooltip-badge.yellow {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .chart-tooltip-badge.red {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    body.dark-theme .control-group {
+      color: #cbd5e1;
+    }
+
+    body.dark-theme .control-group select,
+    body.dark-theme .control-group input[type="date"] {
+      background: #162b58;
+      border-color: rgba(141, 170, 220, 0.35);
+      color: #f8fafc;
+    }
+
+    body.dark-theme .action-btn {
+      background: #182e5e;
+      border-color: rgba(141, 170, 220, 0.35);
+      color: #f8fafc;
+    }
+
+    body.dark-theme .action-btn:hover {
+      background: #243e7a;
+    }
+
+    body.dark-theme .action-btn.export-btn {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: white;
+    }
+
+    body.dark-theme .action-btn.export-btn:hover {
+      background: #2563eb;
+    }
+
+    body.dark-theme .action-btn.export-btn.secondary {
+      background: #182e5e;
+      border-color: rgba(141, 170, 220, 0.35);
+      color: #cbd5e1;
+    }
+
+    body.dark-theme .kpi-card {
+      background: #14244b;
+      border-color: rgba(141, 170, 220, 0.25);
+    }
+
+    body.dark-theme .kpi-label {
+      color: #94a3b8;
+    }
+
+    body.dark-theme .kpi-value {
+      color: #ffffff;
+    }
+
+    body.dark-theme .kpi-sub {
+      color: #cbd5e1;
+    }
+
+    body.dark-theme .chart-container {
+      background: #102146;
+      border-color: rgba(141, 170, 220, 0.3);
+    }
+
+    body.dark-theme .chart-legend {
+      color: #94a3b8;
+    }
+
+    body.dark-theme .chart-tooltip {
+      background: #0f1d3a;
+      border-color: rgba(141, 170, 220, 0.4);
+      color: #f8fafc;
+    }
+
+    body.dark-theme .chart-tooltip-title {
+      color: #ffffff;
+    }
+
+    @media (max-width: 900px) {
+      .analytics-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .analytics-kpi-grid {
+        grid-template-columns: 1fr;
+      }
+      .analytics-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .control-group {
+        justify-content: space-between;
+      }
+      .button-group {
+        width: 100%;
+        flex-wrap: wrap;
+      }
+      .action-btn {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
   </style>
 </head>
 
@@ -1825,6 +2178,89 @@ body.dark-theme .escalation-badge.priority-high {
       <p class="security-empty">No security assistance requests yet. This section will become active when ambassador accounts and escalation features are implemented.</p>
     </section>
 
+    <!-- ---------------------------------------------------- -->
+    <!-- Analytics: Hourly Noise Trends & Decibel Curve       -->
+    <!-- ---------------------------------------------------- -->
+    <section class="section analytics-section" id="analyticsSection">
+      <div class="section-header analytics-header">
+        <div>
+          <h3>Hourly Noise Trends & Decibel Curves</h3>
+          <p class="section-subtitle">
+            24-hour sound pressure level monitoring, threshold crossings, and incident spike correlations.
+          </p>
+        </div>
+
+        <div class="analytics-controls">
+          <div class="control-group">
+            <label for="chartRoomFilter">Room:</label>
+            <select id="chartRoomFilter" onchange="loadHourlyTrends()">
+              <option value="">All Monitored Rooms</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="chartDateFilter">Date:</label>
+            <input type="date" id="chartDateFilter" onchange="loadHourlyTrends()" />
+          </div>
+
+          <div class="button-group">
+            <button class="action-btn" type="button" onclick="setChartToday()">Today</button>
+            <button class="action-btn" type="button" onclick="loadHourlyTrends()">Refresh</button>
+            <button class="action-btn export-btn" type="button" onclick="exportTrendsCsv()" title="Download hourly trends as CSV">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Export CSV
+            </button>
+            <button class="action-btn export-btn secondary" type="button" onclick="exportIncidentsCsv()" title="Download monthly incident report as CSV">
+              Incidents CSV
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards for Trends -->
+      <div class="analytics-kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Peak Noise Hour</div>
+          <div class="kpi-value" id="kpiPeakHour">—</div>
+          <div class="kpi-sub" id="kpiPeakDb">Max: — dB</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Quietest Hour</div>
+          <div class="kpi-value" id="kpiQuietHour">—</div>
+          <div class="kpi-sub" id="kpiQuietDb">Min: — dB</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">24h Average Noise</div>
+          <div class="kpi-value" id="kpiAvgNoise">— dB</div>
+          <div class="kpi-sub" id="kpiTotalReadings">0 readings recorded</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Incident Spikes</div>
+          <div class="kpi-value" id="kpiTotalIncidents">0</div>
+          <div class="kpi-sub" id="kpiIncidentRate">Red threshold events</div>
+        </div>
+      </div>
+
+      <!-- Chart Container & Interactive Canvas -->
+      <div class="chart-container">
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-dot green"></span> Safe (&lt; 60 dB)</span>
+          <span class="legend-item"><span class="legend-line yellow"></span> 60 dB Warning Threshold</span>
+          <span class="legend-item"><span class="legend-line red"></span> 75 dB Critical Threshold</span>
+          <span class="legend-item"><span class="legend-bar"></span> Incident Spikes</span>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="hourlyTrendsCanvas" height="320"></canvas>
+          <div id="chartTooltip" class="chart-tooltip" style="display: none;"></div>
+        </div>
+      </div>
+    </section>
+
     <div class="qs-overview-tabs" id="dailyOverviewReportTabs" role="tablist" aria-label="Overview reports">
       <button id="quietscoreReportTab" role="tab" type="button" aria-selected="true" aria-controls="quietscoreReportsSection" data-report-tab="quietscore"> <span class="qs-tab-summary"><span>QuietScore Reports</span> <span class="qs-report-count" data-report-total="quietscore" aria-label="Report count loading">—</span></span><span class="qs-unread" hidden></span></button>
       <button id="studentReportTab" role="tab" type="button" tabindex="-1" aria-selected="false" aria-controls="studentReportsSection" data-report-tab="student"> <span class="qs-tab-summary"><span>Student Reports</span> <span class="qs-report-count" data-report-total="student" aria-label="Report count loading">—</span></span><span class="qs-unread" hidden></span></button>
@@ -1837,6 +2273,14 @@ body.dark-theme .escalation-badge.priority-high {
             System-generated reports created when a room reaches red status.
           </p>
         </div>
+        <button class="action-btn export-btn" type="button" onclick="exportIncidentsCsv()" title="Download incident history as CSV">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
       </div>
 
       <div class="table-scroll incidents-scroll">
@@ -1864,7 +2308,20 @@ body.dark-theme .escalation-badge.priority-high {
 
     <section class="section" id="studentReportsSection" role="tabpanel" aria-labelledby="studentReportTab" hidden>
       <div class="section-header">
-        <h3>Student Reports</h3>
+        <div>
+          <h3>Student Reports</h3>
+          <p class="section-subtitle">
+            Crowdsourced noise reports submitted by students via QR code.
+          </p>
+        </div>
+        <button class="action-btn export-btn" type="button" onclick="exportStudentReportsCsv()" title="Download student noise reports as CSV">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
       </div>
 
       <div class="table-scroll reports-scroll">
@@ -1960,6 +2417,9 @@ body.dark-theme .escalation-badge.priority-high {
       const light = theme === 'light' || (window.quietspaceUser?.role === 'library_monitor' && theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
       document.body.classList.toggle('light-theme', light);
       document.body.classList.toggle('dark-theme', !light);
+      if (typeof renderHourlyTrendsChart === "function" && typeof cachedHourlyTrends !== "undefined" && cachedHourlyTrends.length > 0) {
+        renderHourlyTrendsChart(cachedHourlyTrends);
+      }
     }
     if (window.quietspaceUser?.role === 'library_monitor') window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
       if (localStorage.getItem(overviewThemeKey) === 'system') applyGlobalTheme();
@@ -2094,6 +2554,7 @@ body.dark-theme .escalation-badge.priority-high {
         const rooms = await response.json();
 
         window.QuietSpaceRoomCards.render(roomCards, rooms, window.quietspaceUser, window.quietspaceBusyRooms);
+        populateRoomFilter(rooms);
       } catch (error) {
         console.error("Error loading readings:", error);
 
@@ -2415,6 +2876,7 @@ body.dark-theme .escalation-badge.priority-high {
 
       loadLatestReadings();
       loadIncidents();
+      loadHourlyTrends();
     }
 
     /*
@@ -2605,12 +3067,526 @@ function buildReportStatusDropdown(
     updateOverviewDate();
     setInterval(updateOverviewDate, 1000);
 
+    // ----------------------------------------------------
+    // Analytics: 24-Hour Decibel Trend Visualization & CSV Export
+    // ----------------------------------------------------
+    let cachedHourlyTrends = [];
+    let chartHoverIndex = -1;
+    let chartInteractionInitialized = false;
+
+    function jumpToAnalytics() {
+      const section = document.getElementById("analyticsSection");
+      if (section) {
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+    }
+
+    function populateRoomFilter(rooms) {
+      const select = document.getElementById("chartRoomFilter");
+      if (!select || !Array.isArray(rooms)) return;
+
+      const currentValue = select.value;
+      const options = ['<option value="">All Monitored Rooms</option>'];
+
+      rooms.forEach((r) => {
+        const id = r.id || r.room_id;
+        const name = r.room_name || `Room ${id}`;
+        const selected = String(currentValue) === String(id) ? " selected" : "";
+        options.push(`<option value="${id}"${selected}>${escapeHtml(name)}</option>`);
+      });
+
+      select.innerHTML = options.join("");
+    }
+
+    function setChartToday() {
+      const dateInput = document.getElementById("chartDateFilter");
+      if (dateInput) {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        dateInput.value = `${y}-${m}-${d}`;
+      }
+      loadHourlyTrends();
+    }
+
+    async function loadHourlyTrends() {
+      const roomSelect = document.getElementById("chartRoomFilter");
+      const dateInput = document.getElementById("chartDateFilter");
+
+      const roomId = roomSelect ? roomSelect.value : "";
+      const date = dateInput ? dateInput.value : "";
+
+      try {
+        let trends = [];
+        if (window.QuietSpaceStore && window.QuietSpaceStore.getHourlyAnalyticsTrends) {
+          const res = await QuietSpaceStore.getHourlyAnalyticsTrends(roomId, date);
+          trends = res.trends || [];
+        } else {
+          let url = `/api/analytics/hourly-trends?t=${Date.now()}`;
+          if (roomId) url += `&room_id=${encodeURIComponent(roomId)}`;
+          if (date) url += `&date=${encodeURIComponent(date)}`;
+
+          const response = await fetch(url);
+          if (response.ok) {
+            trends = await response.json();
+          } else {
+            throw new Error("Unable to fetch analytics trends");
+          }
+        }
+
+        cachedHourlyTrends = trends;
+        updateAnalyticsKpis(trends);
+        renderHourlyTrendsChart(trends);
+        initChartInteraction();
+      } catch (err) {
+        console.error("Error loading hourly trends:", err);
+      }
+    }
+
+    function updateAnalyticsKpis(trends) {
+      if (!Array.isArray(trends) || trends.length === 0) return;
+
+      let maxDb = -1;
+      let peakHour = null;
+      let minDb = 999;
+      let quietHour = null;
+      let totalDbSum = 0;
+      let activeHours = 0;
+      let totalReadings = 0;
+      let totalIncidents = 0;
+
+      trends.forEach((t) => {
+        const avg = Number(t.avg_noise_level || t.avg_level || 0);
+        const readings = Number(t.reading_count || 0);
+        const spikes = Number(t.incident_spikes || t.incident_count || 0);
+
+        totalReadings += readings;
+        totalIncidents += spikes;
+
+        if (avg > 0 || readings > 0) {
+          totalDbSum += avg;
+          activeHours++;
+
+          if (avg > maxDb) {
+            maxDb = avg;
+            peakHour = t;
+          }
+          if (avg < minDb && avg > 0) {
+            minDb = avg;
+            quietHour = t;
+          }
+        }
+      });
+
+      const kpiPeakHour = document.getElementById("kpiPeakHour");
+      const kpiPeakDb = document.getElementById("kpiPeakDb");
+      const kpiQuietHour = document.getElementById("kpiQuietHour");
+      const kpiQuietDb = document.getElementById("kpiQuietDb");
+      const kpiAvgNoise = document.getElementById("kpiAvgNoise");
+      const kpiTotalReadings = document.getElementById("kpiTotalReadings");
+      const kpiTotalIncidents = document.getElementById("kpiTotalIncidents");
+      const kpiIncidentRate = document.getElementById("kpiIncidentRate");
+
+      if (kpiPeakHour) {
+        kpiPeakHour.textContent = peakHour ? peakHour.hour_label : "—";
+      }
+      if (kpiPeakDb) {
+        kpiPeakDb.textContent = peakHour ? `Peak Avg: ${maxDb.toFixed(1)} dB` : "No peak recorded";
+      }
+      if (kpiQuietHour) {
+        kpiQuietHour.textContent = quietHour ? quietHour.hour_label : "—";
+      }
+      if (kpiQuietDb) {
+        kpiQuietDb.textContent = quietHour ? `Min Avg: ${minDb.toFixed(1)} dB` : "Baseline quiet";
+      }
+      if (kpiAvgNoise) {
+        const overallAvg = activeHours > 0 ? (totalDbSum / activeHours).toFixed(1) : "0.0";
+        kpiAvgNoise.textContent = `${overallAvg} dB`;
+      }
+      if (kpiTotalReadings) {
+        kpiTotalReadings.textContent = `${totalReadings} readings recorded`;
+      }
+      if (kpiTotalIncidents) {
+        kpiTotalIncidents.textContent = totalIncidents;
+      }
+      if (kpiIncidentRate) {
+        kpiIncidentRate.textContent = totalIncidents === 1 ? "1 red escalation" : `${totalIncidents} red escalations`;
+      }
+    }
+
+    function renderHourlyTrendsChart(trends) {
+      const canvas = document.getElementById("hourlyTrendsCanvas");
+      if (!canvas) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const displayWidth = rect.width > 0 ? rect.width : (canvas.parentElement ? canvas.parentElement.clientWidth : 800);
+      const displayHeight = 320;
+
+      canvas.width = Math.round(displayWidth * dpr);
+      canvas.height = Math.round(displayHeight * dpr);
+
+      const ctx = canvas.getContext("2d");
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+
+      const isDark = document.body.classList.contains("dark-theme");
+
+      const width = displayWidth;
+      const height = displayHeight;
+
+      const padLeft = 46;
+      const padRight = 20;
+      const padTop = 26;
+      const padBottom = 38;
+
+      const chartW = width - padLeft - padRight;
+      const chartH = height - padTop - padBottom;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const minVal = 0;
+      const maxVal = 100;
+
+      function getY(dbVal) {
+        const clamped = Math.max(minVal, Math.min(maxVal, dbVal));
+        return padTop + chartH - ((clamped - minVal) / (maxVal - minVal)) * chartH;
+      }
+
+      function getX(hour) {
+        return padLeft + (hour / 23) * chartW;
+      }
+
+      const yTicks = [0, 20, 40, 60, 75, 100];
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.font = "11px Inter, system-ui, sans-serif";
+
+      yTicks.forEach((tick) => {
+        const y = getY(tick);
+
+        ctx.beginPath();
+        ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([]);
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(width - padRight, y);
+        ctx.stroke();
+
+        ctx.fillStyle = isDark ? "rgba(219, 231, 255, 0.65)" : "#64748b";
+        ctx.fillText(`${tick} dB`, padLeft - 8, y);
+      });
+
+      const y60 = getY(60);
+      ctx.beginPath();
+      ctx.strokeStyle = isDark ? "#fbbf24" : "#d97706";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(padLeft, y60);
+      ctx.lineTo(width - padRight, y60);
+      ctx.stroke();
+
+      const y75 = getY(75);
+      ctx.beginPath();
+      ctx.strokeStyle = isDark ? "#f87171" : "#dc2626";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(padLeft, y75);
+      ctx.lineTo(width - padRight, y75);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+
+      const barWidth = Math.max(6, (chartW / 24) * 0.55);
+      if (Array.isArray(trends)) {
+        trends.forEach((t) => {
+          const spikes = Number(t.incident_spikes || t.incident_count || 0);
+          if (spikes > 0) {
+            const cx = getX(t.hour);
+            const barH = Math.min(chartH, spikes * 24);
+            const topY = padTop + chartH - barH;
+
+            ctx.fillStyle = isDark ? "rgba(248, 113, 113, 0.35)" : "rgba(220, 38, 38, 0.22)";
+            ctx.beginPath();
+            if (typeof ctx.roundRect === "function") {
+              ctx.roundRect(cx - barWidth / 2, topY, barWidth, barH, [3, 3, 0, 0]);
+            } else {
+              ctx.rect(cx - barWidth / 2, topY, barWidth, barH);
+            }
+            ctx.fill();
+
+            ctx.fillStyle = isDark ? "#fca5a5" : "#b91c1c";
+            ctx.font = "bold 10px Inter, system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(`! ${spikes}`, cx, topY - 2);
+          }
+        });
+      }
+
+      if (Array.isArray(trends) && trends.length > 0) {
+        const points = trends.map((t) => ({
+          x: getX(t.hour),
+          y: getY(Number(t.avg_noise_level || t.avg_level || 0)),
+          hour: t.hour,
+          val: Number(t.avg_noise_level || t.avg_level || 0)
+        }));
+
+        const gradient = ctx.createLinearGradient(0, padTop, 0, padTop + chartH);
+        if (isDark) {
+          gradient.addColorStop(0, "rgba(96, 165, 250, 0.40)");
+          gradient.addColorStop(0.5, "rgba(96, 165, 250, 0.15)");
+          gradient.addColorStop(1, "rgba(96, 165, 250, 0.0)");
+        } else {
+          gradient.addColorStop(0, "rgba(37, 99, 235, 0.30)");
+          gradient.addColorStop(0.5, "rgba(37, 99, 235, 0.10)");
+          gradient.addColorStop(1, "rgba(37, 99, 235, 0.0)");
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, padTop + chartH);
+        ctx.lineTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          const prev = points[i - 1];
+          const curr = points[i];
+          const midX = (prev.x + curr.x) / 2;
+          ctx.bezierCurveTo(midX, prev.y, midX, curr.y, curr.x, curr.y);
+        }
+        ctx.lineTo(points[points.length - 1].x, padTop + chartH);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          const prev = points[i - 1];
+          const curr = points[i];
+          const midX = (prev.x + curr.x) / 2;
+          ctx.bezierCurveTo(midX, prev.y, midX, curr.y, curr.x, curr.y);
+        }
+        ctx.strokeStyle = isDark ? "#60a5fa" : "#2563eb";
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.stroke();
+
+        points.forEach((pt, idx) => {
+          const isHovered = idx === chartHoverIndex;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, isHovered ? 6 : 3.5, 0, Math.PI * 2);
+
+          let ptColor = "#10b981";
+          if (pt.val >= 75) ptColor = "#ef4444";
+          else if (pt.val >= 60) ptColor = "#f59e0b";
+
+          ctx.fillStyle = ptColor;
+          ctx.fill();
+          ctx.lineWidth = isHovered ? 2.5 : 1.5;
+          ctx.strokeStyle = isDark ? "#0f172a" : "#ffffff";
+          ctx.stroke();
+
+          if (isHovered) {
+            ctx.beginPath();
+            ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(30, 41, 59, 0.35)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.moveTo(pt.x, padTop);
+            ctx.lineTo(pt.x, padTop + chartH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        });
+      }
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillStyle = isDark ? "rgba(219, 231, 255, 0.75)" : "#64748b";
+      ctx.font = "11px Inter, system-ui, sans-serif";
+
+      const xTickHours = [0, 3, 6, 9, 12, 15, 18, 21, 23];
+      xTickHours.forEach((h) => {
+        const x = getX(h);
+        const label = h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`;
+        ctx.fillText(label, x, padTop + chartH + 8);
+      });
+    }
+
+    function initChartInteraction() {
+      if (chartInteractionInitialized) return;
+      const canvas = document.getElementById("hourlyTrendsCanvas");
+      const tooltip = document.getElementById("chartTooltip");
+      if (!canvas || !tooltip) return;
+
+      chartInteractionInitialized = true;
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (!Array.isArray(cachedHourlyTrends) || cachedHourlyTrends.length === 0) {
+          tooltip.style.display = "none";
+          return;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const padLeft = 46;
+        const padRight = 20;
+        const chartW = rect.width - padLeft - padRight;
+
+        let hourIndex = Math.round(((mouseX - padLeft) / chartW) * 23);
+        hourIndex = Math.max(0, Math.min(23, hourIndex));
+
+        chartHoverIndex = hourIndex;
+        renderHourlyTrendsChart(cachedHourlyTrends);
+
+        const data = cachedHourlyTrends[hourIndex] || {
+          hour: hourIndex,
+          hour_label: `${hourIndex}:00`,
+          avg_noise_level: 0,
+          reading_count: 0,
+          incident_spikes: 0
+        };
+
+        const avg = Number(data.avg_noise_level || data.avg_level || 0);
+        const maxVal = Number(data.max_noise_level || avg);
+        const count = Number(data.reading_count || 0);
+        const spikes = Number(data.incident_spikes || data.incident_count || 0);
+
+        let badgeClass = "green";
+        let badgeText = "Normal";
+        if (avg >= 75) {
+          badgeClass = "red";
+          badgeText = "Critical";
+        } else if (avg >= 60) {
+          badgeClass = "yellow";
+          badgeText = "Warning";
+        }
+
+        tooltip.innerHTML = `
+          <div class="chart-tooltip-title">${escapeHtml(data.hour_label)}</div>
+          <div class="chart-tooltip-row">
+            <span>Average Noise:</span>
+            <span><strong>${avg.toFixed(1)} dB</strong> <span class="chart-tooltip-badge ${badgeClass}">${badgeText}</span></span>
+          </div>
+          <div class="chart-tooltip-row">
+            <span>Peak Level:</span>
+            <span>${maxVal.toFixed(1)} dB</span>
+          </div>
+          <div class="chart-tooltip-row">
+            <span>Incident Spikes:</span>
+            <span>${spikes > 0 ? `<strong>${spikes} red events</strong>` : "None"}</span>
+          </div>
+          <div class="chart-tooltip-row">
+            <span>Samples:</span>
+            <span>${count} readings</span>
+          </div>
+        `;
+
+        tooltip.style.display = "block";
+        tooltip.style.left = `${mouseX}px`;
+        tooltip.style.top = `${mouseY}px`;
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        chartHoverIndex = -1;
+        renderHourlyTrendsChart(cachedHourlyTrends);
+        tooltip.style.display = "none";
+      });
+
+      window.addEventListener("resize", () => {
+        renderHourlyTrendsChart(cachedHourlyTrends);
+      });
+    }
+
+    async function triggerCsvDownload(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error("CSV download request failed");
+        }
+        const blob = await res.blob();
+        const disposition = res.headers.get("content-disposition");
+        let filename = "quietspace-export.csv";
+        if (disposition && disposition.includes("filename=")) {
+          const match = disposition.match(/filename=["']?([^"']+)["']?/);
+          if (match && match[1]) filename = match[1];
+        }
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      } catch (err) {
+        window.location.href = url;
+      }
+    }
+
+    async function exportTrendsCsv() {
+      const roomSelect = document.getElementById("chartRoomFilter");
+      const dateInput = document.getElementById("chartDateFilter");
+      const roomId = roomSelect ? roomSelect.value : "";
+      const date = dateInput ? dateInput.value : "";
+
+      if (window.QuietSpaceStore && window.QuietSpaceStore.exportCsv) {
+        await QuietSpaceStore.exportCsv("hourly", { roomId, date });
+      } else {
+        let url = `/api/reports/export/csv?type=hourly`;
+        if (roomId) url += `&room_id=${encodeURIComponent(roomId)}`;
+        if (date) url += `&date=${encodeURIComponent(date)}`;
+        await triggerCsvDownload(url);
+      }
+    }
+
+    async function exportIncidentsCsv() {
+      const roomSelect = document.getElementById("chartRoomFilter");
+      const dateInput = document.getElementById("chartDateFilter");
+      const roomId = roomSelect ? roomSelect.value : "";
+      const date = dateInput ? dateInput.value : "";
+      const month = date ? date.slice(0, 7) : "";
+
+      if (window.QuietSpaceStore && window.QuietSpaceStore.exportCsv) {
+        await QuietSpaceStore.exportCsv("incidents", { roomId, month });
+      } else {
+        let url = `/api/reports/export/csv?type=incidents`;
+        if (roomId) url += `&room_id=${encodeURIComponent(roomId)}`;
+        if (month) url += `&month=${encodeURIComponent(month)}`;
+        await triggerCsvDownload(url);
+      }
+    }
+
+    async function exportStudentReportsCsv() {
+      const roomSelect = document.getElementById("chartRoomFilter");
+      const dateInput = document.getElementById("chartDateFilter");
+      const roomId = roomSelect ? roomSelect.value : "";
+      const date = dateInput ? dateInput.value : "";
+      const month = date ? date.slice(0, 7) : "";
+
+      if (window.QuietSpaceStore && window.QuietSpaceStore.exportCsv) {
+        await QuietSpaceStore.exportCsv("reports", { roomId, month });
+      } else {
+        let url = `/api/reports/export/csv?type=reports`;
+        if (roomId) url += `&room_id=${encodeURIComponent(roomId)}`;
+        if (month) url += `&month=${encodeURIComponent(month)}`;
+        await triggerCsvDownload(url);
+      }
+    }
+
     /*
      * Initial load and live refresh.
      */
+    setChartToday();
     refreshDashboard();
 
     setInterval(() => { loadLatestReadings(); loadIncidents(); }, 1000);
+    setInterval(loadHourlyTrends, 60000);
 
     window.addEventListener(
       "focus",
