@@ -1,0 +1,4 @@
+Incident ID,Room Name,Status,Escalation Count,Trigger Level,Started At,Resolved At,Duration (Seconds)
+201,Room 313,resolved,2,red,2026-11-15T13:40:00.000Z,2026-11-15T13:45:30.000Z,330
+202,Room 312,needs_staff_attention,3,red,2026-11-15T15:20:00.000Z,,
+203,Room 311,resolved,1,red,2026-11-15T16:10:00.000Z,2026-11-15T16:13:00.000Z,180

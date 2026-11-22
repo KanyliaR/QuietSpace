@@ -1,0 +1,23 @@
+[Unit]
+Description=QuietSpace Edge Acoustic Sensor Node
+Documentation=https://github.com/KanyliaR/QuietSpace
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/quietspace
+ExecStart=/usr/bin/python3 /opt/quietspace/sound.py --room-id 1 --server-url http://quietspace.local:3000
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=quietspace-sensor
+Environment=PYTHONUNBUFFERED=1
+Environment=QUIETSPACE_API_URL=http://localhost:3000
+Environment=ROOM_ID=1
+
+[Install]
+WantedBy=multi-user.target

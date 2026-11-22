@@ -1,0 +1,5 @@
+Report ID,Room Name,Noise Type,Severity,Comments,Report Status,Submitted At
+101,Room 311,Loud Talking,medium,Group discussion near doorway,resolved,2026-11-15T14:15:00.000Z
+102,Room 312,Phone Call,high,Speakerphone conversation on speaker,open,2026-11-15T15:30:00.000Z
+103,Room 313,Loud Music,high,Bluetooth speaker playing with heavy bass,in_review,2026-11-15T16:00:00.000Z
+104,Room 311,Door Slamming,low,Occasional heavy door bounce,resolved,2026-11-15T16:45:00.000Z
