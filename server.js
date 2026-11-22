@@ -444,4 +444,5 @@ if (require.main === module) {
     process.exit(1);
   });
 }
-module.exports = { app, db, autoResolveStudentReports };
+const { escapeCsvField, buildCsvString } = require("./lib/report-data");
+module.exports = { app, db, autoResolveStudentReports, escapeCsvField, buildCsvString };
