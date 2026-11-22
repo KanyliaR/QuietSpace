@@ -257,6 +257,8 @@ app.post("/api/readings", (req, res) => {
 
       db.query("UPDATE room_devices SET last_reading_at=NOW(3) WHERE id=?", [req.device.id], updateError => {
         if (updateError) return res.status(500).json({message:"Device acknowledgement failed"});
+        const { updateSensorReading } = require("./lib/devices");
+        updateSensorReading(room_id, level, new Date(), status_color);
         res.status(201).json({
         message: "Reading saved successfully",
         reading_id: result.insertId
@@ -445,4 +447,15 @@ if (require.main === module) {
   });
 }
 const { escapeCsvField, buildCsvString } = require("./lib/report-data");
-module.exports = { app, db, autoResolveStudentReports, escapeCsvField, buildCsvString };
+const { sensorRegistry, updateSensorReading, checkHardwareWatchdog, resetSensorRegistry } = require("./lib/devices");
+module.exports = {
+  app,
+  db,
+  autoResolveStudentReports,
+  escapeCsvField,
+  buildCsvString,
+  sensorRegistry,
+  updateSensorReading,
+  checkHardwareWatchdog,
+  resetSensorRegistry
+};

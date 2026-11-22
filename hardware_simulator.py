@@ -203,6 +203,7 @@ class HardwareSensorNode:
         yellow_threshold: float = 60.0,
         red_threshold: float = 75.0,
         use_envelope_filter: bool = True,
+        device_key: Optional[str] = None,
     ):
         self.room_id = room_id
         self.room_name = room_name or f"Room {room_id}"
@@ -211,6 +212,7 @@ class HardwareSensorNode:
         self.generator = NoiseScenario(scenario)
         self.classifier = AcousticClassifier(yellow_threshold, red_threshold)
         self.use_envelope_filter = use_envelope_filter
+        self.device_key = device_key or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
 
         self.start_time = time.time()
         self.readings_sent = 0
@@ -270,13 +272,18 @@ class HardwareSensorNode:
             "status_color": payload["status_color"],
         }
         data = json.dumps(api_payload).encode("utf-8")
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "QuietSpace-HardwareSensor/1.0",
+        }
+        device_key = self.device_key or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
+        if device_key:
+            headers["Authorization"] = f"Bearer {device_key}"
+
         req = urllib.request.Request(
             endpoint,
             data=data,
-            headers={
-                "Content-Type": "application/json",
-                "User-Agent": "QuietSpace-HardwareSensor/1.0",
-            },
+            headers=headers,
             method="POST",
         )
 
@@ -305,10 +312,15 @@ class HardwareSensorNode:
             "status": "ok" if self.is_connected else "disconnected",
         }
         data = json.dumps(payload).encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        device_key = self.device_key or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
+        if device_key:
+            headers["Authorization"] = f"Bearer {device_key}"
+
         req = urllib.request.Request(
             endpoint,
             data=data,
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             method="POST",
         )
         try:
@@ -333,12 +345,14 @@ class HardwareSimulator:
         use_envelope_filter: bool = True,
         transmit: bool = True,
         verbose: bool = True,
+        device_key: Optional[str] = None,
     ):
         self.server_url = server_url
         self.interval = max(0.1, interval)
         self.transmit = transmit
         self.verbose = verbose
         self.running = False
+        self.device_key = device_key or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
 
         self.nodes: Dict[int, HardwareSensorNode] = {}
         for rid in room_ids:
@@ -347,6 +361,7 @@ class HardwareSimulator:
                 server_url=server_url,
                 scenario=scenario,
                 use_envelope_filter=use_envelope_filter,
+                device_key=self.device_key,
             )
 
     def run(self, duration_seconds: Optional[float] = None):
@@ -478,6 +493,13 @@ def parse_args():
         action="store_true",
         help="Quiet output (suppress per-sample logs)",
     )
+    parser.add_argument(
+        "--device-key",
+        "-k",
+        type=str,
+        default=os.getenv("QUIETSPACE_DEVICE_KEY", ""),
+        help="Device secret key for Authorization Bearer token (default: QUIETSPACE_DEVICE_KEY env var)",
+    )
     return parser.parse_args()
 
 
@@ -498,6 +520,7 @@ def main():
         use_envelope_filter=not args.no_envelope,
         transmit=not args.no_transmit,
         verbose=not args.quiet,
+        device_key=args.device_key,
     )
     sim.run(duration_seconds=args.duration)
 
