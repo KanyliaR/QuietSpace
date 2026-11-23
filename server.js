@@ -22,7 +22,7 @@ app.use(express.json({ limit: "16kb" }));
 // Database Connection
 // -----------------------------
 
-const db = mysql.createPool({
+const defaultPool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -32,7 +32,27 @@ const db = mysql.createPool({
   queueLimit: 0
 });
 
-const access = installAccess(app, db);
+const originalPromise = defaultPool.promise.bind(defaultPool);
+const promisePoolProxy = {
+  getConnection: (...args) => (defaultPool.__promisePool || originalPromise()).getConnection(...args),
+  query: (...args) => (defaultPool.__promisePool || originalPromise()).query(...args)
+};
+defaultPool.promise = () => promisePoolProxy;
+const db = defaultPool;
+
+const sseClients = new Set();
+function broadcastSSE(event, data) {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+    } catch (err) {
+      sseClients.delete(client);
+    }
+  }
+}
+
+const access = installAccess(app, db, { broadcastSSE });
 const activity = createActivity(db, access.publish);
 
 // Token-bearing pages never cache or send their URL as a referrer.
@@ -457,5 +477,7 @@ module.exports = {
   sensorRegistry,
   updateSensorReading,
   checkHardwareWatchdog,
-  resetSensorRegistry
+  resetSensorRegistry,
+  broadcastSSE,
+  sseClients
 };

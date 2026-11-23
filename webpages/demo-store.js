@@ -1,0 +1,749 @@
+/**
+ * QuietSpace Unified Data & Storage Layer (demo-store.js)
+ * 
+ * Provides robust, resilient data synchronization across QuietSpace:
+ * 1. Live Node.js + MySQL Mode: Communicates with backend REST API and SSE stream
+ *    when running locally (localhost:3000) or when a custom cloud API URL is configured.
+ * 2. Client-Side Demo Mode: Automatically activates on GitHub Pages (https://*.github.io)
+ *    or when the backend is unreachable. Uses localStorage with realistic starter data
+ *    for rooms, sound readings, student noise reports, and QuietScore incidents.
+ * 3. Cross-Tab Synchronization: Broadcasts updates across open tabs (Settings, Dashboard,
+ *    In-Room Display, Student Reporting) via window storage events.
+ */
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.QuietSpaceStore = factory();
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const STORAGE_ROOMS = 'quietspace_demo_rooms';
+  const STORAGE_REPORTS = 'quietspace_demo_reports';
+  const STORAGE_INCIDENTS = 'quietspace_demo_incidents';
+  const STORAGE_CUSTOM_API = 'quietspace_custom_api_url';
+  const STORAGE_SYNC_EVENT = 'quietspace_sync_ping';
+
+  const DEFAULT_ROOMS = [
+    {
+      id: 1,
+      room_name: 'Room 311',
+      location: 'Bluford Library 3rd Floor',
+      is_active: 1,
+      yellow_threshold: 60,
+      red_threshold: 75,
+      level: 46,
+      status_color: 'green',
+      quiet_score: 95,
+      recorded_at: new Date().toISOString()
+    },
+    {
+      id: 2,
+      room_name: 'Room 312',
+      location: 'Bluford Library 3rd Floor',
+      is_active: 1,
+      yellow_threshold: 60,
+      red_threshold: 75,
+      level: 42,
+      status_color: 'green',
+      quiet_score: 98,
+      recorded_at: new Date().toISOString()
+    },
+    {
+      id: 3,
+      room_name: 'Room 313',
+      location: 'Bluford Library 3rd Floor',
+      is_active: 1,
+      yellow_threshold: 60,
+      red_threshold: 75,
+      level: 53,
+      status_color: 'yellow',
+      quiet_score: 81,
+      recorded_at: new Date().toISOString()
+    }
+  ];
+
+  function getSeedReports() {
+    const now = Date.now();
+    return [
+      {
+        id: 1,
+        room_id: 1,
+        room_name: 'Room 311',
+        noise_type: 'talking',
+        severity: 'medium',
+        comments: 'Group conversation getting loud near the study pods',
+        report_status: 'open',
+        submitted_at: new Date(now - 12 * 60 * 1000).toISOString()
+      },
+      {
+        id: 2,
+        room_id: 3,
+        room_name: 'Room 313',
+        noise_type: 'music',
+        severity: 'low',
+        comments: 'Headphone sound leakage audible across the room',
+        report_status: 'in_review',
+        submitted_at: new Date(now - 46 * 60 * 1000).toISOString()
+      },
+      {
+        id: 3,
+        room_id: 2,
+        room_name: 'Room 312',
+        noise_type: 'phone_call',
+        severity: 'high',
+        comments: 'Speakerphone call ongoing in quiet study area',
+        report_status: 'resolved',
+        submitted_at: new Date(now - 2 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+  }
+
+  function getSeedIncidents() {
+    const now = Date.now();
+    const d = new Date();
+    const curYear = d.getFullYear();
+    const curMonth = d.getMonth();
+    return [
+      {
+        id: 1,
+        room_id: 3,
+        room_name: 'Room 313',
+        status: 'open',
+        escalation_count: 2,
+        timer_started_at: new Date(now - 45 * 1000).toISOString(),
+        started_at: new Date(now - 45 * 1000).toISOString()
+      },
+      {
+        id: 2,
+        room_id: 1,
+        room_name: 'Room 311',
+        status: 'resolved',
+        escalation_count: 1,
+        timer_started_at: new Date(now - 35 * 60 * 1000).toISOString(),
+        started_at: new Date(now - 35 * 60 * 1000).toISOString()
+      },
+      {
+        id: 3,
+        room_id: 2,
+        room_name: 'Room 312',
+        status: 'resolved',
+        escalation_count: 3,
+        timer_started_at: new Date(curYear, curMonth, Math.max(1, d.getDate() - 2), 14, 20).toISOString(),
+        started_at: new Date(curYear, curMonth, Math.max(1, d.getDate() - 2), 14, 20).toISOString()
+      },
+      {
+        id: 4,
+        room_id: 3,
+        room_name: 'Room 313',
+        status: 'resolved',
+        escalation_count: 1,
+        timer_started_at: new Date(curYear, curMonth, Math.max(1, d.getDate() - 5), 10, 15).toISOString(),
+        started_at: new Date(curYear, curMonth, Math.max(1, d.getDate() - 5), 10, 15).toISOString()
+      }
+    ];
+  }
+
+  // Determine if running on GitHub Pages or static host
+  function isGitHubPages() {
+    if (typeof window === 'undefined') return false;
+    const host = window.location.hostname.toLowerCase();
+    const isHttps = window.location.protocol === 'https:';
+    return host.endsWith('github.io') || (isHttps && host !== 'localhost' && host !== '127.0.0.1');
+  }
+
+  // Get effective API base URL
+  function getApiBase() {
+    if (typeof window === 'undefined') return '';
+    try {
+      const custom = localStorage.getItem(STORAGE_CUSTOM_API);
+      if (custom && custom.trim()) {
+        return custom.trim().replace(/\/+$/, '');
+      }
+    } catch (e) {}
+
+    // When running locally on port 3000
+    if ((window.location.protocol === 'http:' || window.location.protocol === 'https:') && window.location.port === '3000') {
+      return '';
+    }
+
+    // When running locally on another port (e.g. VS Code Live Server on 5500)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:3000';
+    }
+
+    // When on GitHub Pages without a custom HTTPS backend URL:
+    // Return null to avoid mixed-content blocking (HTTPS -> HTTP:localhost)
+    return null;
+  }
+
+  function setCustomApiUrl(url) {
+    if (!url || !url.trim()) {
+      localStorage.removeItem(STORAGE_CUSTOM_API);
+    } else {
+      localStorage.setItem(STORAGE_CUSTOM_API, url.trim().replace(/\/+$/, ''));
+    }
+    broadcastSync('api_url_changed');
+  }
+
+  function getCustomApiUrl() {
+    try {
+      return localStorage.getItem(STORAGE_CUSTOM_API) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // Broadcast sync event to other open tabs
+  function broadcastSync(type, payload) {
+    if (typeof window === 'undefined') return;
+    try {
+      const message = { type, payload, timestamp: Date.now() };
+      localStorage.setItem(STORAGE_SYNC_EVENT, JSON.stringify(message));
+      window.dispatchEvent(new CustomEvent('quietspace:sync', { detail: message }));
+    } catch (e) {}
+  }
+
+  // ----------------------------------------------------
+  // LocalStorage Helpers
+  // ----------------------------------------------------
+  function readLocal(key, defaultData) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        localStorage.setItem(key, JSON.stringify(defaultData));
+        return defaultData;
+      }
+      return JSON.parse(raw);
+    } catch (e) {
+      console.warn(`Error reading ${key} from localStorage:`, e);
+      return defaultData;
+    }
+  }
+
+  function writeLocal(key, data) {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+      console.error(`Error saving ${key} to localStorage:`, e);
+    }
+  }
+
+  // Ensure default seeds are present
+  function ensureSeeds() {
+    if (typeof window === 'undefined') return;
+    try {
+      if (!localStorage.getItem(STORAGE_ROOMS)) {
+        writeLocal(STORAGE_ROOMS, DEFAULT_ROOMS);
+      }
+      if (!localStorage.getItem(STORAGE_REPORTS)) {
+        writeLocal(STORAGE_REPORTS, getSeedReports());
+      }
+      if (!localStorage.getItem(STORAGE_INCIDENTS)) {
+        writeLocal(STORAGE_INCIDENTS, getSeedIncidents());
+      }
+    } catch (e) {}
+  }
+
+  ensureSeeds();
+
+  // ----------------------------------------------------
+  // Room Management API & Demo Fallback
+  // ----------------------------------------------------
+  async function getRooms() {
+    ensureSeeds();
+    const api = getApiBase();
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/rooms?t=${Date.now()}`);
+        if (res.ok) {
+          const rooms = await res.json();
+          writeLocal(STORAGE_ROOMS, rooms);
+          return { rooms, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend /api/rooms unreachable, falling back to local storage:', err.message);
+      }
+    }
+    const local = readLocal(STORAGE_ROOMS, DEFAULT_ROOMS);
+    return { rooms: local, source: 'demo' };
+  }
+
+  async function addRoom(roomName, location) {
+    ensureSeeds();
+    const api = getApiBase();
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/rooms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room_name: roomName, location: location || 'Bluford Library 3rd Floor' })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          broadcastSync('room_added', data.room);
+          return { success: true, room: data.room, source: 'database' };
+        }
+        throw new Error(data.message || 'Failed to add room');
+      } catch (err) {
+        if (err.message && !err.message.includes('fetch') && !err.message.includes('NetworkError')) {
+          throw err;
+        }
+        console.warn('Backend unreachable for room creation, adding to local storage.');
+      }
+    }
+
+    // Local storage fallback
+    const rooms = readLocal(STORAGE_ROOMS, DEFAULT_ROOMS);
+    const maxId = rooms.reduce((max, r) => Math.max(max, Number(r.id || r.room_id || 0)), 0);
+    const newRoom = {
+      id: maxId + 1,
+      room_name: roomName.trim(),
+      location: (location || 'Bluford Library 3rd Floor').trim(),
+      is_active: 1,
+      level: 45,
+      status_color: 'green',
+      quiet_score: 95,
+      recorded_at: new Date().toISOString()
+    };
+    rooms.push(newRoom);
+    writeLocal(STORAGE_ROOMS, rooms);
+    broadcastSync('room_added', newRoom);
+    return { success: true, room: newRoom, source: 'demo' };
+  }
+
+  async function updateRoom(roomId, updates) {
+    ensureSeeds();
+    const api = getApiBase();
+    const id = Number(roomId);
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/rooms/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          broadcastSync('room_updated', data.room);
+          return { success: true, room: data.room, source: 'database' };
+        }
+        throw new Error(data.message || 'Failed to update room');
+      } catch (err) {
+        if (err.message && !err.message.includes('fetch') && !err.message.includes('NetworkError')) {
+          throw err;
+        }
+        console.warn('Backend unreachable for room update, updating local storage.');
+      }
+    }
+
+    // Local storage fallback
+    const rooms = readLocal(STORAGE_ROOMS, DEFAULT_ROOMS);
+    const room = rooms.find(r => (r.id || r.room_id) === id);
+    if (!room) throw new Error('Room not found');
+
+    if (updates.room_name !== undefined) room.room_name = updates.room_name.trim();
+    if (updates.location !== undefined) room.location = updates.location.trim();
+    if (updates.is_active !== undefined) room.is_active = updates.is_active ? 1 : 0;
+
+    writeLocal(STORAGE_ROOMS, rooms);
+    broadcastSync('room_updated', room);
+    return { success: true, room, source: 'demo' };
+  }
+
+  async function toggleRoomStatus(roomId) {
+    ensureSeeds();
+    const api = getApiBase();
+    const id = Number(roomId);
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/rooms/${id}/toggle`, { method: 'PATCH' });
+        const data = await res.json();
+        if (res.ok) {
+          broadcastSync('room_toggled', data.room);
+          return { success: true, room: data.room, source: 'database' };
+        }
+        throw new Error(data.message || 'Failed to toggle room status');
+      } catch (err) {
+        if (err.message && !err.message.includes('fetch') && !err.message.includes('NetworkError')) {
+          throw err;
+        }
+        console.warn('Backend unreachable for room toggle, updating local storage.');
+      }
+    }
+
+    // Local storage fallback
+    const rooms = readLocal(STORAGE_ROOMS, DEFAULT_ROOMS);
+    const room = rooms.find(r => (r.id || r.room_id) === id);
+    if (!room) throw new Error('Room not found');
+
+    const currentlyActive = room.is_active !== 0 && room.is_active !== false;
+    room.is_active = currentlyActive ? 0 : 1;
+
+    writeLocal(STORAGE_ROOMS, rooms);
+    broadcastSync('room_toggled', room);
+    return { success: true, room, source: 'demo' };
+  }
+
+  async function updateRoomThresholds(roomId, yellowThreshold, redThreshold) {
+    ensureSeeds();
+    const api = getApiBase();
+    const id = Number(roomId);
+    const yellow = Number(yellowThreshold);
+    const red = Number(redThreshold);
+
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/rooms/${id}/thresholds`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ yellow_threshold: yellow, red_threshold: red })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          broadcastSync('thresholds_updated', data.room);
+          return { success: true, room: data.room, source: 'database' };
+        }
+        throw new Error(data.message || 'Failed to update thresholds');
+      } catch (err) {
+        if (err.message && !err.message.includes('fetch') && !err.message.includes('NetworkError')) {
+          throw err;
+        }
+        console.warn('Backend unreachable for thresholds update, updating demo store.');
+      }
+    }
+
+    // Local storage fallback
+    const rooms = readLocal(STORAGE_ROOMS, DEFAULT_ROOMS);
+    const room = rooms.find(r => (r.id || r.room_id) === id);
+    if (!room) throw new Error('Room not found');
+
+    room.yellow_threshold = yellow;
+    room.red_threshold = red;
+
+    writeLocal(STORAGE_ROOMS, rooms);
+    broadcastSync('thresholds_updated', room);
+    return { success: true, room, source: 'demo' };
+  }
+
+  async function getHourlyAnalyticsTrends(roomId, date) {
+    const api = getApiBase();
+    if (api !== null) {
+      try {
+        let url = `${api}/api/analytics/hourly-trends?`;
+        if (roomId) url += `room_id=${encodeURIComponent(roomId)}&`;
+        if (date) url += `date=${encodeURIComponent(date)}&`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const trends = await res.json();
+          return { trends, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend /api/analytics/hourly-trends unreachable, generating demo trends.');
+      }
+    }
+
+    // Demo fallback for analytics trends
+    const demoTrends = [];
+    for (let h = 0; h < 24; h++) {
+      const hourLabel = h === 0 ? "12 AM" : h < 12 ? `${h} AM` : h === 12 ? "12 PM" : `${h - 12} PM`;
+      // Realistic daytime curve peaking at 2 PM (14:00)
+      const isPeak = h >= 11 && h <= 17;
+      const avgDb = h < 7 ? 32 + (h % 3) : isPeak ? 58 + ((h * 7) % 16) : 44 + ((h * 5) % 10);
+      const spikes = isPeak ? (h % 4) : (h === 20 ? 1 : 0);
+      demoTrends.push({
+        hour: h,
+        hour_label: hourLabel,
+        avg_noise_level: avgDb,
+        avg_level: avgDb,
+        incident_spikes: spikes,
+        incident_count: spikes,
+        reading_count: isPeak ? 120 : 45
+      });
+    }
+    return { trends: demoTrends, source: 'demo' };
+  }
+
+  // ----------------------------------------------------
+  // Reports API & Demo Fallback
+  // ----------------------------------------------------
+  async function getReports() {
+    ensureSeeds();
+    const api = getApiBase();
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/reports?t=${Date.now()}`);
+        if (res.ok) {
+          const reports = await res.json();
+          writeLocal(STORAGE_REPORTS, reports);
+          return { reports, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend /api/reports unreachable, falling back to local storage.');
+      }
+    }
+    const local = readLocal(STORAGE_REPORTS, getSeedReports());
+    return { reports: local, source: 'demo' };
+  }
+
+  async function addReport(reportData) {
+    ensureSeeds();
+    const api = getApiBase();
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/reports`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reportData)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          broadcastSync('report_created', data);
+          return { success: true, report: data, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend unreachable for report submission, saving to local storage.');
+      }
+    }
+
+    // Local storage fallback
+    const reports = readLocal(STORAGE_REPORTS, getSeedReports());
+    const rooms = readLocal(STORAGE_ROOMS, DEFAULT_ROOMS);
+    const matchedRoom = rooms.find(r => (r.id || r.room_id) === Number(reportData.room_id));
+    const roomName = matchedRoom ? matchedRoom.room_name : `Room ${reportData.room_id}`;
+
+    const newReport = {
+      id: Date.now(),
+      room_id: Number(reportData.room_id),
+      room_name: roomName,
+      noise_type: reportData.noise_type || 'unspecified',
+      severity: reportData.severity || 'low',
+      comments: reportData.comments || '',
+      report_status: 'open',
+      submitted_at: new Date().toISOString()
+    };
+    reports.unshift(newReport);
+    writeLocal(STORAGE_REPORTS, reports);
+    broadcastSync('report_created', newReport);
+    return { success: true, report: newReport, source: 'demo' };
+  }
+
+  async function updateReportStatus(reportId, newStatus) {
+    ensureSeeds();
+    const api = getApiBase();
+    const id = Number(reportId);
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/reports/${id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ report_status: newStatus })
+        });
+        if (res.ok) {
+          broadcastSync('report_status_updated', { id, report_status: newStatus });
+          return { success: true, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend unreachable for report status update, updating local storage.');
+      }
+    }
+
+    // Local storage fallback
+    const reports = readLocal(STORAGE_REPORTS, getSeedReports());
+    const target = reports.find(r => r.id === id);
+    if (target) {
+      target.report_status = newStatus;
+      writeLocal(STORAGE_REPORTS, reports);
+      broadcastSync('report_status_updated', { id, report_status: newStatus });
+    }
+    return { success: true, source: 'demo' };
+  }
+
+  // ----------------------------------------------------
+  // Incidents API & Demo Fallback
+  // ----------------------------------------------------
+  async function getIncidents() {
+    ensureSeeds();
+    const api = getApiBase();
+    if (api !== null) {
+      try {
+        const res = await fetch(`${api}/api/incidents?t=${Date.now()}`);
+        if (res.ok) {
+          const incidents = await res.json();
+          writeLocal(STORAGE_INCIDENTS, incidents);
+          return { incidents, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend /api/incidents unreachable, falling back to local storage.');
+      }
+    }
+    const local = readLocal(STORAGE_INCIDENTS, getSeedIncidents());
+    return { incidents: local, source: 'demo' };
+  }
+
+  // ----------------------------------------------------
+  // CSV Export & Offline Report Generator
+  // ----------------------------------------------------
+  function escapeCsvField(val) {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (/[",\n\r]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  function formatCsv(headers, rows) {
+    const headerLine = headers.map(escapeCsvField).join(',');
+    const dataLines = rows.map(r => r.map(escapeCsvField).join(','));
+    return [headerLine, ...dataLines].join('\r\n');
+  }
+
+  function triggerDownload(content, filename, mimeType = 'text/csv;charset=utf-8;') {
+    if (typeof window !== 'undefined' && window.document && window.Blob && window.URL && window.URL.createObjectURL) {
+      const blob = new Blob([content], { type: mimeType });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(link.href);
+      return true;
+    }
+    return false;
+  }
+
+  async function exportCsv(type = 'incidents', options = {}) {
+    ensureSeeds();
+    const api = getApiBase();
+    const month = options.month;
+    const date = options.date;
+    const roomId = options.roomId || options.room_id;
+    const monthTag = month || (date ? date.slice(0, 7) : new Date().toISOString().slice(0, 7));
+    const tag = type === 'hourly' && date ? date : monthTag;
+    const filename = options.filename || `quietspace-${type}-${tag}.csv`;
+
+    if (api !== null) {
+      try {
+        let url = `${api}/api/reports/export/csv?type=${encodeURIComponent(type)}&`;
+        if (month) url += `month=${encodeURIComponent(month)}&`;
+        if (date) url += `date=${encodeURIComponent(date)}&`;
+        if (roomId) url += `room_id=${encodeURIComponent(roomId)}&`;
+
+        const res = await fetch(url);
+        if (res.ok) {
+          const csvText = await res.text();
+          triggerDownload(csvText, filename);
+          return { csv: csvText, filename, source: 'database' };
+        }
+      } catch (err) {
+        console.warn('Backend CSV export unreachable, generating demo CSV client-side.');
+      }
+    }
+
+    // Demo fallback generation
+    let csv = '';
+    if (type === 'reports') {
+      const res = await getReports();
+      let list = Array.isArray(res) ? res : (res.reports || []);
+      if (month) {
+        list = list.filter(r => (r.submitted_at || '').startsWith(month));
+      }
+      if (date) {
+        list = list.filter(r => (r.submitted_at || '').startsWith(date));
+      }
+      if (roomId) {
+        list = list.filter(r => String(r.room_id) === String(roomId) || r.room_name === roomId);
+      }
+
+      const headers = ['Report ID', 'Room Name', 'Noise Type', 'Severity', 'Comments', 'Report Status', 'Submitted At'];
+      const rows = list.map(r => [
+        r.id,
+        r.room_name || `Room ${r.room_id}`,
+        r.noise_type,
+        r.severity,
+        r.comments || '',
+        r.report_status,
+        r.submitted_at || ''
+      ]);
+      csv = formatCsv(headers, rows);
+    } else if (type === 'hourly') {
+      const res = await getHourlyAnalyticsTrends(roomId, date);
+      const trends = res.trends || [];
+      const headers = ['Hour', 'Hour Label', 'Average Noise Level (dB)', 'Max Noise Level (dB)', 'Min Noise Level (dB)', 'Reading Count', 'Incident Spikes'];
+      const rows = trends.map(t => [
+        t.hour,
+        t.hour_label,
+        t.avg_noise_level || t.avg_level || 0,
+        t.max_noise_level || 0,
+        t.min_noise_level || 0,
+        t.reading_count || 0,
+        t.incident_spikes || t.incident_count || 0
+      ]);
+      csv = formatCsv(headers, rows);
+    } else {
+      // Default: incidents
+      const res = await getIncidents();
+      let list = res.incidents || [];
+      if (month) {
+        list = list.filter(i => (i.started_at || '').startsWith(month));
+      }
+      if (date) {
+        list = list.filter(i => (i.started_at || '').startsWith(date));
+      }
+      if (roomId) {
+        list = list.filter(i => String(i.room_id) === String(roomId) || i.room_name === roomId);
+      }
+
+      const headers = ['Incident ID', 'Room Name', 'Status', 'Escalation Count', 'Trigger Level', 'Started At', 'Resolved At', 'Duration (Seconds)'];
+      const rows = list.map(i => [
+        i.id,
+        i.room_name,
+        i.status,
+        i.escalation_count || 0,
+        i.trigger_level || 'red',
+        i.started_at || '',
+        i.resolved_at || '',
+        i.resolved_at && i.started_at ? Math.round((new Date(i.resolved_at) - new Date(i.started_at)) / 1000) : ''
+      ]);
+      csv = formatCsv(headers, rows);
+    }
+
+    triggerDownload(csv, filename);
+    return { csv, filename, source: 'demo' };
+  }
+
+  // Check if current page is in demo mode
+  function getMode() {
+    const api = getApiBase();
+    if (api === null || isGitHubPages()) {
+      return 'demo';
+    }
+    return 'live';
+  }
+
+  return {
+    isGitHubPages,
+    getApiBase,
+    setCustomApiUrl,
+    getCustomApiUrl,
+    getMode,
+    getRooms,
+    addRoom,
+    updateRoom,
+    updateRoomThresholds,
+    toggleRoomStatus,
+    getReports,
+    addReport,
+    updateReportStatus,
+    getIncidents,
+    getHourlyAnalyticsTrends,
+    escapeCsvField,
+    formatCsv,
+    exportCsv,
+    broadcastSync
+  };
+});
