@@ -132,7 +132,15 @@ PORT=3000
 
 **Do not commit your `.env` file to GitHub.**
 
-### 5. Start the Server
+### 5. Run Database Migrations
+
+Run the database migration script to set up all required tables and columns (including system settings, report activities, and staff management):
+
+```bash
+npm run migrate
+```
+
+### 6. Start the Server
 
 Run:
 

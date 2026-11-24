@@ -275,7 +275,7 @@ app.post("/api/readings", (req, res) => {
         });
       }
 
-      db.query("UPDATE room_devices SET last_reading_at=NOW(3) WHERE id=?", [req.device.id], updateError => {
+      db.query("UPDATE room_devices SET last_reading_at=NOW(3), last_seen=NOW(), microphone_seen_at=NOW(3), microphone_state='active' WHERE id=?", [req.device.id], updateError => {
         if (updateError) return res.status(500).json({message:"Device acknowledgement failed"});
         const { updateSensorReading } = require("./lib/devices");
         updateSensorReading(room_id, level, new Date(), status_color);
@@ -421,7 +421,11 @@ async function autoResolveStudentReports() {
     }
     return count;
   } catch (error) {
-    console.error('Error automatically resolving student reports:', error.code || error.message);
+    if (error.code === 'ER_NO_SUCH_TABLE') {
+      console.error('Error automatically resolving student reports: Database tables are missing (ER_NO_SUCH_TABLE). Run "npm run migrate" to initialize required tables.');
+    } else {
+      console.error('Error automatically resolving student reports:', error.code || error.message);
+    }
     throw error;
   }
 }

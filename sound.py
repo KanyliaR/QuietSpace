@@ -368,7 +368,24 @@ def monitoring_config(server_url: Optional[str] = None, device_key: Optional[str
     return config if config.get("room_id") == rid and config.get("monitoring_enabled") else None
 
 
+def load_dotenv():
+    env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k, v = k.strip(), v.strip().strip("'\"")
+                        if k and k not in os.environ:
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+
 def parse_args():
+    load_dotenv()
     parser = argparse.ArgumentParser(description="QuietSpace Edge Sound Sensor Client")
     parser.add_argument(
         "--room-id",

@@ -2417,7 +2417,7 @@ body.dark-theme .escalation-badge.priority-high {
       const light = theme === 'light' || (window.quietspaceUser?.role === 'library_monitor' && theme === 'system' && !window.matchMedia('(prefers-color-scheme: dark)').matches);
       document.body.classList.toggle('light-theme', light);
       document.body.classList.toggle('dark-theme', !light);
-      if (typeof renderHourlyTrendsChart === "function" && typeof cachedHourlyTrends !== "undefined" && cachedHourlyTrends.length > 0) {
+      if (typeof renderHourlyTrendsChart === "function" && typeof cachedHourlyTrends !== "undefined" && cachedHourlyTrends && cachedHourlyTrends.length > 0) {
         renderHourlyTrendsChart(cachedHourlyTrends);
       }
     }
@@ -3070,7 +3070,7 @@ function buildReportStatusDropdown(
     // ----------------------------------------------------
     // Analytics: 24-Hour Decibel Trend Visualization & CSV Export
     // ----------------------------------------------------
-    let cachedHourlyTrends = [];
+    var cachedHourlyTrends = [];
     let chartHoverIndex = -1;
     let chartInteractionInitialized = false;
 

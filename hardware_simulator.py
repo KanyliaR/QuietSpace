@@ -276,7 +276,11 @@ class HardwareSensorNode:
             "Content-Type": "application/json",
             "User-Agent": "QuietSpace-HardwareSensor/1.0",
         }
-        device_key = self.device_key or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
+        device_key = (
+            self.device_key
+            or os.environ.get(f"QUIETSPACE_DEVICE_KEY_{self.room_id}")
+            or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
+        )
         if device_key:
             headers["Authorization"] = f"Bearer {device_key}"
 
@@ -313,7 +317,11 @@ class HardwareSensorNode:
         }
         data = json.dumps(payload).encode("utf-8")
         headers = {"Content-Type": "application/json"}
-        device_key = self.device_key or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
+        device_key = (
+            self.device_key
+            or os.environ.get(f"QUIETSPACE_DEVICE_KEY_{self.room_id}")
+            or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
+        )
         if device_key:
             headers["Authorization"] = f"Bearer {device_key}"
 
@@ -353,15 +361,25 @@ class HardwareSimulator:
         self.verbose = verbose
         self.running = False
         self.device_key = device_key or os.environ.get("QUIETSPACE_DEVICE_KEY", "")
+        key_list = [k.strip() for k in (device_key or "").split(",") if k.strip()]
 
         self.nodes: Dict[int, HardwareSensorNode] = {}
-        for rid in room_ids:
+        for idx, rid in enumerate(room_ids):
+            node_key = (
+                os.environ.get(f"QUIETSPACE_DEVICE_KEY_{rid}")
+                or os.environ.get(f"QUIETSPACE_DEVICE_KEY_ROOM_{rid}")
+            )
+            if not node_key and idx < len(key_list):
+                node_key = key_list[idx]
+            if not node_key and (rid == 1 or len(room_ids) == 1):
+                node_key = self.device_key
+
             self.nodes[rid] = HardwareSensorNode(
                 room_id=rid,
                 server_url=server_url,
                 scenario=scenario,
                 use_envelope_filter=use_envelope_filter,
-                device_key=self.device_key,
+                device_key=node_key or "",
             )
 
     def run(self, duration_seconds: Optional[float] = None):
@@ -438,7 +456,24 @@ class HardwareSimulator:
             print("=" * 60)
 
 
+def load_dotenv():
+    env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k, v = k.strip(), v.strip().strip("'\"")
+                        if k and k not in os.environ:
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+
 def parse_args():
+    load_dotenv()
     parser = argparse.ArgumentParser(
         description="QuietSpace Hardware & Acoustic Sensor Simulator"
     )
